@@ -105,38 +105,44 @@ ml_df = df.copy()
 
 features = ["Period Clean", "Originator", "Recipient", "Doc Type Clean", "Days Open"]
 
+# ensure columns exist
 for col in features:
     if col not in ml_df.columns:
         ml_df[col] = 0
-    if ml_df[col].dtype == "object":
-        le = LabelEncoder()
-        ml_df[col] = le.fit_transform(ml_df[col].astype(str))
+
+# explicitly encode categorical columns
+categorical_cols = ["Originator", "Recipient", "Doc Type Clean"]
+
+for col in categorical_cols:
+    ml_df[col] = ml_df[col].astype(str)
+    le = LabelEncoder()
+    ml_df[col] = le.fit_transform(ml_df[col])
+
+# numeric conversion
+ml_df["Period Clean"] = pd.to_numeric(ml_df["Period Clean"], errors="coerce").fillna(0)
+ml_df["Days Open"] = pd.to_numeric(ml_df["Days Open"], errors="coerce").fillna(0)
 
 X = ml_df[features]
 y = ml_df["Will_Breach_SLA"]
 
 if len(df) > 10:
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = XGBClassifier()
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    model = XGBClassifier(
+        n_estimators=100,
+        max_depth=4,
+        learning_rate=0.1,
+        random_state=42
+    )
+
     model.fit(X_train, y_train)
 
     probs = model.predict_proba(X)[:, 1]
     df["Risk %"] = (probs * 100).round(0)
 else:
     df["Risk %"] = 0
-
-# ---------------- KPIs ----------------
-col1, col2, col3, col4 = st.columns(4)
-
-total_tq = len(df[df["Doc Type Clean"] == "TQ"])
-total_rfi = len(df[df["Doc Type Clean"] == "RFI"])
-closed = len(df[df["Status Clean"].str.contains("Closed", case=False, na=False)])
-overdue = len(df[df["Days Open"] > 7])
-
-col1.metric("Total TQs", total_tq)
-col2.metric("Total RFIs", total_rfi)
-col3.metric("Closed", closed)
-col4.metric("Overdue", overdue)
 
 # ---------------- VENN ----------------
 st.subheader("Outstanding > 7 Days")

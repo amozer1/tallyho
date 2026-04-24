@@ -1,178 +1,157 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
+from streamlit_autorefresh import st_autorefresh
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from xgboost import XGBClassifier
+from prophet import Prophet
 
-from src.data_loader import load_data
-from src.features import build_features
-from src.model import load_model
-from src.predict import run_prediction
+# ---------------- PAGE ----------------
+st.set_page_config(page_title="AI TQ/RFI Dashboard", layout="wide")
 
-st.set_page_config(
-    page_title="TQ & RFI AI Dashboard",
-    page_icon="📊",
-    layout="wide",
-)
+# auto refresh every minute
+st_autorefresh(interval=60000, key="refresh")
 
-# ================= LOAD DATA =================
+# ---------------- LOAD DATA ----------------
+@st.cache_data
+def load_data():
+    df = pd.read_excel("data/TQ_TH.xlsx", header=7)
+    df = df.loc[:, ~df.columns.astype(str).str.contains("^Unnamed")]
+
+    # rename columns
+    df.rename(columns={
+        "Date Sent": "Date Sent",
+        "Date reply required by": "Due Date",
+        "Date of reply\n(CDE)": "Reply Date",
+        "Status*\nC=Closed Out\nO=Open": "Status"
+    }, inplace=True)
+
+    # convert dates
+    for c in ["Date Sent", "Due Date", "Reply Date"]:
+        if c in df.columns:
+            df[c] = pd.to_datetime(df[c], errors="coerce")
+
+    # clean Doc Type
+    if "Doc Type" in df.columns:
+        df["Doc Type"] = df["Doc Type"].astype(str).str.upper()
+    else:
+        df["Doc Type"] = "UNKNOWN"
+
+    # Days open
+    df["Days Open"] = (pd.Timestamp.today() - df["Date Sent"]).dt.days
+
+    # overdue target
+    df["Will_Breach_SLA"] = np.where(df["Days Open"] > 7, 1, 0)
+
+    # NLP urgency
+    urgent_words = ["urgent", "risk", "critical", "delay", "asap"]
+    df["Urgency"] = df["Subject"].apply(
+        lambda x: "Urgent" if any(w in str(x).lower() for w in urgent_words) else "Normal"
+    )
+
+    return df
+
 df = load_data()
 
-# ================= FEATURE ENGINEERING =================
-X, y = build_features(df)
+# ---------------- ML ----------------
+ml_df = df.copy()
 
-# ================= AI MODEL =================
-model = load_model()
+features = ["Period\n(Wks)", "Originator", "Recipient", "Doc Type", "Days Open"]
 
-df = run_prediction(df, model)
+for col in features:
+    if col in ml_df.columns:
+        if ml_df[col].dtype == "object":
+            le = LabelEncoder()
+            ml_df[col] = le.fit_transform(ml_df[col].astype(str))
+    else:
+        ml_df[col] = 0
 
-# ================= COLUMN DETECTION SAFETY =================
-def find_column(possible_names):
-    for col in df.columns:
-        for name in possible_names:
-            if name.lower() in col.lower():
-                return col
-    return None
+X = ml_df[features]
+y = ml_df["Will_Breach_SLA"]
 
-type_col = find_column(["type", "tq", "rfi"])
-status_col = find_column(["status"])
-date_col = find_column(["date", "raised"])
-due_col = find_column(["due"])
+if len(df) > 10:
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    model = XGBClassifier()
+    model.fit(X_train, y_train)
 
-# ================= DATE HANDLING =================
-if date_col:
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df["Days Open"] = (pd.Timestamp.today() - df[date_col]).dt.days
+    probs = model.predict_proba(X)[:, 1]
+    df["Risk %"] = (probs * 100).round(0)
 else:
-    df["Days Open"] = 0
+    df["Risk %"] = 0
 
-# ================= CLASSIFICATION =================
-def classify(row):
-    if type_col:
-        val = str(row[type_col]).lower()
-        if "rfi" in val:
-            return "RFI"
-        elif "tq" in val:
-            return "TQ"
-    return "Unknown"
+# ---------------- KPIs ----------------
+col1, col2, col3, col4 = st.columns(4)
 
-df["Doc Type"] = df.apply(classify, axis=1)
+total_tq = len(df[df["Doc Type"] == "TQ"])
+total_rfi = len(df[df["Doc Type"] == "RFI"])
+closed = len(df[df["Status"].astype(str).str.contains("Closed", case=False, na=False)])
+overdue = len(df[df["Days Open"] > 7])
 
-# ================= SIDEBAR =================
-choice = st.sidebar.radio("Navigation", [
-    "Overview","TQs","RFIs","Analytics","AI Insights"
-])
+col1.metric("Total TQs", total_tq)
+col2.metric("Total RFIs", total_rfi)
+col3.metric("Closed", closed)
+col4.metric("Overdue", overdue)
 
-# ================= HEADER =================
-col1, col2 = st.columns([6,2])
-with col1:
-    st.markdown("### TQ & RFI AI Dashboard")
-    st.caption("AI-driven Delay Prediction & Control Tower")
-with col2:
-    st.date_input("Report Date")
+# ---------------- VENN ----------------
+st.subheader("Outstanding > 7 Days")
 
-# ================= KPIs =================
-k1,k2,k3,k4 = st.columns(4)
-
-total_tq = len(df[df["Doc Type"]=="TQ"])
-total_rfi = len(df[df["Doc Type"]=="RFI"])
-
-closed = len(df[df[status_col].str.contains("close", case=False, na=False)]) if status_col else 0
-overdue = len(df[df["delay_probability"] > 70])
-
-with k1:
-    st.metric("Total TQs", total_tq)
-with k2:
-    st.metric("Total RFIs", total_rfi)
-with k3:
-    st.metric("Closed", closed)
-with k4:
-    st.metric("AI High Risk", overdue)
-
-# ================= SLA LOGIC (REAL) =================
-if due_col:
-    df[due_col] = pd.to_datetime(df[due_col], errors="coerce")
-    df["SLA_Status"] = np.where(
-        df[due_col] < pd.Timestamp.today(),
-        "Overdue",
-        "On Track"
-    )
-else:
-    df["SLA_Status"] = "Unknown"
-
-# ================= VENN CALC =================
-tq_overdue = len(df[(df["Doc Type"]=="TQ") & (df["delay_probability"] > 70)])
-rfi_overdue = len(df[(df["Doc Type"]=="RFI") & (df["delay_probability"] > 70)])
-
-both = int(min(tq_overdue, rfi_overdue) * 0.3)
-tq_only = tq_overdue - both
-rfi_only = rfi_overdue - both
-
-total = max(tq_only + rfi_only + both, 1)
-
-tq_pct = int((tq_only/total)*100)
-both_pct = int((both/total)*100)
-rfi_pct = int((rfi_only/total)*100)
-
-# ================= VENN =================
-st.subheader("AI Identified Non-Responsive Items")
+tq_over = len(df[(df["Doc Type"] == "TQ") & (df["Days Open"] > 7)])
+rfi_over = len(df[(df["Doc Type"] == "RFI") & (df["Days Open"] > 7)])
 
 fig = go.Figure()
 
-fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2,
-              fillcolor="rgba(0,102,255,0.4)")
-fig.add_shape(type="circle", x0=1, y0=0, x1=3, y1=2,
-              fillcolor="rgba(102,0,255,0.4)")
+fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2, fillcolor="blue", opacity=0.4)
+fig.add_shape(type="circle", x0=1, y0=0, x1=3, y1=2, fillcolor="purple", opacity=0.4)
+fig.add_shape(type="circle", x0=2, y0=0, x1=4, y1=2, fillcolor="green", opacity=0.4)
 
-fig.add_annotation(x=1, y=1, text=f"TQ Only<br>{tq_pct}%")
-fig.add_annotation(x=2, y=1, text=f"Overlap<br>{both_pct}%")
-fig.add_annotation(x=3, y=1, text=f"RFI Only<br>{rfi_pct}%")
+fig.add_annotation(x=1, y=1, text=f"TQ<br>{tq_over}")
+fig.add_annotation(x=2, y=1, text="Both")
+fig.add_annotation(x=3, y=1, text=f"RFI<br>{rfi_over}")
 
 fig.update_xaxes(visible=False)
 fig.update_yaxes(visible=False)
-fig.update_layout(height=400)
 
 st.plotly_chart(fig, use_container_width=True)
 
-# ================= CHARTS =================
-c1,c2,c3 = st.columns(3)
+# ---------------- LEADERBOARD ----------------
+st.subheader("Delay Leaderboard")
 
-with c1:
-    st.subheader("Trend")
-    if date_col:
-        st.plotly_chart(
-            px.line(df, x=date_col, y="Days Open", color="Doc Type"),
-            use_container_width=True
-        )
+leaderboard = df.groupby("Recipient")["Days Open"].mean().sort_values(ascending=False)
+st.bar_chart(leaderboard)
 
-with c2:
-    st.subheader("SLA Status")
-    st.bar_chart(df["SLA_Status"].value_counts())
+# ---------------- TREND ----------------
+st.subheader("Trend")
 
-with c3:
-    st.subheader("AI Risk Score")
+trend = px.line(df, x="Date Sent", y="Days Open", color="Doc Type")
+st.plotly_chart(trend, use_container_width=True)
 
-    risk_score = int(df["delay_probability"].mean())
+# ---------------- FORECAST ----------------
+st.subheader("Forecast")
 
-    gauge = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=risk_score,
-        title={'text': "AI Delay Risk"},
-        gauge={'axis': {'range': [0,100]}}
-    ))
+forecast_df = df.groupby("Date Sent").size().reset_index()
+forecast_df.columns = ["ds", "y"]
 
-    st.plotly_chart(gauge, use_container_width=True)
+if len(forecast_df) > 5:
+    m = Prophet()
+    m.fit(forecast_df)
 
-# ================= AI INSIGHTS =================
-st.subheader("AI Insights & Recommendations")
+    future = m.make_future_dataframe(periods=30)
+    fc = m.predict(future)
 
-if overdue > 0:
-    st.warning(f"{overdue} high-risk items detected by AI (>70%)")
+    fig2 = px.line(fc, x="ds", y="yhat")
+    st.plotly_chart(fig2, use_container_width=True)
 
-if df["Doc Type"].value_counts().get("RFI",0) > df["Doc Type"].value_counts().get("TQ",0):
-    st.info("RFI load higher than TQs → design clarification bottleneck likely")
+# ---------------- AI TABLE ----------------
+st.subheader("AI Predictions")
 
-if df["delay_probability"].mean() > 60:
-    st.error("System-wide delay risk is elevated")
-
-st.success("AI model actively monitoring document flow")
+st.dataframe(df[[
+    "TQ Number",
+    "Doc Type",
+    "Subject",
+    "Days Open",
+    "Risk %",
+    "Urgency"
+]])

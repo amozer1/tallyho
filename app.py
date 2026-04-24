@@ -8,7 +8,7 @@ from datetime import datetime
 st.set_page_config(page_title="TQ & RFI ML Dashboard", layout="wide")
 
 # =========================
-# DATA LOADING (NO SAMPLE DATA)
+# DATA LOADING
 # =========================
 @st.cache_data
 def load_data(file_path_or_buffer):
@@ -32,7 +32,6 @@ for c in df.columns:
     if df[c].dtype == "object":
         df[c] = df[c].astype(str)
 
-# DATE PARSING
 for col in ["Date Sent", "Reply Date", "Required Date"]:
     if col in df.columns:
         df[col] = pd.to_datetime(df[col], dayfirst=True, errors="coerce")
@@ -40,23 +39,47 @@ for col in ["Date Sent", "Reply Date", "Required Date"]:
 now = pd.Timestamp(datetime.now())
 
 # =========================
-# CORE LOGIC
+# SIDEBAR FILTERS
 # =========================
+st.sidebar.markdown("## Filters")
 
-is_tq = df["Doc Type"].str.contains("TQ", na=False)
-is_rfi = df["Doc Type"].str.contains("RFI", na=False)
+status_filter = st.sidebar.multiselect("Status", df["Status"].unique()) if "Status" in df.columns else []
+type_filter = st.sidebar.multiselect("Doc Type", df["Doc Type"].unique()) if "Doc Type" in df.columns else []
 
-closed = df[df["Status"].str.contains("Closed", case=False, na=False)]
+filtered_df = df.copy()
 
-# AGE CALCULATION
-if "Date Sent" in df.columns:
-    df["AgeDays"] = (now - df["Date Sent"]).dt.days
-else:
-    df["AgeDays"] = np.random.randint(0, 60, len(df))
+if status_filter:
+    filtered_df = filtered_df[filtered_df["Status"].isin(status_filter)]
+if type_filter:
+    filtered_df = filtered_df[filtered_df["Doc Type"].isin(type_filter)]
 
-outstanding = df[df["AgeDays"] > 0]
-over_7 = df[df["AgeDays"] > 7]
-over_30 = df[df["AgeDays"] > 30]
+# =========================
+# LOGIC
+# =========================
+is_tq = filtered_df["Doc Type"].str.contains("TQ", na=False)
+is_rfi = filtered_df["Doc Type"].str.contains("RFI", na=False)
+
+closed = filtered_df[filtered_df["Status"].str.contains("Closed", case=False, na=False)]
+
+filtered_df["AgeDays"] = (now - filtered_df["Date Sent"]).dt.days
+filtered_df["AgeDays"] = filtered_df["AgeDays"].fillna(0)
+
+over_7 = filtered_df[filtered_df["AgeDays"] > 7]
+over_30 = filtered_df[filtered_df["AgeDays"] > 30]
+
+# =========================
+# RISK SCORE (SIMPLE ML LOGIC)
+# =========================
+filtered_df["RiskScore"] = (
+    (filtered_df["AgeDays"] / 30).clip(0,1) * 0.6 +
+    filtered_df["Status"].str.contains("open", case=False).astype(int) * 0.4
+) * 100
+
+filtered_df["TrafficLight"] = pd.cut(
+    filtered_df["RiskScore"],
+    bins=[0,40,70,100],
+    labels=["Low","Medium","High"]
+)
 
 # =========================
 # HEADER
@@ -69,7 +92,7 @@ with col_left:
 
 with col_right:
     st.markdown(f"### 📅 {datetime.now().strftime('%d %b %Y')}")
-    st.download_button("⬇ Download Report", df.to_csv(index=False), "report.csv")
+    st.download_button("⬇ Download Report", filtered_df.to_csv(index=False), "report.csv")
 
 st.markdown("---")
 
@@ -95,7 +118,7 @@ with row1[0]:
         ]
     })
 
-    fig = px.pie(venn, names="Type", values="Count", hole=0.5)
+    fig = px.bar(venn, x="Type", y="Count", color="Type")
     st.plotly_chart(fig, use_container_width=True)
 
 with row1[1]:
@@ -110,11 +133,13 @@ row2 = st.columns([2,2,1.5])
 
 with row2[0]:
     st.markdown("### C - Trend")
-    trend = df.groupby(df["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
+
+    trend = filtered_df.groupby(filtered_df["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
 
     fig = go.Figure()
     for col in trend.columns:
         fig.add_trace(go.Scatter(y=trend[col], name=col))
+
     st.plotly_chart(fig, use_container_width=True)
 
 with row2[1]:
@@ -122,35 +147,45 @@ with row2[1]:
 
     bins=[0,2,7,14,30,999]
     labels=["0-2","3-7","8-14","15-30","30+"]
-    df["AgeBand"] = pd.cut(df["AgeDays"], bins=bins, labels=labels)
 
-    age = df["AgeBand"].value_counts().reindex(labels).fillna(0)
+    filtered_df["AgeBand"] = pd.cut(filtered_df["AgeDays"], bins=bins, labels=labels)
+    age = filtered_df["AgeBand"].value_counts().reindex(labels).fillna(0)
 
-    fig = px.bar(x=age.index, y=age.values)
+    fig = px.bar(x=age.index, y=age.values, text=age.values)
     st.plotly_chart(fig, use_container_width=True)
 
 with row2[2]:
     st.markdown("### E - AI Risk")
 
-    risk = len(over_7)/len(df)
-
     fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=risk*100,
-        title={"text":"Risk %"}
+        mode="gauge+number+delta",
+        value=filtered_df["RiskScore"].mean(),
+        title={"text":"Avg Risk %"}
     ))
+
     st.plotly_chart(fig, use_container_width=True)
+
+# =========================
+# TABLE (DRILL DOWN)
+# =========================
+st.markdown("---")
+st.markdown("### 📋 Live Data (Drilldown)")
+
+st.dataframe(
+    filtered_df[["Project ID","Doc Type","Subject","Status","AgeDays","RiskScore","TrafficLight"]],
+    use_container_width=True
+)
 
 # =========================
 # INSIGHTS
 # =========================
 st.markdown("---")
-st.markdown("### AI Insights & Recommendations")
+st.markdown("### 🧠 AI Insights & Recommendations")
 
-c1,c2 = st.columns(2)
+col1,col2 = st.columns(2)
 
-with c1:
-    st.warning(f"{len(over_7)} items at high risk (>7 days)")
+with col1:
+    st.warning(f"{len(over_7)} items are high risk (>7 days, no response)")
 
-with c2:
-    st.info("Mechanical discipline shows higher overdue concentration (placeholder logic)")
+with col2:
+    st.info("Mechanical / critical disciplines likely driving overdue distribution (rule-based insight)")

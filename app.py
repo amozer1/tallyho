@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
 
-# ---------------- CONFIG ----------------
+# ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="TQ & RFI AI Dashboard",
+    page_title="TQ / RFI Dashboard",
     page_icon="📊",
     layout="wide"
 )
@@ -13,151 +14,125 @@ st.set_page_config(
 # ---------------- LOAD DATA ----------------
 @st.cache_data
 def load_data():
-    df = pd.read_excel("data/TQ_TH.xlsx")
+    df = pd.read_excel("data.xlsx")
 
-    # Clean column names
-    df.columns = (
-        df.columns
-        .str.replace("\n", " ", regex=False)
-        .str.replace("\t", " ", regex=False)
-        .str.strip()
-    )
+    # clean column names
+    df.columns = [c.strip().replace("\n", " ") for c in df.columns]
 
-    # Rename key columns for consistency
     rename_map = {
         "Doc Type": "Type",
-        "Status* C=Closed Out O=Open": "Status"
+        "Date of reply (CDE)": "Reply Date",
+        "Date reply required by": "Required Date",
+        "Date Sent": "Date Sent",
+        "Period (Wks)": "Period"
     }
-
     df.rename(columns=rename_map, inplace=True)
+
+    # convert dates
+    for col in ["Date Sent", "Required Date", "Reply Date"]:
+        df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
+
+    # status
+    today = pd.Timestamp.today()
+
+    df["Status"] = "Open"
+    df.loc[df["Reply Date"].notna(), "Status"] = "Closed"
+    df.loc[(df["Required Date"] < today) & (df["Reply Date"].isna()), "Status"] = "Overdue"
 
     return df
 
-
 df = load_data()
 
-# ---------------- SAFETY CHECK ----------------
-st.write("### 📌 Columns Detected")
-st.write(df.columns.tolist())
-
 # ---------------- SIDEBAR ----------------
-st.sidebar.title("Navigation")
+st.sidebar.title("Filters")
 
-menu = [
-    "Overview",
-    "TQs",
-    "RFIs",
-    "Analytics",
-    "AI Insights"
+type_filter = st.sidebar.multiselect(
+    "Type", options=df["Type"].unique(), default=df["Type"].unique()
+)
+
+originator_filter = st.sidebar.multiselect(
+    "Originator", options=df["Originator"].dropna().unique(), default=df["Originator"].dropna().unique()
+)
+
+recipient_filter = st.sidebar.multiselect(
+    "Recipient", options=df["Recipient"].dropna().unique(), default=df["Recipient"].dropna().unique()
+)
+
+status_filter = st.sidebar.multiselect(
+    "Status", options=df["Status"].unique(), default=df["Status"].unique()
+)
+
+filtered_df = df[
+    (df["Type"].isin(type_filter)) &
+    (df["Originator"].isin(originator_filter)) &
+    (df["Recipient"].isin(recipient_filter)) &
+    (df["Status"].isin(status_filter))
 ]
 
-choice = st.sidebar.radio("", menu)
-
-# ---------------- TITLE ----------------
-st.title("📊 TQ & RFI AI Dashboard")
-st.caption("Construction Information Management Analytics")
-
-st.divider()
-
-# ---------------- KPI CALCULATIONS ----------------
-total_tq = len(df[df["Type"] == "TQ"])
-total_rfi = len(df[df["Type"] == "RFI"])
-
-# Handle status safely
-closed = len(df[df["Status"].astype(str).str.contains("C", na=False)])
-open_items = len(df[df["Status"].astype(str).str.contains("O", na=False)])
-
-overdue = len(df[df["Days Open"] > 7]) if "Days Open" in df.columns else 0
-
 # ---------------- KPI CARDS ----------------
-c1, c2, c3, c4 = st.columns(4)
+total_rfi = len(filtered_df[filtered_df["Type"] == "RFI"])
+total_tq = len(filtered_df[filtered_df["Type"] == "TQ"])
+open_items = len(filtered_df[filtered_df["Status"] == "Open"])
+closed_items = len(filtered_df[filtered_df["Status"] == "Closed"])
+overdue_items = len(filtered_df[filtered_df["Status"] == "Overdue"])
+avg_period = round(filtered_df["Period"].replace(0, pd.NA).mean(), 2)
 
-c1.metric("Total TQs", total_tq)
-c2.metric("Total RFIs", total_rfi)
-c3.metric("Closed Items", closed)
-c4.metric("Overdue (>7 Days)", overdue)
+st.title("📊 TQ / RFI Dashboard")
 
-st.divider()
+c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-# ---------------- AI INSIGHTS ----------------
-st.subheader("🧠 AI Insights")
-
-i1, i2, i3 = st.columns(3)
-
-i1.info("⚠️ 28 items at risk of delay")
-i2.success("🏗 Mechanical discipline has highest workload")
-i3.warning("🔔 Auto-reminders recommended for overdue items")
-
-st.divider()
+c1.metric("RFIs", total_rfi)
+c2.metric("TQs", total_tq)
+c3.metric("Open", open_items)
+c4.metric("Closed", closed_items)
+c5.metric("Overdue", overdue_items)
+c6.metric("Avg Weeks", avg_period)
 
 # ---------------- CHARTS ----------------
-c1, c2, c3 = st.columns(3)
+col1, col2 = st.columns(2)
 
-# ---------- TREND ----------
-with c1:
-    st.subheader("📈 Response Trend")
-
-    if "Date Sent" in df.columns and "Days Open" in df.columns:
-        fig1 = px.line(df, x="Date Sent", y="Days Open", color="Type")
-        fig1.update_layout(
-            paper_bgcolor="#0B1220",
-            plot_bgcolor="#0B1220",
-            font_color="white"
-        )
-        st.plotly_chart(fig1, use_container_width=True)
-
-# ---------- AGE DISTRIBUTION ----------
-with c2:
-    st.subheader("⏳ Age Distribution")
-
-    if "Days Open" in df.columns:
-        bins = pd.cut(df["Days Open"], bins=[0,2,7,14,30,100])
-        age = bins.value_counts().sort_index()
-
-        fig2 = px.bar(
-            x=age.index.astype(str),
-            y=age.values
-        )
-        fig2.update_layout(
-            paper_bgcolor="#0B1220",
-            plot_bgcolor="#0B1220",
-            font_color="white"
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-
-# ---------- RISK GAUGE ----------
-with c3:
-    st.subheader("🚨 Risk Score")
-
-    fig3 = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=72,
-        title={'text': "Project Risk"},
-        gauge={
-            'axis': {'range': [0, 100]},
-            'bar': {'color': "red"},
-            'steps': [
-                {'range': [0, 40], 'color': "green"},
-                {'range': [40, 70], 'color': "orange"},
-                {'range': [70, 100], 'color': "red"}
-            ]
-        }
-    ))
-
-    fig3.update_layout(
-        paper_bgcolor="#0B1220",
-        font_color="white"
+with col1:
+    fig = px.pie(
+        filtered_df,
+        names="Type",
+        title="RFI vs TQ"
     )
+    st.plotly_chart(fig, use_container_width=True)
 
-    st.plotly_chart(fig3, use_container_width=True)
+with col2:
+    fig2 = px.pie(
+        filtered_df,
+        names="Status",
+        title="Status Distribution",
+        hole=0.5
+    )
+    st.plotly_chart(fig2, use_container_width=True)
 
-st.divider()
+# ---------------- TREND ----------------
+trend = filtered_df.groupby(filtered_df["Date Sent"].dt.date).size().reset_index(name="Count")
 
-# ---------------- DETAILED TABLE ----------------
-st.subheader("📋 Live Dataset View")
-
-st.dataframe(
-    df,
-    use_container_width=True,
-    height=400
+fig3 = px.line(
+    trend,
+    x="Date Sent",
+    y="Count",
+    title="Queries Sent Over Time",
+    markers=True
 )
+
+st.plotly_chart(fig3, use_container_width=True)
+
+# ---------------- RECIPIENT LOAD ----------------
+recipient_load = filtered_df.groupby("Recipient").size().reset_index(name="Count")
+
+fig4 = px.bar(
+    recipient_load,
+    x="Recipient",
+    y="Count",
+    title="Recipient Workload"
+)
+
+st.plotly_chart(fig4, use_container_width=True)
+
+# ---------------- TABLE ----------------
+st.subheader("Detailed Log")
+st.dataframe(filtered_df, use_container_width=True)

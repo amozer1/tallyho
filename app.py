@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
 st.set_page_config(layout="wide")
@@ -14,194 +16,233 @@ def load_data(file):
     df.columns = [c.strip() for c in df.columns]
     return df
 
-uploaded_file = st.file_uploader("Upload Excel", type=["xlsx"])
+uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 default_path = "data/TQ_TH.xlsx"
 
 df = load_data(uploaded_file) if uploaded_file else load_data(default_path)
 
 # =========================
-# CLEAN
+# CLEAN DATA
 # =========================
 df["Date Sent"] = pd.to_datetime(df["Date Sent"], errors="coerce", dayfirst=True)
+df["Reply Date"] = pd.to_datetime(df["Reply Date"], errors="coerce", dayfirst=True)
 
 now = pd.Timestamp(datetime.now())
 df["AgeDays"] = (now - df["Date Sent"]).dt.days.fillna(0)
 
+df["Doc Type"] = df["Doc Type"].str.upper()
+
 is_tq = df["Doc Type"].str.contains("TQ", na=False)
 is_rfi = df["Doc Type"].str.contains("RFI", na=False)
 
-over_7 = df[df["AgeDays"] > 7]
+overdue_7 = df[df["AgeDays"] > 7]
+overdue_30 = df[df["AgeDays"] > 30]
+
+risk = round((len(overdue_7) / len(df)) * 100, 1) if len(df) > 0 else 0
 
 # =========================
-# KPIs
+# NAVIGATION
 # =========================
-tq_total = int(is_tq.sum())
-rfi_total = int(is_rfi.sum())
-overdue_7 = len(over_7)
-open_total = len(df[df["Status"].str.contains("Open", case=False, na=False)])
+page = st.sidebar.radio(
+    "Navigation",
+    ["🟦 Executive Control Centre", "🟩 Data Explorer"]
+)
 
-# =========================
-# A4 CONTROL CENTRE UI (NO STREAMLIT LAYOUT SYSTEM)
-# =========================
-html = f"""
-<style>
+# ==========================================================
+# 🟦 PAGE 1 - EXECUTIVE CONTROL CENTRE (A4 DASHBOARD)
+# ==========================================================
+if page == "🟦 Executive Control Centre":
 
-body {{
-    margin: 0;
-}}
+    st.markdown("""
+    <style>
+    .header {
+        background:#111827;
+        color:white;
+        padding:12px;
+        border-radius:10px;
+        display:flex;
+        justify-content:space-between;
+        font-family:Arial;
+    }
+    .kpi {
+        background:#f3f4f6;
+        padding:10px;
+        border-radius:10px;
+        text-align:center;
+        font-weight:bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-.dashboard {{
-    display: grid;
-    grid-template-columns: 1.6fr 1fr;
-    grid-template-rows: 80px 140px 200px 200px;
-    gap: 10px;
-    height: 95vh;
-    font-family: Arial;
-}}
-
-/* HEADER */
-.header {{
-    grid-column: 1 / 3;
-    background: #111827;
-    color: white;
-    padding: 10px 20px;
-    display:flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px;
-}}
-
-/* KPI STRIP */
-.kpi {{
-    grid-column: 1 / 3;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-}}
-
-.card {{
-    background: #f4f6f8;
-    border-radius: 12px;
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-}}
-
-.big {{
-    font-size: 22px;
-    font-weight: bold;
-}}
-
-.label {{
-    font-size: 12px;
-    color: #666;
-}}
-
-/* MAIN GRID */
-.a {{
-    background: #e8f0fe;
-    border-radius: 12px;
-    padding: 10px;
-}}
-
-.b {{
-    background: #fff4e6;
-    border-radius: 12px;
-    padding: 10px;
-}}
-
-.c {{
-    background: #e6fffa;
-    border-radius: 12px;
-    padding: 10px;
-}}
-
-.d {{
-    background: #fef3f3;
-    border-radius: 12px;
-    padding: 10px;
-}}
-
-.e {{
-    background: #f3f4f6;
-    border-radius: 12px;
-    padding: 10px;
-}}
-
-</style>
-
-<div class="dashboard">
-
-<!-- HEADER -->
-<div class="header">
-    <div><b>TQ & RFI EXECUTIVE CONTROL CENTRE</b></div>
-    <div>{datetime.now().strftime("%d %b %Y")}</div>
-</div>
-
-<!-- KPI ROW -->
-<div class="kpi">
-
-    <div class="card">
-        <div class="big">{overdue_7}</div>
-        <div class="label">Overdue >7 Days</div>
+    # HEADER
+    st.markdown(f"""
+    <div class="header">
+        <div><b>TQ & RFI EXECUTIVE CONTROL CENTRE</b></div>
+        <div>{datetime.now().strftime("%d %b %Y")}</div>
     </div>
+    """, unsafe_allow_html=True)
 
-    <div class="card">
-        <div class="big">{tq_total}</div>
-        <div class="label">Total TQs</div>
-    </div>
+    st.markdown("---")
 
-    <div class="card">
-        <div class="big">{rfi_total}</div>
-        <div class="label">Total RFIs</div>
-    </div>
+    # KPI ROW
+    c1, c2, c3, c4 = st.columns(4)
 
-    <div class="card">
-        <div class="big">{open_total}</div>
-        <div class="label">Open Items</div>
-    </div>
+    c1.markdown(f"<div class='kpi'>Overdue >7<br>{len(overdue_7)}</div>", unsafe_allow_html=True)
+    c2.markdown(f"<div class='kpi'>TQ<br>{int(is_tq.sum())}</div>", unsafe_allow_html=True)
+    c3.markdown(f"<div class='kpi'>RFI<br>{int(is_rfi.sum())}</div>", unsafe_allow_html=True)
+    c4.markdown(f"<div class='kpi'>Risk %<br>{risk}</div>", unsafe_allow_html=True)
 
-</div>
+    st.markdown("---")
 
-<!-- A -->
-<div class="a">
-    <b>A - Project Overview</b><br><br>
-    • Overdue (>7 days): {overdue_7}<br>
-    • System backlog active control view<br>
-    • TQ vs RFI distribution active
-</div>
+    # MAIN GRID
+    a, b = st.columns([2, 1])
 
-<!-- B -->
-<div class="b">
-    <b>B - KPI Control</b><br><br>
-    • Live open workload<br>
-    • System pressure indicator<br>
-    • Delivery status summary
-</div>
+    # PIE (A)
+    with a:
+        st.subheader("A - TQ vs RFI Overview")
 
-<!-- C -->
-<div class="c">
-    <b>C - Trend Control</b><br><br>
-    • TQ & RFI flow over time<br>
-    • Delivery activity monitoring
-</div>
+        pie_df = pd.DataFrame({
+            "Type": ["TQ", "RFI"],
+            "Count": [is_tq.sum(), is_rfi.sum()]
+        })
 
-<!-- D -->
-<div class="d">
-    <b>D - Ageing Heat Map</b><br><br>
-    • 0-2 / 3-7 / 8-14 / 15-30 / 30+<br>
-    • Backlog intensity view
-</div>
+        fig1 = px.pie(pie_df, names="Type", values="Count", hole=0.5)
+        st.plotly_chart(fig1, use_container_width=True)
 
-<!-- E -->
-<div class="e">
-    <b>E - AI Risk Engine</b><br><br>
-    • Risk: {round((overdue_7/len(df))*100,1) if len(df)>0 else 0}%<br>
-    • Delay probability model<br>
-    • Executive alert system
-</div>
+        st.subheader("C - Trend Analysis")
 
-</div>
-"""
+        trend = df.groupby(df["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
 
-st.components.v1.html(html, height=900, scrolling=False)
+        fig2 = go.Figure()
+
+        if "TQ" in trend.columns:
+            fig2.add_trace(go.Scatter(y=trend["TQ"], name="TQ"))
+        if "RFI" in trend.columns:
+            fig2.add_trace(go.Scatter(y=trend["RFI"], name="RFI"))
+
+        st.plotly_chart(fig2, use_container_width=True)
+
+    # RIGHT PANEL (B + D + E)
+    with b:
+        st.subheader("B - KPI Intelligence")
+
+        st.metric("Total Items", len(df))
+        st.metric("Overdue >7", len(overdue_7))
+        st.metric("Overdue >30", len(overdue_30))
+
+        st.markdown("---")
+
+        st.subheader("D - Ageing")
+
+        bins = [0, 2, 7, 14, 30, 999]
+        labels = ["0-2", "3-7", "8-14", "15-30", "30+"]
+
+        df["AgeBand"] = pd.cut(df["AgeDays"], bins=bins, labels=labels)
+        age = df["AgeBand"].value_counts().reindex(labels).fillna(0)
+
+        st.bar_chart(age)
+
+        st.markdown("---")
+
+        st.subheader("E - AI Risk")
+
+        fig3 = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=risk,
+            title={"text": "Delay Risk %"},
+            gauge={"axis": {"range": [0, 100]}}
+        ))
+
+        st.plotly_chart(fig3, use_container_width=True)
+
+    st.markdown("---")
+
+    st.subheader("🧠 Executive Insights")
+
+    col1, col2 = st.columns(2)
+
+    col1.warning(f"{len(overdue_7)} items overdue >7 days")
+    col2.info(f"Highest sender workload: {df['Sender'].value_counts().idxmax()}")
+
+# ==========================================================
+# 🟩 PAGE 2 - DATA EXPLORER (FULL OPERATIONS LAYER)
+# ==========================================================
+elif page == "🟩 Data Explorer":
+
+    st.title("📋 Data Explorer - TQ & RFI Operations")
+
+    st.sidebar.header("Filters")
+
+    doc_filter = st.sidebar.multiselect(
+        "Doc Type",
+        df["Doc Type"].unique(),
+        df["Doc Type"].unique()
+    )
+
+    status_filter = st.sidebar.multiselect(
+        "Status",
+        df["Status"].unique(),
+        df["Status"].unique()
+    )
+
+    sender_filter = st.sidebar.multiselect(
+        "Sender",
+        df["Sender"].unique(),
+        df["Sender"].unique()
+    )
+
+    age_filter = st.sidebar.selectbox(
+        "Age Filter",
+        ["All", ">7 Days", ">30 Days"]
+    )
+
+    filtered = df[
+        (df["Doc Type"].isin(doc_filter)) &
+        (df["Status"].isin(status_filter)) &
+        (df["Sender"].isin(sender_filter))
+    ]
+
+    if age_filter == ">7 Days":
+        filtered = filtered[filtered["AgeDays"] > 7]
+    elif age_filter == ">30 Days":
+        filtered = filtered[filtered["AgeDays"] > 30]
+
+    # KPIs
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Records", len(filtered))
+    c2.metric("Open", len(filtered[filtered["Status"] == "Open"]))
+    c3.metric("Overdue >7", len(filtered[filtered["AgeDays"] > 7]))
+    c4.metric("Avg Age", round(filtered["AgeDays"].mean(), 1))
+
+    st.markdown("---")
+
+    tab1, tab2, tab3 = st.tabs(["📊 Register", "📈 Analytics", "🚨 Exceptions"])
+
+    with tab1:
+        st.dataframe(filtered, use_container_width=True)
+
+    with tab2:
+        st.subheader("Sender Workload")
+
+        sender = filtered["Sender"].value_counts().reset_index()
+        sender.columns = ["Sender", "Count"]
+
+        st.bar_chart(sender.set_index("Sender"))
+
+        st.subheader("Doc Type Split")
+        st.bar_chart(filtered["Doc Type"].value_counts())
+
+    with tab3:
+        st.subheader("Overdue Items")
+        st.dataframe(filtered[filtered["AgeDays"] > 7])
+
+        st.subheader("No Reply Items")
+        st.dataframe(filtered[filtered["Reply Date"].isna()])
+
+    st.markdown("---")
+
+    st.subheader("🔎 Drill Down")
+
+    selected = st.selectbox("Select Seq No", filtered["Seq No"].unique())
+
+    st.json(filtered[filtered["Seq No"] == selected].to_dict(orient="records")[0])

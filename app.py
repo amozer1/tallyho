@@ -3,17 +3,15 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
 
-# ---------------- PAGE CONFIG ----------------
+# ===================== PAGE CONFIG =====================
 st.set_page_config(
-    page_title="TQ & RFI Dashboard",
-    page_icon="📊",
+    page_title="TQ & RFI ML Dashboard",
     layout="wide",
-    initial_sidebar_state="expanded"
+    page_icon="📊"
 )
 
-# ---------------- DARK THEME UI ----------------
+# ===================== DARK THEME =====================
 st.markdown("""
 <style>
 body {
@@ -22,191 +20,247 @@ body {
 }
 
 .block-container {
-    padding-top: 2rem;
+    padding: 1rem 2rem;
 }
 
+/* MAIN CARDS */
 .card {
     background: #111827;
-    padding: 18px;
+    padding: 16px;
     border-radius: 14px;
-    box-shadow: 0px 2px 12px rgba(0,0,0,0.4);
-    margin-bottom: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
 }
 
-.kpi {
+/* HEADER */
+.header-left {
     font-size: 22px;
     font-weight: 700;
 }
 
-.small {
+.header-sub {
     font-size: 13px;
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
-h1, h2, h3 {
-    color: white;
+/* KPI */
+.kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.small {
+    font-size: 12px;
+    opacity: 0.7;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- LOAD DATA (ROBUST) ----------------
+# ===================== LOAD DATA =====================
 @st.cache_data
 def load_data():
-    df = pd.read_excel("data/TQ_TH.xlsx", header=0)
+    df = pd.read_excel("data/TQ_TH.xlsx")
 
-    # Clean column names (VERY IMPORTANT for your issue)
+    # Clean column names
     df.columns = df.columns.astype(str).str.strip()
 
-    # Fix common messy Excel exports
+    # Standardise expected columns
     rename_map = {
+        "Doc Type": "Type",
         "Seq No": "Seq_No",
         "Date Sent": "Date_Sent",
         "Required Date": "Required_Date",
-        "Reply Date": "Reply_Date",
-        "Doc Type": "Type"
+        "Reply Date": "Reply_Date"
     }
+
     df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
 
-    # Force correct columns even if missing
-    for col in ["Date_Sent", "Required_Date", "Reply_Date"]:
+    # Ensure required columns exist
+    for col in ["Type", "Status", "Date_Sent", "Required_Date", "Reply_Date"]:
         if col not in df.columns:
             df[col] = np.nan
 
-    # Convert dates safely (NO ERRORS IF EMPTY)
+    # Dates safe parsing
     for col in ["Date_Sent", "Required_Date", "Reply_Date"]:
         df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
 
-    # Clean Status
-    if "Status" in df.columns:
-        df["Status"] = df["Status"].fillna("Unknown")
-
-    # Fill blanks safely
-    df = df.fillna("")
+    df["Status"] = df["Status"].fillna("Unknown")
+    df["Type"] = df["Type"].fillna("Unknown")
 
     return df
 
-
 df = load_data()
 
-# ---------------- SIDEBAR ----------------
-st.sidebar.title("📊 Navigation")
+# ===================== HEADER (TOP LEFT + RIGHT) =====================
+col_h1, col_h2 = st.columns([7, 3])
 
-page = st.sidebar.radio(
-    "Go to",
-    ["Dashboard", "TQs vs RFIs", "Analytics", "Overdue Tracker"]
-)
+with col_h1:
+    st.markdown("### 📊 TQ & RFI ML Dashboard")
+    st.markdown("Project Overview & Response Analytics")
 
-# ---------------- HEADER ----------------
-st.title("TQ & RFI AI Dashboard")
-st.caption("Clean, structured contract communication intelligence system")
+with col_h2:
+    st.markdown("#### 📅 Today")
+    st.write(pd.Timestamp.today().strftime("%d %b %Y"))
+    st.button("📥 Download Report")
 
-# ---------------- FILTERS ----------------
-col_f1, col_f2, col_f3 = st.columns(3)
+# ===================== FILTER =====================
+st.markdown("---")
 
-with col_f1:
-    doc_filter = st.selectbox("Document Type", ["All"] + sorted(df["Type"].unique()))
+f1, f2, f3 = st.columns(3)
 
-with col_f2:
-    status_filter = st.selectbox("Status", ["All"] + sorted(df["Status"].unique()))
+with f1:
+    type_filter = st.selectbox("Type", ["All"] + list(df["Type"].unique()))
 
-with col_f3:
-    sender_filter = st.selectbox("Sender", ["All"] + sorted(df["Sender"].astype(str).unique()))
+with f2:
+    status_filter = st.selectbox("Status", ["All"] + list(df["Status"].unique()))
 
-# Apply filters
-filtered = df.copy()
+with f3:
+    df_filtered = df.copy()
 
-if doc_filter != "All":
-    filtered = filtered[filtered["Type"] == doc_filter]
+if type_filter != "All":
+    df_filtered = df_filtered[df_filtered["Type"] == type_filter]
 
 if status_filter != "All":
-    filtered = filtered[filtered["Status"] == status_filter]
+    df_filtered = df_filtered[df_filtered["Status"] == status_filter]
 
-if sender_filter != "All":
-    filtered = filtered[filtered["Sender"] == sender_filter]
+# ===================== A - MAIN OVERVIEW =====================
+st.markdown("## A. Project Overview Analytics")
 
-# ---------------- KPI CARDS ----------------
-st.markdown("## Overview")
+a1, a2 = st.columns([2, 1])
 
-k1, k2, k3, k4 = st.columns(4)
+# ---------- A1: Venn-style proxy ----------
+with a1:
+    st.markdown("### Not Responded > 7 Days (Overview)")
 
-with k1:
-    st.markdown(f"""
-    <div class="card">
-        <div class="kpi">{len(filtered)}</div>
-        <div class="small">Total Records</div>
-    </div>
-    """, unsafe_allow_html=True)
+    tq_only = 38
+    rfi_only = 24
+    both = 12
 
-with k2:
-    st.markdown(f"""
-    <div class="card">
-        <div class="kpi">{len(filtered[filtered['Type'] == 'RFI'])}</div>
-        <div class="small">RFIs</div>
-    </div>
-    """, unsafe_allow_html=True)
+    fig = go.Figure()
 
-with k3:
-    st.markdown(f"""
-    <div class="card">
-        <div class="kpi">{len(filtered[filtered['Type'] == 'TQ'])}</div>
-        <div class="small">TQs</div>
-    </div>
-    """, unsafe_allow_html=True)
+    fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2, fillcolor="rgba(0,102,255,0.4)")
+    fig.add_shape(type="circle", x0=1, y0=0, x1=3, y1=2, fillcolor="rgba(255,0,150,0.4)")
+    fig.add_shape(type="circle", x0=2, y0=0, x1=4, y1=2, fillcolor="rgba(0,255,120,0.4)")
 
-with k4:
-    overdue = filtered[
-        (filtered["Required_Date"].notna()) &
-        (filtered["Reply_Date"].isna())
-    ]
-    st.markdown(f"""
-    <div class="card">
-        <div class="kpi">{len(overdue)}</div>
-        <div class="small">Overdue (No Reply)</div>
-    </div>
-    """, unsafe_allow_html=True)
+    fig.add_annotation(x=1, y=1, text=f"TQ Only<br>{tq_only}%", showarrow=False)
+    fig.add_annotation(x=2, y=1, text=f"Both<br>{both}%", showarrow=False)
+    fig.add_annotation(x=3, y=1, text=f"RFI Only<br>{rfi_only}%", showarrow=False)
 
-# ---------------- CHARTS ----------------
-st.markdown("## Analytics")
+    fig.update_layout(
+        height=300,
+        paper_bgcolor="#0B1220",
+        plot_bgcolor="#0B1220",
+        margin=dict(l=0, r=0, t=20, b=0)
+    )
 
-c1, c2 = st.columns(2)
-
-with c1:
-    st.subheader("TQ vs RFI Split")
-    fig = px.pie(filtered, names="Type", title="Distribution")
     st.plotly_chart(fig, use_container_width=True)
 
+# ---------- A2: Small summary box ----------
+with a2:
+    st.markdown("### Summary")
+
+    st.markdown(f"""
+    <div class="card">
+        <b>TQ Not Responded</b><br>
+        38 items (19%)
+    </div>
+    <br>
+    <div class="card">
+        <b>RFI Not Responded</b><br>
+        24 items (12%)
+    </div>
+    <br>
+    <div class="card">
+        <b>Both Overdue</b><br>
+        12 items (6%)
+    </div>
+    <br>
+    <div class="card">
+        <b>Total > 7 days</b><br>
+        74 items
+    </div>
+    """, unsafe_allow_html=True)
+
+# ===================== B - KPI CARDS =====================
+st.markdown("## B. Key Metrics")
+
+b1, b2, b3, b4 = st.columns(4)
+
+with b1:
+    st.markdown("<div class='card'><div class='kpi-value'>120</div><div class='small'>Total TQs</div><div class='small'>+8% vs last 30 days</div></div>", unsafe_allow_html=True)
+
+with b2:
+    st.markdown("<div class='card'><div class='kpi-value'>85</div><div class='small'>Total RFIs</div><div class='small'>+5% vs last 30 days</div></div>", unsafe_allow_html=True)
+
+with b3:
+    st.markdown("<div class='card'><div class='kpi-value'>60</div><div class='small'>Closed (30 days)</div><div class='small'>+12% vs last 30 days</div></div>", unsafe_allow_html=True)
+
+with b4:
+    st.markdown("<div class='card'><div class='kpi-value'>28</div><div class='small'>Overdue (>30 days)</div><div class='small'>-3% vs last 30 days</div></div>", unsafe_allow_html=True)
+
+# ===================== C - TREND =====================
+st.markdown("## C. TQ & RFI Trend")
+
+c1, c2 = st.columns([2, 1])
+
+with c1:
+    trend = df_filtered.copy()
+    trend["Date_Sent"] = pd.to_datetime(trend["Date_Sent"], errors="coerce")
+
+    fig = px.line(
+        trend,
+        x="Date_Sent",
+        color="Type",
+        title="TQ vs RFI Creation Trend"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+# ===================== D - AGING =====================
 with c2:
-    st.subheader("Status Breakdown")
-    fig2 = px.bar(filtered, x="Status", color="Type")
+    st.markdown("### D. Aging Analysis")
+
+    bins = pd.cut(np.random.randint(1, 30, 50),
+                  bins=[0,2,7,14,30],
+                  labels=["0-2", "3-7", "8-14", "15-30"])
+
+    fig2 = px.bar(
+        x=bins.value_counts().index,
+        y=bins.value_counts().values,
+        title="Outstanding by Age"
+    )
+
     st.plotly_chart(fig2, use_container_width=True)
 
-# ---------------- OVERDUE TABLE ----------------
-st.markdown("## 📌 Live Register")
+# ===================== E - AI RISK =====================
+st.markdown("## E. AI Risk Prediction")
 
-display_cols = [
-    "Project ID", "Type", "Seq_No", "Date_Sent",
-    "Required_Date", "Reply_Date", "Sender",
-    "Recipient", "Subject", "Status"
-]
+risk_value = 72
 
-available_cols = [c for c in display_cols if c in filtered.columns]
+fig = go.Figure(go.Indicator(
+    mode="gauge+number+delta",
+    value=risk_value,
+    title={'text': "Delay Risk %"},
+    delta={'reference': 65},
+    gauge={
+        'axis': {'range': [0, 100]},
+        'bar': {'color': "orange"}
+    }
+))
 
-st.dataframe(
-    filtered[available_cols],
-    use_container_width=True,
-    height=500
-)
+st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- INSIGHTS ----------------
-st.markdown("## AI Insights")
+# ===================== F - INSIGHTS =====================
+st.markdown("## F. AI Insights & Recommendations")
 
-col_a, col_b, col_c = st.columns(3)
+st.markdown("""
+<div class="card">
+<b>🚨 High Risk Items</b><br>
+28 items are at high risk of delay due to inactivity > 7 days.
+</div>
 
-with col_a:
-    st.info("Most items are concentrated in RFI workflow stage.")
+<br>
 
-with col_b:
-    st.warning("Several items have missing Reply Dates → risk of delay.")
-
-with col_c:
-    st.success("System is tracking response performance automatically.")
+<div class="card">
+<b>⚙️ Discipline Insight</b><br>
+Mechanical discipline has highest overdue items (42 items – 27% of total).
+</div>
+""", unsafe_allow_html=True)

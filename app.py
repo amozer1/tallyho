@@ -9,33 +9,24 @@ from datetime import datetime
 st.set_page_config(
     page_title="TQ & RFI AI Dashboard",
     page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# ---------------- DARK THEME CSS ----------------
+# ---------------- DARK THEME ----------------
 st.markdown("""
 <style>
-html, body, [class*="css"]  {
+body {
     background-color: #0B1220;
     color: white;
 }
-
-.big-title {
-    font-size: 34px;
-    font-weight: 700;
-    color: white;
+[data-testid="stAppViewContainer"] {
+    background-color: #0B1220;
 }
-
 [data-testid="metric-container"] {
-    background: linear-gradient(135deg,#111827,#1F2937);
-    padding: 16px;
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0,0,0,.4);
-}
-
-[data-testid="stSidebar"] {
     background-color: #111827;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.4);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -45,106 +36,125 @@ html, body, [class*="css"]  {
 def load_data():
     df = pd.read_excel("data/TQ_TH.xlsx")
 
-    # Clean column names (safe minimal cleaning)
+    # Clean headers
     df.columns = df.columns.astype(str).str.strip()
 
-    # Convert dates safely
-    for col in ["Date Sent", "Required Date", "Reply Date"]:
-        if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
+    # Helper function to find columns safely
+    def find_col(keyword):
+        for c in df.columns:
+            if keyword.lower() in c.lower():
+                return c
+        return None
 
-    # Ensure numeric safety
+    col_type = find_col("doc type")
+    col_sent = find_col("date sent")
+    col_reply = find_col("reply date")
+    col_req = find_col("required")
+    col_status = find_col("status")
+
+    # Standardise columns
+    if col_type:
+        df["Type"] = df[col_type]
+
+    if col_sent:
+        df["Date Sent"] = pd.to_datetime(df[col_sent], errors="coerce", dayfirst=True)
+
+    if col_req:
+        df["Required Date"] = pd.to_datetime(df[col_req], errors="coerce", dayfirst=True)
+
+    # IMPORTANT: Reply Date may be empty → keep as NaT
+    if col_reply:
+        df["Reply Date"] = pd.to_datetime(df[col_reply], errors="coerce", dayfirst=True)
+    else:
+        df["Reply Date"] = pd.NaT
+
+    if col_status:
+        df["Status"] = df[col_status].fillna("Open")
+    else:
+        df["Status"] = "Open"
+
+    # ---------------- DAYS OPEN ----------------
+    today = pd.Timestamp.today()
+
     df["Days Open"] = np.where(
         df["Reply Date"].notna(),
         (df["Reply Date"] - df["Date Sent"]).dt.days,
-        (pd.Timestamp.today() - df["Date Sent"]).dt.days
+        (today - df["Date Sent"]).dt.days
     )
 
-    # Ensure Status exists and is clean
-    df["Status"] = df["Status"].fillna("Open")
-
-    # Overdue logic
-    df.loc[(df["Days Open"] > 7) & (df["Reply Date"].isna()), "Status"] = "Overdue"
+    # ---------------- STATUS LOGIC ----------------
     df.loc[df["Reply Date"].notna(), "Status"] = "Closed"
+    df.loc[(df["Reply Date"].isna()) & (df["Days Open"] > 7), "Status"] = "Overdue"
 
     return df
+
 
 df = load_data()
 
 # ---------------- TITLE ----------------
-col1, col2 = st.columns([8, 2])
+st.title("📊 TQ & RFI AI Dashboard")
+st.caption("Project Communication Intelligence System")
 
-with col1:
-    st.markdown('<div class="big-title">📊 TQ & RFI AI Dashboard</div>', unsafe_allow_html=True)
-    st.caption("Executive Project Communication Intelligence")
-
-with col2:
-    st.date_input("Date", datetime.today())
-
-# ---------------- KPI ----------------
-total_tq = len(df[df["Doc Type"] == "TQ"])
-total_rfi = len(df[df["Doc Type"] == "RFI"])
+# ---------------- KPIs ----------------
+total = len(df)
+tq = len(df[df["Type"] == "TQ"])
+rfi = len(df[df["Type"] == "RFI"])
 closed = len(df[df["Status"] == "Closed"])
 open_ = len(df[df["Status"] == "Open"])
 overdue = len(df[df["Status"] == "Overdue"])
-avg_days = round(df["Days Open"].mean(), 1)
 
-k1, k2, k3, k4, k5, k6 = st.columns(6)
+c1, c2, c3, c4, c5 = st.columns(5)
 
-k1.metric("TQs", total_tq)
-k2.metric("RFIs", total_rfi)
-k3.metric("Closed", closed)
-k4.metric("Open", open_)
-k5.metric("Overdue", overdue)
-k6.metric("Avg Days", avg_days)
+c1.metric("Total", total)
+c2.metric("TQ", tq)
+c3.metric("RFI", rfi)
+c4.metric("Closed", closed)
+c5.metric("Overdue", overdue)
 
-# ---------------- VENN STYLE VISUAL ----------------
-st.subheader("Communication Health Overview")
+# ---------------- VENN STYLE ----------------
+st.subheader("Response Health Overview")
 
 fig = go.Figure()
 
 fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2,
-              fillcolor="rgba(0,102,255,0.35)")
+              fillcolor="rgba(0,100,255,0.3)")
 fig.add_shape(type="circle", x0=1, y0=0, x1=3, y1=2,
-              fillcolor="rgba(150,0,255,0.35)")
-fig.add_shape(type="circle", x0=2, y0=0, x1=4, y1=2,
-              fillcolor="rgba(0,255,120,0.35)")
+              fillcolor="rgba(200,0,255,0.3)")
 
 fig.add_annotation(x=1, y=1, text="TQ")
 fig.add_annotation(x=2, y=1, text="Overlap")
 fig.add_annotation(x=3, y=1, text="RFI")
 
+fig.update_layout(height=300, paper_bgcolor="#0B1220")
 fig.update_xaxes(visible=False)
 fig.update_yaxes(visible=False)
-fig.update_layout(height=350, paper_bgcolor="#0B1220")
 
 st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- CHARTS ----------------
-c1, c2, c3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
-with c1:
-    st.subheader("Trend")
-    trend = df.groupby(["Date Sent", "Doc Type"]).size().reset_index(name="Count")
-    fig1 = px.line(trend, x="Date Sent", y="Count", color="Doc Type", template="plotly_dark")
+with col1:
+    st.subheader("Status Split")
+    fig1 = px.pie(df, names="Status", template="plotly_dark")
     st.plotly_chart(fig1, use_container_width=True)
 
-with c2:
-    st.subheader("Age Distribution")
-    bins = pd.cut(df["Days Open"], [0,2,7,14,30,100])
-    fig2 = px.bar(x=bins.value_counts().index.astype(str),
-                  y=bins.value_counts().values,
-                  template="plotly_dark")
+with col2:
+    st.subheader("Days Open Distribution")
+    fig2 = px.histogram(df, x="Days Open", nbins=10, template="plotly_dark")
     st.plotly_chart(fig2, use_container_width=True)
 
-with c3:
-    st.subheader("Risk Gauge")
+with col3:
+    st.subheader("Risk Indicator")
+    risk = min(overdue * 5, 100)
+
     fig3 = go.Figure(go.Indicator(
         mode="gauge+number",
-        value=min(overdue * 4, 100),
-        title={"text": "Risk Level"},
-        gauge={"axis": {"range": [0,100]}}
+        value=risk,
+        title={"text": "Project Risk %"},
+        gauge={"axis": {"range": [0, 100]}}
     ))
+
     fig3.update_layout(paper_bgcolor="#0B1220")
     st.plotly_chart(fig3, use_container_width=True)
 
@@ -154,19 +164,15 @@ st.subheader("AI Insights")
 a1, a2, a3 = st.columns(3)
 
 with a1:
-    st.info(f"{overdue} items are overdue (>7 days).")
+    st.info(f"{overdue} items overdue (>7 days).")
 
 with a2:
-    top_recipient = df["Recipient"].mode()[0]
-    st.success(f"Top workload: {top_recipient}")
+    top_sender = df["Sender"].mode()[0]
+    st.success(f"Most active sender: {top_sender}")
 
 with a3:
-    st.warning("Recommend automated reminders for overdue RFIs/TQs.")
+    st.warning("Introduce automated RFI/TQ reminders to reduce delays.")
 
 # ---------------- TABLE ----------------
 st.subheader("Full Register")
 st.dataframe(df, use_container_width=True)
-
-# ---------------- FOOTER ----------------
-st.markdown("---")
-st.caption("AI-powered TQ & RFI Dashboard | Streamlit + Python")

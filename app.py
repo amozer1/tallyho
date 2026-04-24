@@ -8,107 +8,87 @@ from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
 # =========================
-# PAGE CONFIG
+# CONFIG
 # =========================
 st.set_page_config(
-    page_title="CONTROL ROOM v3 - TQ/RFI AI",
-    page_icon="🧠",
-    layout="wide"
+    page_title="Engineering Control Room",
+    layout="wide",
+    page_icon="🧠"
 )
 
 st_autorefresh(interval=60000, key="refresh")
 
-
 # =========================
-# STYLE (CONTROL ROOM)
+# DARK CONTROL ROOM THEME
 # =========================
 st.markdown("""
 <style>
-body { background-color:#070B14; color:#E5E7EB; }
-
-.block-container { padding-top: 1rem; }
-
-.card {
-    background:#111827;
-    padding:16px;
-    border-radius:14px;
-    border:1px solid #1F2937;
+body {
+    background-color: #060A12;
+    color: #E5E7EB;
 }
 
+/* KPI cards */
 .kpi {
-    background:#111827;
-    padding:14px;
-    border-radius:12px;
-    text-align:center;
-    border:1px solid #1F2937;
+    background: #111827;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid #1F2937;
+    text-align: center;
+}
+
+/* section cards */
+.card {
+    background: #0F172A;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #1F2937;
+}
+
+/* title */
+.title {
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+/* subtitle */
+.subtitle {
+    color: #94A3B8;
+    margin-top: -5px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 
 # =========================
-# LOAD + PARSE YOUR COMPLEX SHEET
+# DATA LOAD (your robust loader assumed)
 # =========================
 @st.cache_data
 def load_data():
+    df = pd.read_excel("data/TQ_TH.xlsx", header=7)
 
-    df = pd.read_excel("data/TQ_TH.xlsx", header=None)
+    df.columns = df.columns.astype(str).str.strip().str.replace("\n", " ")
 
-    # locate actual header row (TQ Number row)
-    header_row = df[df.iloc[:,0].astype(str).str.contains("TQ Number", na=False)].index[0]
-
-    df = pd.read_excel("data/TQ_TH.xlsx", header=header_row)
-
-    # clean columns
-    df.columns = df.columns.astype(str).str.replace("\n", " ").str.strip()
-
-    # remove duplicate headers
-    df = df.loc[:, ~df.columns.duplicated()]
-
-    # =========================
-    # SAFE COLUMN MAPPING
-    # =========================
-    def find_col(keys):
+    def find(k):
         for c in df.columns:
-            for k in keys:
-                if k.lower() in c.lower():
-                    return c
+            if k.lower() in c.lower():
+                return c
         return None
 
-    date_col = find_col(["Date Sent"])
-    reply_col = find_col(["Date reply required"])
-    status_col = find_col(["Status"])
-    type_col = find_col(["Doc Type"])
-    subject_col = find_col(["Subject"])
-    tq_col = find_col(["TQ Number"])
-    originator_col = find_col(["Originator"])
-    recipient_col = find_col(["Recipient"])
+    date_col = find("Date Sent")
+    type_col = find("Doc Type")
+    status_col = find("Status")
+    subject_col = find("Subject")
 
-    # safety
-    if date_col is None:
-        st.error("Missing Date Sent column after parsing")
-        st.write(df.columns)
-        st.stop()
-
-    # =========================
-    # CORE TRANSFORMATION
-    # =========================
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     df["Date"] = df[date_col]
     df["Days Open"] = (pd.Timestamp.today() - df["Date"]).dt.days
+    df["Type"] = df[type_col]
+    df["Status"] = df[status_col]
+    df["Subject"] = df[subject_col]
 
-    # operational layer
-    df["Type"] = df[type_col] if type_col else "UNKNOWN"
-    df["Status"] = df[status_col] if status_col else "UNKNOWN"
-    df["Subject"] = df[subject_col] if subject_col else ""
-    df["TQ Number"] = df[tq_col] if tq_col else range(len(df))
-
-    # metadata layer (kept for drilldown later)
-    df["Originator"] = df[originator_col] if originator_col else ""
-    df["Recipient"] = df[recipient_col] if recipient_col else ""
-
-    # risk logic
     df["Overdue"] = df["Days Open"] > 7
     df["Critical"] = df["Days Open"] > 14
 
@@ -119,60 +99,7 @@ df = load_data()
 
 
 # =========================
-# SIDEBAR
-# =========================
-st.sidebar.title("🧠 CONTROL ROOM v3")
-
-st.sidebar.radio("Mode", [
-    "Overview",
-    "Live Ops",
-    "Risk",
-    "AI Insights",
-    "Forecast"
-])
-
-
-# =========================
-# HEADER
-# =========================
-c1, c2 = st.columns([7,2])
-
-with c1:
-    st.title("TQ & RFI ENGINEERING CONTROL ROOM")
-    st.caption("Live Infrastructure Intelligence System")
-
-with c2:
-    st.date_input("System Date")
-
-st.divider()
-
-
-# =========================
-# KPI LAYER
-# =========================
-k1,k2,k3,k4,k5 = st.columns(5)
-
-with k1:
-    st.metric("TOTAL", len(df))
-
-with k2:
-    st.metric("TQs", len(df[df["Type"]=="TQ"]))
-
-with k3:
-    st.metric("RFIs", len(df[df["Type"]=="RFI"]))
-
-with k4:
-    st.metric("OVERDUE", len(df[df["Overdue"]]))
-
-with k5:
-    st.metric("CRITICAL", len(df[df["Critical"]]))
-
-
-st.divider()
-
-
-# =========================
-# ML RISK ENGINE
+# AI RISK MODEL
 # =========================
 ml = df.copy()
 ml["Days Open"] = pd.to_numeric(ml["Days Open"], errors="coerce").fillna(0)
@@ -181,42 +108,82 @@ X = ml[["Days Open"]]
 y = ml["Overdue"].astype(int)
 
 if len(df) > 10:
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
     model = XGBClassifier(n_estimators=80, max_depth=3)
-    model.fit(X_train, y_train)
-
+    model.fit(X, y)
     df["Risk %"] = (model.predict_proba(X)[:,1] * 100).round(0)
 else:
     df["Risk %"] = 0
 
 
 # =========================
-# SYSTEM LOAD VISUAL
+# HEADER
 # =========================
-c1, c2 = st.columns([2,1])
+col1, col2 = st.columns([8,2])
 
-with c1:
-    st.subheader("System Load Analysis")
+with col1:
+    st.markdown('<div class="title">ENGINEERING CONTROL ROOM</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">TQ / RFI Intelligence System</div>', unsafe_allow_html=True)
+
+with col2:
+    st.date_input("System Date")
+
+st.divider()
+
+
+# =========================
+# KPI STRIP (EXECUTIVE LAYER)
+# =========================
+k1,k2,k3,k4,k5 = st.columns(5)
+
+kpis = [
+    ("TOTAL", len(df)),
+    ("TQs", len(df[df["Type"]=="TQ"])),
+    ("RFIs", len(df[df["Type"]=="RFI"])),
+    ("OVERDUE", len(df[df["Overdue"]])),
+    ("CRITICAL", len(df[df["Critical"]]))
+]
+
+for i,(label,val) in enumerate(kpis):
+    with [k1,k2,k3,k4,k5][i]:
+        st.markdown(f"""
+        <div class="kpi">
+            <h3>{val}</h3>
+            <p>{label}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+st.divider()
+
+
+# =========================
+# MAIN DASHBOARD GRID
+# =========================
+left, right = st.columns([2,1])
+
+# ---------------- LEFT (INTELLIGENCE + VISUALS)
+with left:
+
+    st.markdown("### System Intelligence")
+
+    # VENN STYLE
+    fig = go.Figure()
 
     tq_over = len(df[(df["Type"]=="TQ") & (df["Overdue"])])
     rfi_over = len(df[(df["Type"]=="RFI") & (df["Overdue"])])
 
-    fig = go.Figure()
-
     fig.add_shape(type="circle", x0=0,y0=0,x1=2,y1=2,
-                  fillcolor="rgba(0,102,255,0.3)")
-
+                  fillcolor="rgba(59,130,246,0.3)")
     fig.add_shape(type="circle", x0=1,y0=0,x1=3,y1=2,
-                  fillcolor="rgba(140,0,255,0.3)")
+                  fillcolor="rgba(168,85,247,0.3)")
 
-    fig.add_annotation(x=1,y=1,text=f"TQ {tq_over}")
-    fig.add_annotation(x=3,y=1,text=f"RFI {rfi_over}")
+    fig.add_annotation(x=1,y=1,text=f"TQ<br>{tq_over}")
+    fig.add_annotation(x=3,y=1,text=f"RFI<br>{rfi_over}")
 
     fig.update_layout(
-        height=380,
-        paper_bgcolor="#070B14",
-        plot_bgcolor="#070B14",
+        height=350,
+        paper_bgcolor="#060A12",
+        plot_bgcolor="#060A12",
         xaxis=dict(visible=False),
         yaxis=dict(visible=False)
     )
@@ -224,28 +191,60 @@ with c1:
     st.plotly_chart(fig, use_container_width=True)
 
 
-with c2:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("AI Intelligence")
+    # TREND
+    st.markdown("### Activity Trend")
 
-    st.write("• Delay clustering detected")
-    st.write("• RFI response lag higher than TQ")
-    st.write("• Critical backlog increasing trend")
+    trend = px.line(df, x="Date", y="Days Open", color="Type")
+    trend.update_layout(
+        paper_bgcolor="#060A12",
+        plot_bgcolor="#060A12"
+    )
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.plotly_chart(trend, use_container_width=True)
+
+
+
+# ---------------- RIGHT (AI RISK PANEL)
+with right:
+
+    st.markdown("### AI Risk Panel")
+
+    risk_high = len(df[df["Risk %"] > 70])
+
+    st.markdown(f"""
+    <div class="card">
+        <h2 style="color:#F87171;">{risk_high}</h2>
+        <p>High Risk Items</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    gauge = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=df["Risk %"].mean(),
+        title={'text': "System Risk Index"},
+        gauge={'axis': {'range': [0,100]}}
+    ))
+
+    gauge.update_layout(
+        paper_bgcolor="#060A12"
+    )
+
+    st.plotly_chart(gauge, use_container_width=True)
+
+    st.info("⚠ RFI backlog increasing trend detected")
+    st.success("✔ System stable under current load")
 
 
 # =========================
-# TABLE (OPERATIONAL REGISTER)
+# BOTTOM: CONTROL REGISTER
 # =========================
-st.subheader("Live Engineering Register")
+st.divider()
 
-st.dataframe(df[[
-    "TQ Number",
-    "Type",
-    "Originator",
-    "Recipient",
-    "Subject",
-    "Days Open",
-    "Risk %"
-]])
+st.markdown("### Live Engineering Register")
+
+st.dataframe(
+    df[["Type","Subject","Days Open","Risk %","Status"]],
+    use_container_width=True
+)

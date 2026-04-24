@@ -15,40 +15,84 @@ st.set_page_config(page_title="AI TQ/RFI Dashboard", layout="wide")
 # auto refresh every minute
 st_autorefresh(interval=60000, key="refresh")
 
+st.title("📊 AI TQ / RFI Dashboard")
+
 # ---------------- LOAD DATA ----------------
 @st.cache_data
 def load_data():
     df = pd.read_excel("data/TQ_TH.xlsx", header=7)
+
+    # remove unnamed columns
     df = df.loc[:, ~df.columns.astype(str).str.contains("^Unnamed")]
 
-    # rename columns
-    df.rename(columns={
-        "Date Sent": "Date Sent",
-        "Date reply required by": "Due Date",
-        "Date of reply\n(CDE)": "Reply Date",
-        "Status*\nC=Closed Out\nO=Open": "Status"
-    }, inplace=True)
+    # clean headers
+    df.columns = (
+        df.columns.astype(str)
+        .str.strip()
+        .str.replace("\n", " ", regex=False)
+        .str.replace("  ", " ", regex=False)
+    )
+
+    # helper function
+    def find_col(keyword):
+        for c in df.columns:
+            if keyword.lower() in c.lower():
+                return c
+        return None
+
+    date_sent_col = find_col("Date Sent")
+    due_date_col = find_col("Date reply required")
+    reply_date_col = find_col("Date of reply")
+    status_col = find_col("Status")
+    subject_col = find_col("Subject")
+    doc_type_col = find_col("Doc Type")
+    period_col = find_col("Period")
+    tq_num_col = find_col("TQ Number")
 
     # convert dates
-    for c in ["Date Sent", "Due Date", "Reply Date"]:
-        if c in df.columns:
+    for c in [date_sent_col, due_date_col, reply_date_col]:
+        if c:
             df[c] = pd.to_datetime(df[c], errors="coerce")
 
-    # clean Doc Type
-    if "Doc Type" in df.columns:
-        df["Doc Type"] = df["Doc Type"].astype(str).str.upper()
+    # standard columns
+    if date_sent_col:
+        df["Date Sent Clean"] = df[date_sent_col]
+        df["Days Open"] = (pd.Timestamp.today() - df[date_sent_col]).dt.days
     else:
-        df["Doc Type"] = "UNKNOWN"
+        df["Date Sent Clean"] = pd.NaT
+        df["Days Open"] = 0
 
-    # Days open
-    df["Days Open"] = (pd.Timestamp.today() - df["Date Sent"]).dt.days
+    if doc_type_col:
+        df["Doc Type Clean"] = df[doc_type_col].astype(str).str.upper()
+    else:
+        df["Doc Type Clean"] = "UNKNOWN"
+
+    if status_col:
+        df["Status Clean"] = df[status_col].astype(str)
+    else:
+        df["Status Clean"] = "UNKNOWN"
+
+    if subject_col:
+        df["Subject Clean"] = df[subject_col].astype(str)
+    else:
+        df["Subject Clean"] = ""
+
+    if period_col:
+        df["Period Clean"] = pd.to_numeric(df[period_col], errors="coerce").fillna(0)
+    else:
+        df["Period Clean"] = 0
+
+    if tq_num_col:
+        df["TQ Number Clean"] = df[tq_num_col]
+    else:
+        df["TQ Number Clean"] = range(1, len(df)+1)
 
     # overdue target
     df["Will_Breach_SLA"] = np.where(df["Days Open"] > 7, 1, 0)
 
     # NLP urgency
     urgent_words = ["urgent", "risk", "critical", "delay", "asap"]
-    df["Urgency"] = df["Subject"].apply(
+    df["Urgency"] = df["Subject Clean"].apply(
         lambda x: "Urgent" if any(w in str(x).lower() for w in urgent_words) else "Normal"
     )
 
@@ -59,21 +103,20 @@ df = load_data()
 # ---------------- ML ----------------
 ml_df = df.copy()
 
-features = ["Period\n(Wks)", "Originator", "Recipient", "Doc Type", "Days Open"]
+features = ["Period Clean", "Originator", "Recipient", "Doc Type Clean", "Days Open"]
 
 for col in features:
-    if col in ml_df.columns:
-        if ml_df[col].dtype == "object":
-            le = LabelEncoder()
-            ml_df[col] = le.fit_transform(ml_df[col].astype(str))
-    else:
+    if col not in ml_df.columns:
         ml_df[col] = 0
+    if ml_df[col].dtype == "object":
+        le = LabelEncoder()
+        ml_df[col] = le.fit_transform(ml_df[col].astype(str))
 
 X = ml_df[features]
 y = ml_df["Will_Breach_SLA"]
 
 if len(df) > 10:
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     model = XGBClassifier()
     model.fit(X_train, y_train)
 
@@ -85,9 +128,9 @@ else:
 # ---------------- KPIs ----------------
 col1, col2, col3, col4 = st.columns(4)
 
-total_tq = len(df[df["Doc Type"] == "TQ"])
-total_rfi = len(df[df["Doc Type"] == "RFI"])
-closed = len(df[df["Status"].astype(str).str.contains("Closed", case=False, na=False)])
+total_tq = len(df[df["Doc Type Clean"] == "TQ"])
+total_rfi = len(df[df["Doc Type Clean"] == "RFI"])
+closed = len(df[df["Status Clean"].str.contains("Closed", case=False, na=False)])
 overdue = len(df[df["Days Open"] > 7])
 
 col1.metric("Total TQs", total_tq)
@@ -98,11 +141,10 @@ col4.metric("Overdue", overdue)
 # ---------------- VENN ----------------
 st.subheader("Outstanding > 7 Days")
 
-tq_over = len(df[(df["Doc Type"] == "TQ") & (df["Days Open"] > 7)])
-rfi_over = len(df[(df["Doc Type"] == "RFI") & (df["Days Open"] > 7)])
+tq_over = len(df[(df["Doc Type Clean"] == "TQ") & (df["Days Open"] > 7)])
+rfi_over = len(df[(df["Doc Type Clean"] == "RFI") & (df["Days Open"] > 7)])
 
 fig = go.Figure()
-
 fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2, fillcolor="blue", opacity=0.4)
 fig.add_shape(type="circle", x0=1, y0=0, x1=3, y1=2, fillcolor="purple", opacity=0.4)
 fig.add_shape(type="circle", x0=2, y0=0, x1=4, y1=2, fillcolor="green", opacity=0.4)
@@ -113,25 +155,25 @@ fig.add_annotation(x=3, y=1, text=f"RFI<br>{rfi_over}")
 
 fig.update_xaxes(visible=False)
 fig.update_yaxes(visible=False)
-
 st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- LEADERBOARD ----------------
 st.subheader("Delay Leaderboard")
 
-leaderboard = df.groupby("Recipient")["Days Open"].mean().sort_values(ascending=False)
-st.bar_chart(leaderboard)
+if "Recipient" in df.columns:
+    leaderboard = df.groupby("Recipient")["Days Open"].mean().sort_values(ascending=False)
+    st.bar_chart(leaderboard)
 
 # ---------------- TREND ----------------
 st.subheader("Trend")
 
-trend = px.line(df, x="Date Sent", y="Days Open", color="Doc Type")
+trend = px.line(df, x="Date Sent Clean", y="Days Open", color="Doc Type Clean")
 st.plotly_chart(trend, use_container_width=True)
 
 # ---------------- FORECAST ----------------
 st.subheader("Forecast")
 
-forecast_df = df.groupby("Date Sent").size().reset_index()
+forecast_df = df.groupby("Date Sent Clean").size().reset_index()
 forecast_df.columns = ["ds", "y"]
 
 if len(forecast_df) > 5:
@@ -147,11 +189,13 @@ if len(forecast_df) > 5:
 # ---------------- AI TABLE ----------------
 st.subheader("AI Predictions")
 
-st.dataframe(df[[
-    "TQ Number",
-    "Doc Type",
-    "Subject",
-    "Days Open",
-    "Risk %",
-    "Urgency"
-]])
+st.dataframe(df[
+    [
+        "TQ Number Clean",
+        "Doc Type Clean",
+        "Subject Clean",
+        "Days Open",
+        "Risk %",
+        "Urgency",
+    ]
+])

@@ -22,58 +22,77 @@ df = load_data(uploaded_file) if uploaded_file else load_data("data/TQ_TH.xlsx")
 # CLEAN
 # =========================
 df["Date Sent"] = pd.to_datetime(df["Date Sent"], errors="coerce", dayfirst=True)
-now = pd.Timestamp(datetime.now())
 
+now = pd.Timestamp(datetime.now())
 df["AgeDays"] = (now - df["Date Sent"]).dt.days
 
 df["Doc Type"] = df["Doc Type"].str.upper()
 
 tq = df[df["Doc Type"] == "TQ"]
 rfi = df[df["Doc Type"] == "RFI"]
-
 overdue = df[df["AgeDays"] > 7]
 
-risk = round(len(overdue) / len(df) * 100, 1)
+risk = round(len(overdue)/len(df)*100,1)
 
 # =========================
-# FRAME STYLE FUNCTION
+# GLOBAL STYLE (CONTROL ROOM LOOK)
 # =========================
-def framed(title, content):
-    st.markdown(f"""
-    <div style="
-        border:2px solid #1f2937;
-        border-radius:10px;
-        padding:10px;
-        margin-bottom:15px;
-        background:#0f172a;
-        color:white;
-    ">
-        <h4 style="margin:0 0 10px 0;">{title}</h4>
-    """, unsafe_allow_html=True)
+st.markdown("""
+<style>
 
-    content()
+html, body, [class*="css"]  {
+    background-color: #0b1220;
+    color: #e5e7eb;
+    font-family: Arial;
+}
 
-    st.markdown("</div>", unsafe_allow_html=True)
+/* KPI CARDS */
+.kpi {
+    background: #111827;
+    padding: 8px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 13px;
+    border: 1px solid #1f2937;
+}
+
+/* SECTION BOX */
+.box {
+    border: 1px solid #1f2937;
+    border-radius: 10px;
+    padding: 6px;
+    background: #0f172a;
+}
+
+/* REDUCE SPACE */
+.block-container {
+    padding-top: 0rem;
+    padding-bottom: 0rem;
+}
+
+h1, h2, h3 {
+    margin: 0px;
+    font-size: 16px !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # =========================
 # HEADER
 # =========================
-st.title("📊 TQ & RFI EXECUTIVE CONTROL CENTRE")
-st.caption(f"Live System | {datetime.now().strftime('%d %b %Y %H:%M')}")
-
-st.markdown("---")
+st.title("TQ & RFI CONTROL CENTRE")
+st.caption(f"Live Engineering Dashboard | {datetime.now().strftime('%d %b %Y %H:%M')}")
 
 # =========================
-# KPI ROW (FRAMED)
+# KPI ROW (VERY COMPACT)
 # =========================
 c1, c2, c3, c4 = st.columns(4)
 
-c1.metric("Overdue >7", len(overdue))
-c2.metric("TQ", len(tq))
-c3.metric("RFI", len(rfi))
-c4.metric("Risk %", risk)
-
-st.markdown("---")
+c1.markdown(f"<div class='kpi'>OVERDUE<br><b>{len(overdue)}</b></div>", unsafe_allow_html=True)
+c2.markdown(f"<div class='kpi'>TQ<br><b>{len(tq)}</b></div>", unsafe_allow_html=True)
+c3.markdown(f"<div class='kpi'>RFI<br><b>{len(rfi)}</b></div>", unsafe_allow_html=True)
+c4.markdown(f"<div class='kpi'>RISK %<br><b>{risk}</b></div>", unsafe_allow_html=True)
 
 # =========================
 # MAIN GRID
@@ -81,93 +100,84 @@ st.markdown("---")
 left, right = st.columns([2, 1])
 
 # =========================
-# LEFT SIDE
+# LEFT SIDE (A + C)
 # =========================
 with left:
 
-    # PIE (A)
-    def pie_block():
-        fig = px.pie(
-            names=["TQ", "RFI"],
-            values=[len(tq), len(rfi)],
-            hole=0.5
-        )
-        fig.update_layout(margin=dict(l=10,r=10,t=10,b=10))
-        st.plotly_chart(fig, use_container_width=True)
+    st.markdown("### A - Overview")
 
-    framed("A - TQ vs RFI Overview", pie_block)
+    pie = px.pie(
+        names=["TQ","RFI"],
+        values=[len(tq), len(rfi)],
+        hole=0.6
+    )
+    pie.update_layout(height=250, margin=dict(l=10,r=10,t=10,b=10))
+    st.plotly_chart(pie, use_container_width=True)
 
-    # TREND (C)
-    def trend_block():
-        trend = df.groupby(df["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
+    st.markdown("### C - Trend")
 
-        fig = go.Figure()
-        if "TQ" in trend:
-            fig.add_trace(go.Scatter(y=trend["TQ"], name="TQ"))
-        if "RFI" in trend:
-            fig.add_trace(go.Scatter(y=trend["RFI"], name="RFI"))
+    trend = df.groupby(df["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
 
-        fig.update_layout(margin=dict(l=10,r=10,t=10,b=10))
-        st.plotly_chart(fig, use_container_width=True)
+    fig = go.Figure()
+    if "TQ" in trend:
+        fig.add_trace(go.Scatter(y=trend["TQ"], name="TQ"))
+    if "RFI" in trend:
+        fig.add_trace(go.Scatter(y=trend["RFI"], name="RFI"))
 
-    framed("C - Trend Analysis", trend_block)
-
-    # TABLE
-    def table_block():
-        st.dataframe(
-            df[["Doc Type","Seq No","Sender","Recipient","Status","AgeDays"]],
-            use_container_width=True
-        )
-
-    framed("📋 Live Register", table_block)
+    fig.update_layout(height=250, margin=dict(l=10,r=10,t=10,b=10))
+    st.plotly_chart(fig, use_container_width=True)
 
 # =========================
-# RIGHT SIDE
+# RIGHT SIDE (B + D + E)
 # =========================
 with right:
 
-    # B - KPIs
-    def kpi_block():
-        st.metric("Overdue >30", len(df[df["AgeDays"] > 30]))
-        st.metric("Open Items", len(df[df["Status"].str.upper()=="OPEN"]))
+    st.markdown("### B - KPIs")
 
-    framed("B - Control KPIs", kpi_block)
+    st.metric("Overdue >30", len(df[df["AgeDays"] > 30]))
+    st.metric("Open Items", len(df[df["Status"].str.upper()=="OPEN"]))
 
-    # D - AGEING
-    def ageing_block():
-        bins = [0,2,7,14,30,999]
-        labels = ["0-2","3-7","8-14","15-30","30+"]
+    st.markdown("---")
 
-        df["AgeBand"] = pd.cut(df["AgeDays"], bins=bins, labels=labels)
-        age = df["AgeBand"].value_counts().reindex(labels).fillna(0)
+    st.markdown("### D - Ageing")
 
-        fig = px.bar(x=age.index, y=age.values)
-        fig.update_layout(margin=dict(l=10,r=10,t=10,b=10))
-        st.plotly_chart(fig, use_container_width=True)
+    bins = [0,2,7,14,30,999]
+    labels = ["0-2","3-7","8-14","15-30","30+"]
 
-    framed("D - Ageing Distribution", ageing_block)
+    df["AgeBand"] = pd.cut(df["AgeDays"], bins=bins, labels=labels)
+    age = df["AgeBand"].value_counts().reindex(labels).fillna(0)
 
-    # E - RISK
-    def risk_block():
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=risk,
-            gauge={"axis":{"range":[0,100]}}
-        ))
+    fig2 = px.bar(x=age.index, y=age.values)
+    fig2.update_layout(height=200, margin=dict(l=10,r=10,t=10,b=10))
+    st.plotly_chart(fig2, use_container_width=True)
 
-        fig.update_layout(margin=dict(l=10,r=10,t=10,b=10))
-        st.plotly_chart(fig, use_container_width=True)
+    st.markdown("### E - Risk")
 
-    framed("E - AI Risk Engine", risk_block)
+    fig3 = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=risk,
+        gauge={"axis":{"range":[0,100]}}
+    ))
+
+    fig3.update_layout(height=200, margin=dict(l=10,r=10,t=10,b=10))
+    st.plotly_chart(fig3, use_container_width=True)
 
 # =========================
-# INSIGHTS
+# LIVE REGISTER (ONLY SCROLLABLE PART)
 # =========================
 st.markdown("---")
 
-st.subheader("🧠 Executive Insights")
+st.markdown("### 📋 Live Register")
 
-col1, col2 = st.columns(2)
-
-col1.warning(f"{len(overdue)} items overdue (>7 days)")
-col2.info(f"Top sender: {df['Sender'].value_counts().idxmax()}")
+st.dataframe(
+    df[[
+        "Doc Type",
+        "Seq No",
+        "Sender",
+        "Recipient",
+        "Status",
+        "AgeDays"
+    ]],
+    use_container_width=True,
+    height=250
+)

@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
 import plotly.graph_objects as go
+import plotly.express as px
 from streamlit_autorefresh import st_autorefresh
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
@@ -19,13 +19,17 @@ st.set_page_config(
 st_autorefresh(interval=60000, key="refresh")
 
 # =========================
-# CONTROL ROOM STYLE
+# CONTROL ROOM UI STYLE
 # =========================
 st.markdown("""
 <style>
 body {
     background-color: #070B14;
     color: #E5E7EB;
+}
+
+.block-container {
+    padding-top: 1rem;
 }
 
 /* Sidebar */
@@ -42,18 +46,6 @@ section[data-testid="stSidebar"] {
     text-align: center;
 }
 
-/* Critical highlight */
-.kpi-danger {
-    background: #1F0B0B;
-    border: 1px solid #EF4444;
-}
-
-/* Medium highlight */
-.kpi-warn {
-    background: #1F1A0B;
-    border: 1px solid #F59E0B;
-}
-
 /* Cards */
 .card {
     background: #111827;
@@ -62,7 +54,6 @@ section[data-testid="stSidebar"] {
     border: 1px solid #1F2937;
 }
 
-/* Title */
 .title {
     font-size: 28px;
     font-weight: 700;
@@ -72,27 +63,45 @@ section[data-testid="stSidebar"] {
 
 
 # =========================
-# LOAD DATA
+# LOAD DATA (FIXED + ROBUST)
 # =========================
 @st.cache_data
 def load_data():
     df = pd.read_excel("data/TQ_TH.xlsx", header=7)
 
-    df.columns = df.columns.astype(str).str.strip()
+    # clean headers
+    df.columns = (
+        df.columns.astype(str)
+        .str.strip()
+        .str.replace("\n", " ", regex=False)
+        .str.replace("  ", " ", regex=False)
+    )
 
-    def find(col):
-        for c in df.columns:
-            if col.lower() in c.lower():
-                return c
+    # SAFE COLUMN FINDER
+    def find_col(df, keywords):
+        for col in df.columns:
+            for k in keywords:
+                if k.lower() in col.lower():
+                    return col
         return None
 
-    date_col = find("Date Sent")
-    status_col = find("Status")
-    type_col = find("Doc Type")
-    subject_col = find("Subject")
-    tq_col = find("TQ Number")
+    date_col = find_col(df, ["date sent", "sent date"])
+    status_col = find_col(df, ["status"])
+    type_col = find_col(df, ["doc type", "type"])
+    subject_col = find_col(df, ["subject"])
+    tq_col = find_col(df, ["tq number", "tq"])
 
-    df["Date"] = pd.to_datetime(df[date_col], errors="coerce")
+    # HARD SAFETY CHECK
+    if date_col is None:
+        st.error("❌ 'Date Sent' column not found in Excel file.")
+        st.write(df.columns)
+        st.stop()
+
+    # convert dates safely
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+
+    # core fields
+    df["Date"] = df[date_col]
     df["Days Open"] = (pd.Timestamp.today() - df["Date"]).dt.days
 
     df["Type"] = df[type_col] if type_col else "UNKNOWN"
@@ -114,17 +123,17 @@ df = load_data()
 # =========================
 st.sidebar.title("🧠 CONTROL ROOM")
 
-mode = st.sidebar.radio("Mode", [
+page = st.sidebar.radio("Mode", [
     "Overview",
     "Live Operations",
     "Risk Monitor",
-    "AI Intelligence",
-    "Forecasting"
+    "AI Insights",
+    "Forecast"
 ])
 
 
 # =========================
-# HEADER (CONTROL ROOM STYLE)
+# HEADER
 # =========================
 col1, col2 = st.columns([7, 2])
 
@@ -139,32 +148,29 @@ st.divider()
 
 
 # =========================
-# KPI ENGINE (CONTROL STATUS)
+# KPI ENGINE
 # =========================
 total = len(df)
 tq = len(df[df["Type"] == "TQ"])
 rfi = len(df[df["Type"] == "RFI"])
 overdue = len(df[df["Overdue"] == True])
-critical = len(df[df["Days Open"] > 14])
+critical = len(df[df["Critical"] == True])
 
 k1, k2, k3, k4, k5 = st.columns(5)
 
 with k1:
-    st.markdown('<div class="kpi">TOTAL<br><h2>{}</h2></div>'.format(total), unsafe_allow_html=True)
+    st.metric("TOTAL", total)
 
 with k2:
-    st.markdown('<div class="kpi">{}</div>'.format(tq), unsafe_allow_html=True)
     st.metric("TQs", tq)
 
 with k3:
     st.metric("RFIs", rfi)
 
 with k4:
-    st.markdown('<div class="kpi kpi-warn"></div>', unsafe_allow_html=True)
     st.metric("Overdue", overdue)
 
 with k5:
-    st.markdown('<div class="kpi kpi-danger"></div>', unsafe_allow_html=True)
     st.metric("Critical", critical)
 
 
@@ -172,7 +178,7 @@ st.divider()
 
 
 # =========================
-# RISK ENGINE (XGBOOST)
+# ML RISK ENGINE (SAFE)
 # =========================
 ml = df.copy()
 ml["Days Open"] = pd.to_numeric(ml["Days Open"], errors="coerce").fillna(0)
@@ -192,13 +198,13 @@ else:
 
 
 # =========================
-# CONTROL ROOM SECTION 1
+# CONTROL ROOM VISUAL SECTION
 # =========================
 c1, c2 = st.columns([2, 1])
 
-# ---- VENN / SYSTEM LOAD VIEW ----
+# ---------------- VENN STYLE LOAD ----------------
 with c1:
-    st.subheader("System Load: TQ / RFI Overdue Distribution")
+    st.subheader("System Load: Overdue Distribution")
 
     tq_over = len(df[(df["Type"] == "TQ") & (df["Overdue"] == True)])
     rfi_over = len(df[(df["Type"] == "RFI") & (df["Overdue"] == True)])
@@ -211,9 +217,9 @@ with c1:
     fig.add_shape(type="circle", x0=1, y0=0, x1=3, y1=2,
                   fillcolor="rgba(140,0,255,0.35)", line_color="purple")
 
-    fig.add_annotation(x=1, y=1, text=f"TQ LOAD<br>{tq_over}")
-    fig.add_annotation(x=2, y=1, text="INTERSECTION")
-    fig.add_annotation(x=3, y=1, text=f"RFI LOAD<br>{rfi_over}")
+    fig.add_annotation(x=1, y=1, text=f"TQ<br>{tq_over}")
+    fig.add_annotation(x=2, y=1, text="Overlap")
+    fig.add_annotation(x=3, y=1, text=f"RFI<br>{rfi_over}")
 
     fig.update_layout(
         height=380,
@@ -226,20 +232,20 @@ with c1:
     st.plotly_chart(fig, use_container_width=True)
 
 
-# ---- CONTROL INSIGHT PANEL ----
+# ---------------- AI INSIGHT PANEL ----------------
 with c2:
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("AI CONTROL ANALYSIS")
+    st.subheader("AI CONTROL INSIGHTS")
 
     st.write("• Overdue clustering detected in engineering workflow")
     st.write("• RFIs show higher delay sensitivity than TQs")
-    st.write("• Critical backlog increasing beyond 14 days")
+    st.write("• Critical backlog increasing (>14 days)")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 
 # =========================
-# CONTROL ROOM SECTION 2
+# ANALYTICS SECTION
 # =========================
 c3, c4 = st.columns(2)
 
@@ -249,16 +255,18 @@ with c3:
 
     fig = px.line(df, x="Date", y="Days Open", color="Type")
     fig.update_layout(paper_bgcolor="#070B14", plot_bgcolor="#070B14")
+
     st.plotly_chart(fig, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
 with c4:
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("Risk Heat Distribution")
+    st.subheader("Delay Distribution")
 
     fig2 = px.histogram(df, x="Days Open", color="Type")
     fig2.update_layout(paper_bgcolor="#070B14", plot_bgcolor="#070B14")
+
     st.plotly_chart(fig2, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -276,14 +284,14 @@ with a1:
     st.info(f"High Risk Items: {high_risk}")
 
 with a2:
-    st.success("System stability acceptable for TQs (<7 days cluster stable)")
+    st.success("System stability acceptable for current load")
 
 with a3:
     st.warning("Recommend escalation automation for RFIs > 7 days")
 
 
 # =========================
-# CONTROL TABLE (OPERATIONAL VIEW)
+# CONTROL TABLE
 # =========================
 st.subheader("Live Control Register")
 

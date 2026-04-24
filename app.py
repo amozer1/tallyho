@@ -103,6 +103,7 @@ df = load_data()
 # ---------------- ML ----------------
 ml_df = df.copy()
 
+# safe feature list
 features = ["Period Clean", "Originator", "Recipient", "Doc Type Clean", "Days Open"]
 
 # ensure columns exist
@@ -110,19 +111,16 @@ for col in features:
     if col not in ml_df.columns:
         ml_df[col] = 0
 
-# explicitly encode categorical columns
-categorical_cols = ["Originator", "Recipient", "Doc Type Clean"]
+# convert categoricals
+for col in ["Originator", "Recipient", "Doc Type Clean"]:
+    ml_df[col] = ml_df[col].astype("category").cat.codes
 
-for col in categorical_cols:
-    ml_df[col] = ml_df[col].astype(str)
-    le = LabelEncoder()
-    ml_df[col] = le.fit_transform(ml_df[col])
-
-# numeric conversion
+# convert numerics
 ml_df["Period Clean"] = pd.to_numeric(ml_df["Period Clean"], errors="coerce").fillna(0)
 ml_df["Days Open"] = pd.to_numeric(ml_df["Days Open"], errors="coerce").fillna(0)
 
-X = ml_df[features]
+# final numeric enforcement
+X = ml_df[features].apply(pd.to_numeric, errors="coerce").fillna(0)
 y = ml_df["Will_Breach_SLA"]
 
 if len(df) > 10:
@@ -141,6 +139,7 @@ if len(df) > 10:
 
     probs = model.predict_proba(X)[:, 1]
     df["Risk %"] = (probs * 100).round(0)
+
 else:
     df["Risk %"] = 0
 

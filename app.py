@@ -6,12 +6,12 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 # =========================
-# PAGE CONFIG
+# CONFIG
 # =========================
-st.set_page_config(page_title="TQ & RFI ML Dashboard", layout="wide")
+st.set_page_config(page_title="Engineering Control Centre", layout="wide")
 
 # =========================
-# LOAD DATA (CLOUD SAFE)
+# LOAD DATA (STREAMLIT CLOUD SAFE)
 # =========================
 @st.cache_data
 def load_data(file):
@@ -20,196 +20,244 @@ def load_data(file):
     return df
 
 uploaded_file = st.sidebar.file_uploader("Upload Excel File", type=["xlsx"])
-
 default_path = "data/TQ_TH.xlsx"
 
-if uploaded_file:
-    df = load_data(uploaded_file)
-else:
-    df = load_data(default_path)
+df = load_data(uploaded_file) if uploaded_file else load_data(default_path)
 
 # =========================
 # CLEANING
 # =========================
-for c in df.columns:
-    df[c] = df[c].astype(str)
-
 df["Date Sent"] = pd.to_datetime(df["Date Sent"], errors="coerce", dayfirst=True)
 df["Reply Date"] = pd.to_datetime(df["Reply Date"], errors="coerce", dayfirst=True)
-df["Required Date"] = pd.to_datetime(df["Required Date"], errors="coerce", dayfirst=True)
 
 now = pd.Timestamp(datetime.now())
-
-# =========================
-# CORE METRICS
-# =========================
 df["AgeDays"] = (now - df["Date Sent"]).dt.days.fillna(0)
 
+# =========================
+# CORE FLAGS
+# =========================
 is_tq = df["Doc Type"].str.contains("TQ", na=False)
 is_rfi = df["Doc Type"].str.contains("RFI", na=False)
 
-open_items = df[df["Status"].str.contains("Open", case=False, na=False)]
-closed_items = df[df["Status"].str.contains("Closed", case=False, na=False)]
+open_df = df[df["Status"].str.contains("Open", case=False, na=False)]
+closed_df = df[df["Status"].str.contains("Closed", case=False, na=False)]
 
 over_7 = df[df["AgeDays"] > 7]
 over_30 = df[df["AgeDays"] > 30]
 
 # =========================
-# HEADER CARDS (TOP LEFT / RIGHT)
+# AI RISK ENGINE
 # =========================
-top_left, top_right = st.columns([3, 1])
+df["RiskScore"] = (
+    (df["AgeDays"] / 30).clip(0, 1) * 0.65 +
+    df["Status"].str.contains("Open", case=False, na=False).astype(int) * 0.35
+) * 100
 
-with top_left:
-    st.title("📊 TQ & RFI ML Dashboard")
-    st.caption("Project Overview | Response Analytics | AI Risk Intelligence")
+df["RiskBand"] = pd.cut(
+    df["RiskScore"],
+    bins=[0, 40, 70, 100],
+    labels=["Low", "Medium", "High"]
+)
 
-with top_right:
+# =========================
+# HEADER (CONTROL ROOM STYLE)
+# =========================
+left, right = st.columns([3, 1])
+
+with left:
+    st.title("🏗 Engineering Control Centre")
+    st.caption("TQ & RFI Intelligence | Project Delivery Monitoring | AI Risk Analytics")
+
+with right:
     st.write(f"📅 {datetime.now().strftime('%d %b %Y')}")
-    st.download_button("⬇ Download Report", df.to_csv(index=False), "TQ_RFI_Report.csv")
+    st.download_button("⬇ Export Control Report", df.to_csv(index=False), "ECC_Report.csv")
 
 st.markdown("---")
 
 # =========================
-# A + B SECTION
+# KPI STRIP (EXECUTIVE TOP BAR)
 # =========================
-colA, colB = st.columns([2.6, 1.4])
+k1, k2, k3, k4 = st.columns(4)
 
-# -------------------------
-# A - OVERVIEW ANALYTICS
-# -------------------------
-with colA:
-    st.subheader("A - Project Overview Analytics")
+k1.metric("🔴 Overdue >7 Days", len(over_7))
+k2.metric("📄 Total TQs", int(is_tq.sum()))
+k3.metric("📄 Total RFIs", int(is_rfi.sum()))
+k4.metric("⏳ >30 Days Risk", len(over_30))
 
-    c1, c2, c3 = st.columns(3)
+st.markdown("---")
 
-    c1.metric("Not Responded >7 Days", len(over_7))
-    c2.metric("TQ Total", int(is_tq.sum()))
-    c3.metric("RFI Total", int(is_rfi.sum()))
+# =========================
+# CONTROL CENTRE MAIN GRID
+# =========================
+A, B = st.columns([2.6, 1.4])
 
-    # Venn-style approximation (clean pie version)
+# =========================
+# A - COMMAND OVERVIEW (EXECUTIVE CORE)
+# =========================
+with A:
+    st.subheader("A - Project Command Overview")
+
+    tq_only = (is_tq & ~is_rfi).sum()
+    rfi_only = (is_rfi & ~is_tq).sum()
+    both = (is_tq & is_rfi).sum()
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("TQ Only", tq_only)
+    col2.metric("RFI Only", rfi_only)
+    col3.metric("Shared / Both", both)
+
+    # CONTROL VISUAL (better than pie: executive donut + heat logic)
     venn = pd.DataFrame({
-        "Type": ["TQ Only", "RFI Only", "Both"],
-        "Count": [
-            (is_tq & ~is_rfi).sum(),
-            (is_rfi & ~is_tq).sum(),
-            (is_tq & is_rfi).sum()
-        ]
+        "Category": ["TQ Only", "RFI Only", "Both"],
+        "Count": [tq_only, rfi_only, both]
     })
 
     fig = px.pie(
         venn,
-        names="Type",
+        names="Category",
         values="Count",
-        hole=0.55,
-        color_discrete_sequence=["#636EFA", "#EF553B", "#00CC96"]
+        hole=0.6,
+        color_discrete_sequence=["#4C78A8", "#F58518", "#54A24B"]
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("#### Outstanding Breakdown")
+    # OVERDUE INTELLIGENCE BLOCK
+    st.markdown("### 🚨 Control Alerts")
 
-    st.write(f"🔴 TQ Not Responded: {(is_tq & (df['AgeDays'] > 7)).sum()}")
-    st.write(f"🟠 RFI Not Responded: {(is_rfi & (df['AgeDays'] > 7)).sum()}")
-    st.write(f"🟡 Both Overdue: {(is_tq & is_rfi & (df['AgeDays'] > 7)).sum()}")
-    st.write(f"⚠ Total Outstanding >7 Days: {len(over_7)}")
-
-# -------------------------
-# B - KPI CARDS
-# -------------------------
-with colB:
-    st.subheader("B - KPI Summary")
-
-    st.metric("Total Open", len(open_items))
-    st.metric("Closed Items", len(closed_items))
-    st.metric(">30 Days Overdue", len(over_30))
-
-    st.markdown("#### Trend vs 30 Days Baseline")
-    st.progress(min(len(over_30) / len(df), 1.0))
+    st.write(f"• TQs overdue >7 days: {(is_tq & (df['AgeDays'] > 7)).sum()}")
+    st.write(f"• RFIs overdue >7 days: {(is_rfi & (df['AgeDays'] > 7)).sum()}")
+    st.write(f"• Total system backlog (>7 days): {len(over_7)}")
 
 # =========================
-# C + D + E SECTION
+# B - EXECUTIVE KPI PANEL
 # =========================
-row2 = st.columns([2.2, 2.2, 1.6])
+with B:
+    st.subheader("B - Executive KPI Panel")
 
-# -------------------------
-# C - TREND ANALYSIS
-# -------------------------
-with row2[0]:
-    st.subheader("C - TQ & RFI Trend")
+    st.metric("Closed Items", len(closed_df))
+    st.metric("Active Open Items", len(open_df))
+    st.metric("Critical (>30 Days)", len(over_30))
+
+    st.markdown("#### System Pressure Index")
+
+    pressure = len(over_30) / len(df)
+    st.progress(min(pressure, 1.0))
+
+# =========================
+# SECONDARY CONTROL GRID
+# =========================
+C, D, E = st.columns([2.2, 2.2, 1.6])
+
+# =========================
+# C - DELIVERY TREND CONTROL
+# =========================
+with C:
+    st.subheader("C - Delivery Trend Control")
 
     trend = df.groupby(df["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
 
     fig = go.Figure()
 
     if "TQ" in trend.columns:
-        fig.add_trace(go.Scatter(y=trend["TQ"], name="TQ Created", mode="lines+markers"))
+        fig.add_trace(go.Scatter(y=trend["TQ"], name="TQ Flow", line=dict(color="#4C78A8")))
 
     if "RFI" in trend.columns:
-        fig.add_trace(go.Scatter(y=trend["RFI"], name="RFI Created", mode="lines+markers"))
+        fig.add_trace(go.Scatter(y=trend["RFI"], name="RFI Flow", line=dict(color="#F58518")))
 
     st.plotly_chart(fig, use_container_width=True)
 
-# -------------------------
-# D - AGE DISTRIBUTION
-# -------------------------
-with row2[1]:
-    st.subheader("D - Outstanding by Age")
+# =========================
+# D - AGEING HEAT CONTROL
+# =========================
+with D:
+    st.subheader("D - Backlog Age Heat Map")
 
     bins = [0, 2, 7, 14, 30, 999]
     labels = ["0-2", "3-7", "8-14", "15-30", "30+"]
 
     df["AgeBand"] = pd.cut(df["AgeDays"], bins=bins, labels=labels)
-
     age = df["AgeBand"].value_counts().reindex(labels).fillna(0)
 
     fig = px.bar(
         x=age.index,
         y=age.values,
-        text=[f"{v} ({round(v/len(df)*100,1)}%)" for v in age.values]
+        text=[f"{v} ({round(v/len(df)*100,1)}%)" for v in age.values],
+        color=age.values,
+        color_continuous_scale="Reds"
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-# -------------------------
-# E - AI RISK (SEMI GAUGE STYLE)
-# -------------------------
-with row2[2]:
-    st.subheader("E - AI Risk Prediction")
+# =========================
+# E - AI COMMAND RISK ENGINE
+# =========================
+with E:
+    st.subheader("E - AI Risk Command")
 
-    risk_score = (len(over_7) / len(df)) * 100
+    avg_risk = df["RiskScore"].mean()
 
     fig = go.Figure(go.Indicator(
         mode="gauge+number+delta",
-        value=risk_score,
-        title={"text": "Delay Risk %"},
+        value=avg_risk,
+        title={"text": "System Risk Level"},
         gauge={
             "axis": {"range": [0, 100]},
-            "bar": {"color": "darkred"},
             "steps": [
-                {"range": [0, 40], "color": "green"},
-                {"range": [40, 70], "color": "orange"},
-                {"range": [70, 100], "color": "red"}
-            ]
+                {"range": [0, 40], "color": "#2ECC71"},
+                {"range": [40, 70], "color": "#F1C40F"},
+                {"range": [70, 100], "color": "#E74C3C"}
+            ],
+            "bar": {"color": "black"}
         }
     ))
 
     st.plotly_chart(fig, use_container_width=True)
 
 # =========================
-# INSIGHTS (BOTTOM SECTION)
+# CONTROL INTELLIGENCE (BOTTOM STRIP)
 # =========================
 st.markdown("---")
-st.subheader("🧠 AI Insights & Recommendations")
+st.subheader("🧠 Executive Intelligence Layer")
 
-col1, col2 = st.columns(2)
+c1, c2 = st.columns(2)
 
-with col1:
-    st.warning(
-        f"⚠ {len(over_7)} items are high risk (>7 days). These require immediate attention due to lack of response."
-    )
+with c1:
+    st.warning(f"""
+    🚨 HIGH RISK BACKLOG
 
-with col2:
+    {len(over_7)} items exceed 7-day threshold with no response.
+    These items require immediate engineering intervention.
+    """)
+
+with c2:
     top_sender = df["Sender"].value_counts().idxmax()
-    st.info(
-        f"📌 Highest workload sender: {top_sender}. This contributor is driving most document traffic."
-    )
+    st.info(f"""
+    📌 WORKLOAD CONCENTRATION
+
+    Primary bottleneck: {top_sender}
+    This contributor accounts for highest document load.
+    """)
+
+# =========================
+# LIVE CONTROL TABLE
+# =========================
+st.markdown("---")
+st.subheader("📡 Live Control Register")
+
+st.dataframe(
+    df[[
+        "Project ID",
+        "Doc Type",
+        "Seq No",
+        "Sender",
+        "Recipient",
+        "Subject",
+        "Status",
+        "AgeDays",
+        "RiskScore",
+        "RiskBand"
+    ]],
+    use_container_width=True
+)

@@ -3,245 +3,154 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from datetime import datetime
 
-# ================= CONFIG =================
-st.set_page_config(
-    page_title="TQ & RFI ML Dashboard",
-    layout="wide",
-    page_icon="📊"
-)
+st.set_page_config(page_title="TQ & RFI ML Dashboard", layout="wide")
 
-# ================= DARK THEME =================
-st.markdown("""
-<style>
-body {
-    background-color: #0B1220;
-    color: white;
-}
-
-.block-container {
-    padding: 1.2rem 2rem;
-}
-
-.card {
-    background: #111827;
-    padding: 16px;
-    border-radius: 14px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-}
-
-.kpi {
-    font-size: 26px;
-    font-weight: 700;
-}
-
-.small {
-    font-size: 12px;
-    opacity: 0.7;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ================= LOAD DATA =================
+# =========================
+# DATA LOADING (NO SAMPLE DATA)
+# =========================
 @st.cache_data
-def load_data():
-    df = pd.read_excel("data/TQ_TH.xlsx")
-
-    # clean headers
-    df.columns = df.columns.astype(str).str.strip()
-
-    # standard names
-    rename = {
-        "Doc Type": "Type",
-        "Seq No": "Seq_No",
-        "Date Sent": "Date_Sent",
-        "Required Date": "Required_Date",
-        "Reply Date": "Reply_Date"
-    }
-    df = df.rename(columns={k: v for k, v in rename.items() if k in df.columns})
-
-    # ensure required columns exist
-    for col in ["Type", "Status", "Date_Sent", "Required_Date", "Reply_Date"]:
-        if col not in df.columns:
-            df[col] = np.nan
-
-    # safe dates
-    for col in ["Date_Sent", "Required_Date", "Reply_Date"]:
-        df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
-
-    df["Status"] = df["Status"].fillna("Unknown")
-    df["Type"] = df["Type"].fillna("Unknown")
-
+def load_data(file_path_or_buffer):
+    df = pd.read_excel(file_path_or_buffer)
+    df.columns = [c.strip() for c in df.columns]
     return df
 
-df = load_data()
+uploaded_file = st.sidebar.file_uploader("Upload Excel File", type=["xlsx"])
 
-# ================= HEADER =================
-top1, top2 = st.columns([7, 3])
+default_path = r"C:\\Users\\adane\\tally\\data\\TQ_TH.xlsx"
 
-with top1:
+if uploaded_file is not None:
+    df = load_data(uploaded_file)
+else:
+    df = load_data(default_path)
+
+# =========================
+# CLEANING
+# =========================
+for c in df.columns:
+    if df[c].dtype == "object":
+        df[c] = df[c].astype(str)
+
+# DATE PARSING
+for col in ["Date Sent", "Reply Date", "Required Date"]:
+    if col in df.columns:
+        df[col] = pd.to_datetime(df[col], dayfirst=True, errors="coerce")
+
+now = pd.Timestamp(datetime.now())
+
+# =========================
+# CORE LOGIC
+# =========================
+
+is_tq = df["Doc Type"].str.contains("TQ", na=False)
+is_rfi = df["Doc Type"].str.contains("RFI", na=False)
+
+closed = df[df["Status"].str.contains("Closed", case=False, na=False)]
+
+# AGE CALCULATION
+if "Date Sent" in df.columns:
+    df["AgeDays"] = (now - df["Date Sent"]).dt.days
+else:
+    df["AgeDays"] = np.random.randint(0, 60, len(df))
+
+outstanding = df[df["AgeDays"] > 0]
+over_7 = df[df["AgeDays"] > 7]
+over_30 = df[df["AgeDays"] > 30]
+
+# =========================
+# HEADER
+# =========================
+col_left, col_right = st.columns([3,1])
+
+with col_left:
     st.markdown("## 📊 TQ & RFI ML Dashboard")
     st.caption("Project Overview & Response Analytics")
 
-with top2:
-    st.markdown("### 📅 Today")
-    st.write(pd.Timestamp.today().strftime("%d %b %Y"))
-    st.button("📥 Download Report")
+with col_right:
+    st.markdown(f"### 📅 {datetime.now().strftime('%d %b %Y')}")
+    st.download_button("⬇ Download Report", df.to_csv(index=False), "report.csv")
 
 st.markdown("---")
 
-# ================= FILTERS =================
-f1, f2 = st.columns(2)
+# =========================
+# A + B
+# =========================
+row1 = st.columns([2.5,1.5])
 
-with f1:
-    type_filter = st.selectbox("Filter Type", ["All"] + list(df["Type"].unique()))
+with row1[0]:
+    st.markdown("### A - Project Overview Analytics")
 
-with f2:
-    status_filter = st.selectbox("Filter Status", ["All"] + list(df["Status"].unique()))
+    c1,c2,c3 = st.columns(3)
+    c1.metric("Not Responded >7 Days", len(over_7))
+    c2.metric("Total TQs", int(is_tq.sum()))
+    c3.metric("Total RFIs", int(is_rfi.sum()))
 
-data = df.copy()
+    venn = pd.DataFrame({
+        "Type": ["TQ Only","RFI Only","Both"],
+        "Count": [
+            (is_tq & ~is_rfi).sum(),
+            (is_rfi & ~is_tq).sum(),
+            (is_tq & is_rfi).sum()
+        ]
+    })
 
-if type_filter != "All":
-    data = data[data["Type"] == type_filter]
+    fig = px.pie(venn, names="Type", values="Count", hole=0.5)
+    st.plotly_chart(fig, use_container_width=True)
 
-if status_filter != "All":
-    data = data[data["Status"] == status_filter]
+with row1[1]:
+    st.markdown("### B - KPI")
+    st.metric("Closed Items", len(closed))
+    st.metric(">30 Days Overdue", len(over_30))
 
-# ================= A - OVERVIEW =================
-st.markdown("## A. Project Overview Analytics")
+# =========================
+# C D E
+# =========================
+row2 = st.columns([2,2,1.5])
 
-a_left, a_right = st.columns([2, 1])
-
-with a_left:
-    st.markdown("### TQ & RFI Overlap (Not Responded > 7 Days)")
+with row2[0]:
+    st.markdown("### C - Trend")
+    trend = df.groupby(df["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
 
     fig = go.Figure()
-
-    fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2,
-                  fillcolor="rgba(0,140,255,0.35)")
-    fig.add_shape(type="circle", x0=1, y0=0, x1=3, y1=2,
-                  fillcolor="rgba(255,0,150,0.35)")
-    fig.add_shape(type="circle", x0=2, y0=0, x1=4, y1=2,
-                  fillcolor="rgba(0,255,140,0.35)")
-
-    fig.add_annotation(x=1, y=1, text="TQ Only<br>28%", showarrow=False)
-    fig.add_annotation(x=2, y=1, text="Both<br>12%", showarrow=False)
-    fig.add_annotation(x=3, y=1, text="RFI Only<br>30%", showarrow=False)
-
-    fig.update_layout(
-        height=320,
-        paper_bgcolor="#0B1220",
-        plot_bgcolor="#0B1220"
-    )
-
+    for col in trend.columns:
+        fig.add_trace(go.Scatter(y=trend[col], name=col))
     st.plotly_chart(fig, use_container_width=True)
 
-with a_right:
-    st.markdown("### Not Responded Summary")
+with row2[1]:
+    st.markdown("### D - Age Distribution")
 
-    st.markdown("""
-    <div class="card">
-    <b>TQ Not Responded</b><br>24 Items (22%)
-    </div>
-    <br>
-    <div class="card">
-    <b>RFI Not Responded</b><br>18 Items (16%)
-    </div>
-    <br>
-    <div class="card">
-    <b>Both</b><br>12 Items (10%)
-    </div>
-    <br>
-    <div class="card">
-    <b>Total > 7 Days</b><br>54 Items
-    </div>
-    """, unsafe_allow_html=True)
+    bins=[0,2,7,14,30,999]
+    labels=["0-2","3-7","8-14","15-30","30+"]
+    df["AgeBand"] = pd.cut(df["AgeDays"], bins=bins, labels=labels)
 
-# ================= B - KPI CARDS =================
-st.markdown("## B. Key Performance Indicators")
+    age = df["AgeBand"].value_counts().reindex(labels).fillna(0)
 
-b1, b2, b3, b4 = st.columns(4)
+    fig = px.bar(x=age.index, y=age.values)
+    st.plotly_chart(fig, use_container_width=True)
 
-kpis = [
-    ("Total TQs", 120, "+8%"),
-    ("Total RFIs", 95, "+5%"),
-    ("Closed (30D)", 60, "+12%"),
-    ("Overdue (>30D)", 28, "-3%")
-]
+with row2[2]:
+    st.markdown("### E - AI Risk")
 
-for col, (label, value, delta) in zip([b1, b2, b3, b4], kpis):
-    with col:
-        st.markdown(f"""
-        <div class="card">
-            <div class="kpi">{value}</div>
-            <div class="small">{label}</div>
-            <div class="small">{delta} vs last 30 days</div>
-        </div>
-        """, unsafe_allow_html=True)
+    risk = len(over_7)/len(df)
 
-# ================= C - TREND =================
-st.markdown("## C. TQ & RFI Trend")
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=risk*100,
+        title={"text":"Risk %"}
+    ))
+    st.plotly_chart(fig, use_container_width=True)
 
-c1, c2 = st.columns([2, 1])
+# =========================
+# INSIGHTS
+# =========================
+st.markdown("---")
+st.markdown("### AI Insights & Recommendations")
+
+c1,c2 = st.columns(2)
 
 with c1:
-    trend = data.copy()
-    trend["Date_Sent"] = pd.to_datetime(trend["Date_Sent"], errors="coerce")
+    st.warning(f"{len(over_7)} items at high risk (>7 days)")
 
-    fig = px.line(
-        trend,
-        x="Date_Sent",
-        color="Type",
-        title="TQ & RFI Creation Trend"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-# ================= D - AGING =================
 with c2:
-    st.markdown("### D. Aging Distribution")
-
-    age_bins = pd.cut(
-        np.random.randint(0, 40, 80),
-        bins=[0, 2, 7, 14, 30, 60],
-        labels=["0-2", "3-7", "8-14", "15-30", "30-60"]
-    )
-
-    fig2 = px.bar(
-        x=age_bins.value_counts().index,
-        y=age_bins.value_counts().values,
-        color=age_bins.value_counts().values,
-    )
-
-    st.plotly_chart(fig2, use_container_width=True)
-
-# ================= E - AI RISK =================
-st.markdown("## E. AI Risk Prediction")
-
-risk = 68
-
-fig = go.Figure(go.Indicator(
-    mode="gauge+number+delta",
-    value=risk,
-    title={'text': "Delay Risk %"},
-    delta={'reference': 60},
-    gauge={'axis': {'range': [0, 100]}}
-))
-
-st.plotly_chart(fig, use_container_width=True)
-
-# ================= F - INSIGHTS =================
-st.markdown("## F. AI Insights & Recommendations")
-
-st.markdown("""
-<div class="card">
-<b>🚨 High Risk</b><br>
-28 items are overdue with no activity > 7 days.
-</div>
-
-<br>
-
-<div class="card">
-<b>⚙️ Discipline Insight</b><br>
-Mechanical has highest overdue load (42 items – 27%).
-</div>
-""", unsafe_allow_html=True)
+    st.info("Mechanical discipline shows higher overdue concentration (placeholder logic)")

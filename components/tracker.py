@@ -69,6 +69,30 @@ def render_tracker(df):
     # =========================
     st.markdown("### 📊 TQ & RFI Tracker")
 
+    # =========================
+    # 🚨 OUTSIDE ALERT (TOP OF CHART)
+    # =========================
+    st.markdown(
+        f"""
+        <div style="
+            padding: 8px 12px;
+            border-radius: 8px;
+            background-color: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.8);
+            margin-bottom: 10px;
+            max-width: 520px;
+        ">
+            <div style="color:#ff4d4d; font-weight:800; font-size:14px;">
+                ⚠ Outstanding > 7 Days: {overdue} ({round((overdue/total)*100,1) if total else 0}%)
+            </div>
+            <div style="color:white; font-size:13px; margin-top:4px;">
+                🔵 TQ: {overdue_tq} &nbsp;&nbsp; 🟢 RFI: {overdue_rfi}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     left, right = st.columns([2.5, 1])
 
     # =========================
@@ -78,21 +102,16 @@ def render_tracker(df):
 
         fig = go.Figure()
 
-        # =========================
-        # OUTER RECTANGLE BOUNDARY
-        # =========================
+        # OUTER BOUNDARY
         fig.add_shape(
             type="rect",
             x0=-0.2, y0=-0.25,
             x1=3.4, y1=1.85,
             line=dict(color="rgba(255,255,255,0.6)", width=2),
             fillcolor="rgba(0,0,0,0)",
-            layer="above"
         )
 
-        # =========================
-        # HEADER INSIDE BOUNDARY
-        # =========================
+        # HEADER
         fig.add_annotation(
             x=1.6, y=1.72,
             text="""
@@ -101,38 +120,14 @@ def render_tracker(df):
             """,
             showarrow=False,
             font=dict(color="white", size=18),
-            align="center"
         )
 
-        # =========================
-        # 🚨 OVERDUE ALERT (TOP RIGHT CORNER)
-        # =========================
-        fig.add_annotation(
-            x=3.25, y=1.75,
-            text=f"""
-            <b>⚠ OVERDUE > 7 DAYS</b><br>
-            <span style='font-size:18px'>{overdue} ({round((overdue/total)*100,1) if total else 0}%)</span><br><br>
-            🔵 TQ: {overdue_tq} ({round((overdue_tq/overdue)*100,1) if overdue else 0}%)<br>
-            🟢 RFI: {overdue_rfi} ({round((overdue_rfi/overdue)*100,1) if overdue else 0}%)
-            """,
-            showarrow=False,
-            align="left",
-            font=dict(color="#ff4d4d", size=12),
-            bgcolor="rgba(239,68,68,0.12)",
-            bordercolor="rgba(239,68,68,0.8)",
-            borderwidth=2,
-            borderpad=6
-        )
-
-        # =========================
         # CIRCLES
-        # =========================
         fig.add_shape(
             type="circle",
             x0=0.0, y0=0.2, x1=1.2, y1=1.4,
             fillcolor="rgba(59,130,246,0.55)",
             line=dict(color="#3b82f6", width=2),
-            layer="below"
         )
 
         fig.add_shape(
@@ -140,7 +135,6 @@ def render_tracker(df):
             x0=2.0, y0=0.2, x1=3.2, y1=1.4,
             fillcolor="rgba(34,197,94,0.55)",
             line=dict(color="#22c55e", width=2),
-            layer="below"
         )
 
         fig.add_shape(
@@ -148,39 +142,22 @@ def render_tracker(df):
             x0=0.9, y0=0.05, x1=2.3, y1=1.55,
             fillcolor="rgba(168,85,247,0.70)",
             line=dict(color="#a855f7", width=2),
-            layer="above"
         )
 
-        # =========================
-        # MAIN LABELS
-        # =========================
-        fig.add_annotation(
-            x=0.6, y=0.8,
+        # LABELS
+        fig.add_annotation(x=0.6, y=0.8,
             text=f"<b>Total TQ</b><br>{tq_total}<br>{tq_pct}%",
-            showarrow=False,
-            font=dict(color="white", size=16),
-            align="center"
-        )
+            showarrow=False, font=dict(color="white"))
 
-        fig.add_annotation(
-            x=1.6, y=0.82,
+        fig.add_annotation(x=1.6, y=0.82,
             text=f"<b>Total</b><br>{total}<br>100%",
-            showarrow=False,
-            font=dict(color="white", size=18),
-            align="center"
-        )
+            showarrow=False, font=dict(color="white"))
 
-        fig.add_annotation(
-            x=2.6, y=0.8,
+        fig.add_annotation(x=2.6, y=0.8,
             text=f"<b>Total RFI</b><br>{rfi_total}<br>{rfi_pct}%",
-            showarrow=False,
-            font=dict(color="white", size=16),
-            align="center"
-        )
+            showarrow=False, font=dict(color="white"))
 
-        # =========================
         # LAYOUT
-        # =========================
         fig.update_layout(
             height=380,
             paper_bgcolor="#0b1220",
@@ -193,7 +170,7 @@ def render_tracker(df):
         st.plotly_chart(fig, use_container_width=True)
 
     # =========================
-    # RIGHT PANEL (UNCHANGED)
+    # RIGHT PANEL
     # =========================
     with right:
 

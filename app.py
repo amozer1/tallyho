@@ -5,4 +5,4 @@ from components.venn_overview import render_venn_overview
 render_sidebar()
 render_header()
 
-render_venn_overview(df)
+render_venn_overview()

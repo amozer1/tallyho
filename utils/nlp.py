@@ -1,15 +1,14 @@
 import pandas as pd
 
-def keyword_risk(df):
+def extract_keywords(df):
 
-    keywords = ["delay", "urgent", "critical", "risk", "blocked"]
+    text = df["Subject"].fillna("").str.lower()
 
-    def score(text):
-        if pd.isna(text):
-            return 0
-        text = str(text).lower()
-        return sum(k in text for k in keywords)
+    keywords = {
+        "risk": text.str.contains("risk").sum(),
+        "urgent": text.str.contains("urgent").sum(),
+        "delay": text.str.contains("delay").sum(),
+        "design": text.str.contains("design").sum()
+    }
 
-    df["KeywordRisk"] = df["Subject"].apply(score)
-
-    return df
+    return keywords

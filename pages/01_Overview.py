@@ -5,6 +5,11 @@ import streamlit.components.v1 as components
 from utils.data_loader import load_data
 
 # =========================
+# PAGE CONFIG (optional but recommended)
+# =========================
+st.set_page_config(page_title="TQ & RFI Dashboard", layout="wide")
+
+# =========================
 # LOAD DATA
 # =========================
 df = load_data()
@@ -36,7 +41,7 @@ tq_total = len(tq)
 rfi_total = len(rfi)
 
 # =========================
-# HEADER (PROFESSIONAL)
+# HEADER (CLEAN + SAFE HTML)
 # =========================
 st.markdown(f"""
 <div style="
@@ -83,7 +88,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =========================
-# CIRCLE FUNCTION (UNCHANGED LOGIC)
+# SAFE CIRCLE FUNCTION (UNCHANGED LOGIC)
 # =========================
 def render_ring(title, open_v, closed_v, out_v, total, color):
 
@@ -136,17 +141,17 @@ def render_ring(title, open_v, closed_v, out_v, total, color):
     """
 
 # =========================
-# DISPLAY CIRCLES
+# DISPLAY CIRCLES (SAFE)
 # =========================
-c1, c2 = st.columns(2)
+col1, col2 = st.columns(2)
 
-with c1:
+with col1:
     components.html(
         render_ring("TQ", tq_open, tq_closed, tq_outstanding, tq_total, "#FFA500"),
         height=380
     )
 
-with c2:
+with col2:
     components.html(
         render_ring("RFI", rfi_open, rfi_closed, rfi_outstanding, rfi_total, "#2F80ED"),
         height=380

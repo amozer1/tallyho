@@ -11,7 +11,13 @@ def render_outstanding_line(df, total):
         return
 
     # =========================
-    # FILTER: OVERDUE (>7 DAYS + NOT REPLIED)
+    # CLEANING (ensure consistency)
+    # =========================
+    df = df.copy()
+    df["doc type"] = df["doc type"].astype(str).str.lower()
+
+    # =========================
+    # OVERDUE FILTER (> 7 DAYS + NOT REPLIED)
     # =========================
     overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
 
@@ -19,19 +25,25 @@ def render_outstanding_line(df, total):
     overdue_pct = round((overdue / total) * 100, 1)
 
     # =========================
-    # BREAKDOWN
+    # BREAKDOWN (FROM REAL DATA)
     # =========================
-    overdue_tq = len(overdue_df[overdue_df["doc type"].str.lower() == "tq"])
-    overdue_rfi = len(overdue_df[overdue_df["doc type"].str.lower() == "rfi"])
+    tq_total = len(df[df["doc type"] == "tq"])
+    rfi_total = len(df[df["doc type"] == "rfi"])
+
+    overdue_tq = len(overdue_df[overdue_df["doc type"] == "tq"])
+    overdue_rfi = len(overdue_df[overdue_df["doc type"] == "rfi"])
+
+    tq_pct = round((overdue_tq / tq_total) * 100, 1) if tq_total else 0
+    rfi_pct = round((overdue_rfi / rfi_total) * 100, 1) if rfi_total else 0
 
     # =========================
-    # UI
+    # UI OUTPUT (SIMPLE + CLEAR)
     # =========================
     st.markdown(f"""
 ### ⚠ Overdue (> 7 Days)
 
-🔴 Overdue = **{overdue}** ({overdue_pct}%)
+🔴 **Overdue = {overdue} ({overdue_pct}%)**
 
-➡ TQ overdue: **{overdue_tq}**  
-➡ RFI overdue: **{overdue_rfi}**
+➡ TQ overdue: **{overdue_tq} ({tq_pct}%)**  
+➡ RFI overdue: **{overdue_rfi} ({rfi_pct}%)**
 """)

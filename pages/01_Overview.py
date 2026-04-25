@@ -23,14 +23,16 @@ df["AgeDays"] = (today - df["Date Sent"]).dt.days
 tq_over = df[(df["Doc Type"] == "TQ") & (df["AgeDays"] > 7)]
 rfi_over = df[(df["Doc Type"] == "RFI") & (df["AgeDays"] > 7)]
 
-tq_set = set(tq_over.index)
-rfi_set = set(rfi_over.index)
+tq_count = len(tq_over)
+rfi_count = len(rfi_over)
+
+# overlap logic (based on Recipient)
+tq_set = set(tq_over["Recipient"])
+rfi_set = set(rfi_over["Recipient"])
 
 both_set = tq_set.intersection(rfi_set)
 
-tq_only = len(tq_set - both_set)
-rfi_only = len(rfi_set - both_set)
-both = len(both_set)
+both_count = len(both_set)
 
 total_overdue = len(df[df["AgeDays"] > 7])
 
@@ -40,16 +42,16 @@ def pct(x):
 # =========================
 # HEADER
 # =========================
-left, middle, right = st.columns([2, 3, 1])
+l, m, r = st.columns([2, 3, 1])
 
-with left:
-    st.markdown("<h2 style='color:white'>TQ & RFI Dashboard</h2>", unsafe_allow_html=True)
+with l:
+    st.markdown("<h2 style='color:white;'>TQ & RFI Dashboard</h2>", unsafe_allow_html=True)
 
-with middle:
-    st.markdown("<p style='color:#9fb3c8'>Project Overview and Response Analytics</p>", unsafe_allow_html=True)
+with m:
+    st.markdown("<p style='color:#9fb3c8;'>Project Overview and Response Analytics</p>", unsafe_allow_html=True)
 
-with right:
-    st.markdown(f"<h4 style='color:white;text-align:right'>{datetime.today().strftime('%d %b %Y')}</h4>", unsafe_allow_html=True)
+with r:
+    st.markdown(f"<h4 style='text-align:right;color:white;'>{datetime.today().strftime('%d %b %Y')}</h4>", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -62,43 +64,46 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# MAIN LAYOUT (2 COLUMNS)
+# MAIN LAYOUT
 # =========================
-left_col, right_col = st.columns([2, 1])
+left, right = st.columns([2.2, 1])
 
 # =========================
-# VENN STYLE (SIMULATED WITH PLOTLY)
+# VENN DIAGRAM (PROPER CLEAN VERSION)
 # =========================
-with left_col:
+with left:
 
     fig = go.Figure()
 
+    # Left circle (TQ)
     fig.add_shape(type="circle",
-        x0=0, y0=0, x1=2, y1=2,
-        line=dict(color="#2F80ED"),
+        x0=0.5, y0=0.5, x1=3, y1=3,
+        line=dict(color="#2F80ED", width=3),
     )
 
+    # Right circle (RFI)
     fig.add_shape(type="circle",
-        x0=1, y0=0, x1=3, y1=2,
-        line=dict(color="#EB5757"),
+        x0=2, y0=0.5, x1=4.5, y1=3,
+        line=dict(color="#EB5757", width=3),
     )
 
-    fig.add_annotation(x=0.8, y=1.2,
-        text=f"TQ Only<br>{tq_only} ({pct(tq_only)}%)",
+    # Labels
+    fig.add_annotation(x=1.3, y=2,
+        text=f"TQ<br>{tq_count} ({pct(tq_count)}%)",
         showarrow=False,
-        font=dict(color="#2F80ED")
+        font=dict(color="#2F80ED", size=14)
     )
 
-    fig.add_annotation(x=2.2, y=1.2,
-        text=f"RFI Only<br>{rfi_only} ({pct(rfi_only)}%)",
+    fig.add_annotation(x=3.2, y=2,
+        text=f"RFI<br>{rfi_count} ({pct(rfi_count)}%)",
         showarrow=False,
-        font=dict(color="#EB5757")
+        font=dict(color="#EB5757", size=14)
     )
 
-    fig.add_annotation(x=1.5, y=0.8,
-        text=f"Both<br>{both} ({pct(both)}%)",
+    fig.add_annotation(x=2.4, y=1.5,
+        text=f"Both<br>{both_count}",
         showarrow=False,
-        font=dict(color="#00FFD5")
+        font=dict(color="#00FFD5", size=13)
     )
 
     fig.update_layout(
@@ -112,17 +117,17 @@ with left_col:
     st.plotly_chart(fig, use_container_width=True)
 
 # =========================
-# RIGHT PANEL (KPI BULLETS)
+# RIGHT PANEL (CLEAN KPI LIST)
 # =========================
-with right_col:
+with right:
 
     st.markdown("### Breakdown")
 
     st.markdown(f"""
-    <div style="color:white;line-height:2;">
-        🔵 TQ Not Responded: <b>{tq_only}</b> ({pct(tq_only)}%)<br>
-        🔴 RFI Not Responded: <b>{rfi_only}</b> ({pct(rfi_only)}%)<br>
-        🟢 Both Overdue: <b>{both}</b> ({pct(both)}%)<br>
+    <div style="color:white;line-height:2;font-size:15px;">
+        🔵 TQ Not Responded: <b>{tq_count}</b> ({pct(tq_count)}%)<br>
+        🔴 RFI Not Responded: <b>{rfi_count}</b> ({pct(rfi_count)}%)<br>
+        🟢 Both (Overlap): <b>{both_count}</b><br>
     </div>
     """, unsafe_allow_html=True)
 
@@ -133,10 +138,10 @@ with right_col:
         background:#1b2b3a;
         padding:15px;
         border-radius:12px;
-        border:1px solid #2F80ED;
+        border-left:4px solid #2F80ED;
         color:white;
     ">
-        <b>Total Outstanding > 7 Days</b><br><br>
+        <b>Total Outstanding &gt; 7 Days</b><br><br>
         {total_overdue} items<br>
         {pct(total_overdue)}%
     </div>

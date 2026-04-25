@@ -1,180 +1,213 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from datetime import datetime
-from utils.data_loader import load_data
-from utils.metrics import get_metrics
 
-st.set_page_config(layout="wide", page_title="Overview")
 
-# =========================
-# LOAD DATA
-# =========================
-df = load_data()
-m = get_metrics(df)
+def render_tracker(df):
 
-# =========================
-# CUSTOM CSS
-# =========================
-st.markdown("""
-<style>
-.block-container {
-    padding-top: 0.5rem;
-    padding-bottom: 0rem;
-    max-width: 100%;
-}
-html, body, [class*="css"] {
-    font-family: 'Segoe UI';
-    background-color: #06111f;
-    color: white;
-}
-.card {
-    background: linear-gradient(145deg,#091b31,#06111f);
-    border: 1px solid rgba(0,191,255,0.25);
-    border-radius: 16px;
-    padding: 15px;
-    box-shadow: 0 0 15px rgba(0,191,255,0.08);
-    margin-bottom: 10px;
-}
-.metric-card{
-    background: linear-gradient(145deg,#081c34,#0a1020);
-    border-radius: 14px;
-    padding: 18px;
-    text-align:center;
-    border:1px solid rgba(255,255,255,0.08);
-    min-height:140px;
-}
-.big-font{
-    font-size:42px;
-    font-weight:bold;
-}
-.small-font{
-    color:#b8c7e0;
-    font-size:14px;
-}
-</style>
-""", unsafe_allow_html=True)
+    # =========================
+    # VALIDATION
+    # =========================
+    if df is None or df.empty:
+        st.warning("No data available.")
+        return
 
-# =========================
-# HEADER
-# =========================
-h1,h2 = st.columns([4,2])
+    df = df.copy()
+    df.columns = [c.strip().lower() for c in df.columns]
 
-with h1:
-    st.markdown("""
-    <div class="card">
-    <h1>📊 TQ & RFI ML Dashboard</h1>
-    <p>Project overview and Response analytics</p>
-    </div>
-    """, unsafe_allow_html=True)
+    required = ["doc type", "date sent", "reply date"]
 
-with h2:
-    today = datetime.today().strftime("%d %b %Y")
-    st.markdown(f"""
-    <div class="card">
-    <h3>📅 {today}</h3>
-    <p>Download Report ⬇</p>
-    </div>
-    """, unsafe_allow_html=True)
+    for c in required:
+        if c not in df.columns:
+            st.error(f"Missing column: {c}")
+            return
 
-# =========================
-# ROW A + B
-# =========================
-left,right = st.columns([3,2])
+    # =========================
+    # CLEAN DATA
+    # =========================
+    df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
+    df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-with left:
-    st.markdown('<div class="card"><h3>A - Project Overview Analytics</h3></div>', unsafe_allow_html=True)
+    today = pd.Timestamp(datetime.today().date())
+    df["age"] = (today - df["date sent"]).dt.days
 
-    tq_over = len(df[(df["Type"]=="TQ") & (df["AgeDays"]>7)])
-    rfi_over = len(df[(df["Type"]=="RFI") & (df["AgeDays"]>7)])
-    both = min(tq_over,rfi_over)
+    total = len(df)
 
-    fig = go.Figure()
+    tq = df[df["doc type"].str.lower() == "tq"]
+    rfi = df[df["doc type"].str.lower() == "rfi"]
 
-    fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2,
-                  fillcolor="royalblue", opacity=0.35, line_color="royalblue")
-    fig.add_shape(type="circle", x0=1, y0=0, x1=3, y1=2,
-                  fillcolor="cyan", opacity=0.35, line_color="cyan")
-    fig.add_shape(type="circle", x0=2, y0=0, x1=4, y1=2,
-                  fillcolor="purple", opacity=0.35, line_color="purple")
+    tq_total = len(tq)
+    rfi_total = len(rfi)
 
-    fig.add_annotation(x=0.7,y=1,text=f"TQ Only<br>{tq_over}")
-    fig.add_annotation(x=2,y=1,text=f"Both<br>{both}")
-    fig.add_annotation(x=3.3,y=1,text=f"RFI Only<br>{rfi_over}")
+    tq_pct = round((tq_total / total) * 100, 1) if total else 0
+    rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
-    fig.update_xaxes(visible=False)
-    fig.update_yaxes(visible=False)
-    fig.update_layout(height=300, template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
+    # =========================
+    # NOT RESPONDED
+    # =========================
+    tq_not = len(tq[tq["reply date"].isna()])
+    rfi_not = len(rfi[rfi["reply date"].isna()])
+    total_not = len(df[df["reply date"].isna()])
 
-with right:
-    st.markdown('<div class="card"><h3>B - KPI Cards</h3></div>', unsafe_allow_html=True)
-    c1,c2 = st.columns(2)
-    c3,c4 = st.columns(2)
+    tq_not_pct = round((tq_not / tq_total) * 100, 1) if tq_total else 0
+    rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
+    total_not_pct = round((total_not / total) * 100, 1) if total else 0
 
-    with c1:
-        st.markdown(f'<div class="metric-card"><h4>Total TQs</h4><div class="big-font">{m["total_tq"]}</div></div>', unsafe_allow_html=True)
-    with c2:
-        st.markdown(f'<div class="metric-card"><h4>Total RFIs</h4><div class="big-font">{m["total_rfi"]}</div></div>', unsafe_allow_html=True)
-    with c3:
-        st.markdown(f'<div class="metric-card"><h4>Closed</h4><div class="big-font">{m["closed"]}</div></div>', unsafe_allow_html=True)
-    with c4:
-        st.markdown(f'<div class="metric-card"><h4>Overdue</h4><div class="big-font">{m["overdue7"]}</div></div>', unsafe_allow_html=True)
+    # =========================
+    # OVERDUE BREAKDOWN (>7 DAYS)
+    # =========================
+    overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
 
-# =========================
-# ROW C D E
-# =========================
-c,d,e = st.columns([2,1,1])
+    overdue_total = len(overdue_df)
 
-with c:
-    st.markdown('<div class="card"><h3>C - TQ & RFI Trend</h3></div>', unsafe_allow_html=True)
-    trend = df.groupby(["DateSent","Type"]).size().reset_index(name="Count")
-    fig2 = px.line(trend, x="DateSent", y="Count", color="Type", markers=True)
-    fig2.update_layout(template="plotly_dark", height=300)
-    st.plotly_chart(fig2, use_container_width=True)
+    overdue_tq = len(overdue_df[overdue_df["doc type"].str.lower() == "tq"])
+    overdue_rfi = len(overdue_df[overdue_df["doc type"].str.lower() == "rfi"])
 
-with d:
-    st.markdown('<div class="card"><h3>D - Outstanding by Age</h3></div>', unsafe_allow_html=True)
+    overdue_total_pct = round((overdue_total / total) * 100, 1) if total else 0
+    overdue_tq_pct = round((overdue_tq / overdue_total) * 100, 1) if overdue_total else 0
+    overdue_rfi_pct = round((overdue_rfi / overdue_total) * 100, 1) if overdue_total else 0
 
-    bins = [0,2,7,14,30,999]
-    labels = ["0-2","3-7","8-14","15-30","30+"]
-    df["AgeBand"] = pd.cut(df["AgeDays"], bins=bins, labels=labels)
+    # =========================
+    # 🚨 FLASHING ALERT
+    # =========================
+    st.markdown(
+        f"""
+        <style>
+        @keyframes blink {{
+            0% {{ opacity: 1; }}
+            50% {{ opacity: 0.3; }}
+            100% {{ opacity: 1; }}
+        }}
 
-    age = df.groupby("AgeBand").size().reset_index(name="Count")
-    fig3 = px.bar(age, x="Count", y="AgeBand", orientation="h", color="Count")
-    fig3.update_layout(template="plotly_dark", height=300)
-    st.plotly_chart(fig3, use_container_width=True)
+        .alert-box {{
+            padding: 12px;
+            background-color: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.7);
+            border-radius: 8px;
+            color: #ff4d4d;
+            font-weight: 700;
+            font-size: 15px;
+            animation: blink 1.2s infinite;
+            margin-bottom: 12px;
+        }}
+        </style>
 
-with e:
-    st.markdown('<div class="card"><h3>E - AI Risk Prediction</h3></div>', unsafe_allow_html=True)
+        <div class="alert-box">
+            ⚠ Outstanding > 7 Days: {overdue_total} ({overdue_total_pct}%)
+            <br><br>
+            🔵 TQ: {overdue_tq} ({overdue_tq_pct}%)
+            <br>
+            🟢 RFI: {overdue_rfi} ({overdue_rfi_pct}%)
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    risk = min(100, int((m["overdue7"]/max(1,m["open"]))*100))
-    fig4 = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=risk,
-        gauge={
-            "axis":{"range":[0,100]},
-            "steps":[
-                {"range":[0,40],"color":"green"},
-                {"range":[40,70],"color":"yellow"},
-                {"range":[70,100],"color":"red"}
-            ]
-        }
-    ))
-    fig4.update_layout(template="plotly_dark", height=300)
-    st.plotly_chart(fig4, use_container_width=True)
+    # =========================
+    # TITLE
+    # =========================
+    st.markdown("### 📊 TQ & RFI Tracker")
 
-# =========================
-# ROW F
-# =========================
-st.markdown('<div class="card"><h3>F - AI Insights & Recommendations</h3></div>', unsafe_allow_html=True)
+    left, right = st.columns([2.5, 1])
 
-i1,i2 = st.columns(2)
+    # =========================
+    # LEFT VISUAL
+    # =========================
+    with left:
 
-with i1:
-    st.error(f"{m['overdue7']} items are at high risk of delay.")
+        fig = go.Figure()
 
-with i2:
-    top_recipient = df["Recipient"].value_counts().idxmax() if not df.empty else "N/A"
-    st.info(f"{top_recipient} has the highest number of outstanding items.")
+        # =========================
+        # BOUNDARY
+        # =========================
+        fig.add_shape(
+            type="rect",
+            x0=-0.2, y0=-0.25,
+            x1=3.4, y1=1.85,
+            line=dict(color="rgba(255,255,255,0.6)", width=2),
+            fillcolor="rgba(0,0,0,0)",
+        )
+
+        # =========================
+        # HEADER
+        # =========================
+        fig.add_annotation(
+            x=1.6, y=1.72,
+            text="""
+            <b>Not Responded Within 7 Days</b><br>
+            <span style='font-size:13px; opacity:0.8;'>TQ & RFI AGING OVERVIEW</span>
+            """,
+            showarrow=False,
+            font=dict(color="white", size=18),
+        )
+
+        # =========================
+        # CIRCLES (UNCHANGED)
+        # =========================
+        fig.add_shape(
+            type="circle",
+            x0=0.0, y0=0.2, x1=1.2, y1=1.4,
+            fillcolor="rgba(59,130,246,0.55)",
+            line=dict(color="#3b82f6", width=2),
+        )
+
+        fig.add_shape(
+            type="circle",
+            x0=2.0, y0=0.2, x1=3.2, y1=1.4,
+            fillcolor="rgba(34,197,94,0.55)",
+            line=dict(color="#22c55e", width=2),
+        )
+
+        fig.add_shape(
+            type="circle",
+            x0=0.9, y0=0.05, x1=2.3, y1=1.55,
+            fillcolor="rgba(168,85,247,0.70)",
+            line=dict(color="#a855f7", width=2),
+        )
+
+        # =========================
+        # LABELS
+        # =========================
+        fig.add_annotation(x=0.6, y=0.8,
+            text=f"<b>TQ</b><br>{tq_total}<br>{tq_pct}%",
+            showarrow=False, font=dict(color="white"))
+
+        fig.add_annotation(x=1.6, y=0.82,
+            text=f"<b>TOTAL</b><br>{total}<br>100%",
+            showarrow=False, font=dict(color="white"))
+
+        fig.add_annotation(x=2.6, y=0.8,
+            text=f"<b>RFI</b><br>{rfi_total}<br>{rfi_pct}%",
+            showarrow=False, font=dict(color="white"))
+
+        # =========================
+        # LAYOUT
+        # =========================
+        fig.update_layout(
+            height=380,
+            paper_bgcolor="#0b1220",
+            plot_bgcolor="#0b1220",
+            margin=dict(l=0, r=0, t=0, b=0),
+            xaxis=dict(visible=False, range=[-0.3, 3.5]),
+            yaxis=dict(visible=False, range=[-0.3, 1.9]),
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # RIGHT PANEL (OPTIONAL SUMMARY)
+    # =========================
+    with right:
+
+        st.markdown("#### ⚙ Control Panel")
+
+        st.markdown(f"""
+🔵 **TQ not responded:** {tq_not} ({tq_not_pct}%)
+
+🟢 **RFI not responded:** {rfi_not} ({rfi_not_pct}%)
+
+⚫ **Total not responded:** {total_not} ({total_not_pct}%)
+""")
+
+        st.info(f"Overdue > 7 Days: {overdue_total}")

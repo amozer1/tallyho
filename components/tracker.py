@@ -43,9 +43,6 @@ def render_tracker(df):
     tq_pct = round((tq_total / total) * 100, 1) if total else 0
     rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
-    # =========================
-    # NOT RESPONDED
-    # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
@@ -64,87 +61,80 @@ def render_tracker(df):
     left, right = st.columns([3, 1])
 
     # =========================
-    # LEFT CHART
+    # LEFT VISUAL
     # =========================
     with left:
 
         fig = go.Figure()
 
-        # =========================
-        # MAIN BOUNDARY
-        # =========================
+        # MAIN CONTAINER
         fig.add_shape(
             type="rect",
-            x0=-0.6, y0=-0.2,
-            x1=3.6, y1=1.9,
-            line=dict(color="rgba(255,255,255,0.6)", width=2),
+            x0=0, y0=0,
+            x1=10, y1=6,
+            line=dict(color="rgba(255,255,255,0.5)", width=2),
             fillcolor="rgba(0,0,0,0)",
         )
 
-        # =========================
-        # RIGHT KPI PANEL (CLEAN BOX)
-        # =========================
+        # RIGHT SIDE KPI PANEL (CLEAN & SIMPLE)
         fig.add_shape(
             type="rect",
-            x0=2.55, y0=0.1,
-            x1=3.5, y1=1.7,
-            line=dict(color="rgba(255,255,255,0.4)", width=1.5),
+            x0=7.2, y0=0.5,
+            x1=9.7, y1=5.5,
+            line=dict(color="rgba(255,255,255,0.3)", width=1.5),
             fillcolor="rgba(255,255,255,0.03)",
         )
 
+        # HEADER ONLY (NO CLUTTER)
+        fig.add_annotation(
+            x=4.5, y=5.6,
+            text="<b>Not Responded Within 7 Days</b><br><span style='font-size:12px'>TQ & RFI AGING OVERVIEW</span>",
+            showarrow=False,
+            font=dict(color="white", size=18),
+        )
+
         # =========================
-        # CIRCLES (SLIGHTLY REDUCED SIZE FOR FIT)
+        # SIMPLE CLEAN CIRCLES (NO OVERLAP TEXT INSIDE ANNOTATIONS)
         # =========================
         fig.add_shape(
             type="circle",
-            x0=0.1, y0=0.35, x1=1.1, y1=1.35,
+            x0=1, y0=1, x1=4, y1=4,
             fillcolor="rgba(59,130,246,0.55)",
             line=dict(color="#3b82f6", width=2),
         )
 
         fig.add_shape(
             type="circle",
-            x0=1.4, y0=0.35, x1=2.4, y1=1.35,
-            fillcolor="rgba(168,85,247,0.65)",
+            x0=3.5, y0=1, x1=6.5, y1=4,
+            fillcolor="rgba(168,85,247,0.6)",
             line=dict(color="#a855f7", width=2),
         )
 
         fig.add_shape(
             type="circle",
-            x0=0.75, y0=0.15, x1=1.85, y1=1.55,
-            fillcolor="rgba(34,197,94,0.45)",
+            x0=2.5, y0=0.8, x1=5.5, y1=4.8,
+            fillcolor="rgba(34,197,94,0.4)",
             line=dict(color="#22c55e", width=2),
         )
 
-        # =========================
-        # LABELS
-        # =========================
-        fig.add_annotation(
-            x=0.6, y=0.85,
-            text=f"<b>TQ</b><br>{tq_total}<br>{tq_pct}%",
-            showarrow=False,
-            font=dict(color="white", size=14)
-        )
+        # SIMPLE LABELS (ONLY 3 — CLEAN)
+        fig.add_annotation(x=2.5, y=2.5,
+            text=f"<b>TQ</b><br>{tq_total}",
+            showarrow=False, font=dict(color="white"))
 
-        fig.add_annotation(
-            x=1.65, y=0.9,
-            text=f"<b>TOTAL</b><br>{total}<br>100%",
-            showarrow=False,
-            font=dict(color="white", size=16)
-        )
+        fig.add_annotation(x=4.5, y=2.5,
+            text=f"<b>TOTAL</b><br>{total}",
+            showarrow=False, font=dict(color="white"))
 
-        fig.add_annotation(
-            x=2.2, y=0.85,
-            text=f"<b>RFI</b><br>{rfi_total}<br>{rfi_pct}%",
-            showarrow=False,
-            font=dict(color="white", size=14)
-        )
+        fig.add_annotation(x=6.0, y=2.5,
+            text=f"<b>RFI</b><br>{rfi_total}",
+            showarrow=False, font=dict(color="white"))
 
         # =========================
-        # RIGHT KPI PANEL TEXT (CLEAN BULLETS)
+        # RIGHT PANEL TEXT (ONLY PLACE FOR KPI TEXT)
         # =========================
         fig.add_annotation(
-            x=3.05, y=1.55,
+            x=8.4, y=5.0,
             text=f"""
 ⚙ <b>Summary</b><br><br>
 
@@ -161,36 +151,36 @@ def render_tracker(df):
 <b>{overdue}</b>
 """,
             showarrow=False,
-            font=dict(color="white", size=12),
-            align="left"
+            align="left",
+            font=dict(color="white", size=12)
         )
 
         # =========================
-        # LAYOUT
+        # FINAL LAYOUT
         # =========================
         fig.update_layout(
-            height=420,
+            height=450,
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[-0.6, 3.6]),
-            yaxis=dict(visible=False, range=[-0.2, 1.9]),
+            xaxis=dict(visible=False, range=[0, 10]),
+            yaxis=dict(visible=False, range=[0, 6]),
         )
 
         st.plotly_chart(fig, use_container_width=True)
 
     # =========================
-    # STREAMLIT SIDE PANEL
+    # STREAMLIT SIDE SUMMARY
     # =========================
     with right:
         st.markdown("#### ⚙ Summary")
 
         st.markdown(f"""
-🔵 **TQ Not Responded:** {tq_not} ({tq_not_pct}%)
+🔵 TQ Not Responded: **{tq_not} ({tq_not_pct}%)**
 
-🟢 **RFI Not Responded:** {rfi_not} ({rfi_not_pct}%)
+🟢 RFI Not Responded: **{rfi_not} ({rfi_not_pct}%)**
 
-⚫ **Total Not Responded:** {total_not} ({total_not_pct}%)
+⚫ Total Not Responded: **{total_not} ({total_not_pct}%)**
 """)
 
         st.error(f"⚠ Overdue > 7 Days: {overdue}")

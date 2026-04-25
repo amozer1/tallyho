@@ -7,23 +7,25 @@ def render_header():
     <style>
 
     /* =========================
-       HEADER CONTAINER
+       MAIN HEADER BAR
     ========================= */
     .header-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 20px;
 
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.25);
         border-radius: 16px;
+
         padding: 16px 20px;
         box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
+
+        margin-bottom: 10px;
     }
 
     /* =========================
-       LEFT BRAND
+       LEFT SECTION (BRAND)
     ========================= */
     .brand {
         display: flex;
@@ -47,6 +49,10 @@ def render_header():
        CENTER STATUS
     ========================= */
     .status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
         color: #cbd5e1;
         font-size: 13px;
         font-weight: 600;
@@ -57,9 +63,6 @@ def render_header():
         background: rgba(122, 60, 255, 0.12);
         border: 1px solid rgba(122, 60, 255, 0.25);
 
-        display: flex;
-        align-items: center;
-        gap: 6px;
         white-space: nowrap;
     }
 
@@ -94,6 +97,7 @@ def render_header():
     .export {
         background: linear-gradient(135deg, #7a3cff 0%, #8b5cf6 100%);
         color: white;
+
         font-size: 13px;
         font-weight: 800;
 
@@ -102,24 +106,30 @@ def render_header():
 
         box-shadow: 0 0 12px rgba(122, 60, 255, 0.35);
         text-align: center;
+
         cursor: pointer;
     }
 
     .export:hover {
-        transform: scale(1.02);
+        transform: scale(1.03);
         transition: 0.2s ease-in-out;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
+    # =========================
+    # HEADER HTML
+    # =========================
     st.markdown(f"""
     <div class="header-bar">
 
         <!-- LEFT -->
         <div class="brand">
             <div class="title">TQ / RFI Intelligence Hub</div>
-            <div class="subtitle">Project Controls • SLA Monitoring • Response Analytics</div>
+            <div class="subtitle">
+                Project Controls • SLA Monitoring • Response Analytics
+            </div>
         </div>
 
         <!-- CENTER -->

@@ -7,9 +7,6 @@ def render_header():
     st.markdown("""
     <style>
 
-    /* =========================
-       MAIN HEADER BAR
-    ========================= */
     .header-bar {
         display: flex;
         justify-content: space-between;
@@ -24,9 +21,6 @@ def render_header():
         margin-bottom: 10px;
     }
 
-    /* =========================
-       LEFT SECTION
-    ========================= */
     .brand {
         display: flex;
         flex-direction: column;
@@ -36,7 +30,6 @@ def render_header():
         color: white;
         font-size: 24px;
         font-weight: 900;
-        letter-spacing: 0.4px;
     }
 
     .subtitle {
@@ -45,9 +38,6 @@ def render_header():
         margin-top: 4px;
     }
 
-    /* =========================
-       CENTER STATUS
-    ========================= */
     .status {
         display: flex;
         align-items: center;
@@ -67,7 +57,6 @@ def render_header():
 
     .status-dot {
         color: #22c55e;
-        font-size: 14px;
         animation: pulse 1.8s infinite;
     }
 
@@ -77,9 +66,6 @@ def render_header():
         100% { opacity: 1; }
     }
 
-    /* =========================
-       RIGHT SECTION
-    ========================= */
     .right {
         display: flex;
         flex-direction: column;
@@ -94,7 +80,7 @@ def render_header():
     }
 
     .export {
-        background: linear-gradient(135deg, #7a3cff 0%, #8b5cf6 100%);
+        background: linear-gradient(135deg, #7a3cff, #8b5cf6);
         color: white;
 
         font-size: 13px;
@@ -102,15 +88,7 @@ def render_header():
 
         padding: 10px 14px;
         border-radius: 10px;
-
         text-align: center;
-        box-shadow: 0 0 12px rgba(122, 60, 255, 0.35);
-        cursor: pointer;
-    }
-
-    .export:hover {
-        transform: scale(1.02);
-        transition: 0.2s ease-in-out;
     }
 
     </style>

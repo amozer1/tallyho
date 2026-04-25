@@ -4,7 +4,7 @@ import pandas as pd
 from components.sidebar import render_sidebar
 from components.header import render_header
 from components.tracker import render_tracker
-
+from components.outstanding import render_outstanding
 
 # =========================
 # PAGE CONFIG (MUST BE FIRST)

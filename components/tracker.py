@@ -39,19 +39,56 @@ def render_tracker(df):
         base = base if base > 0 else 1
         pct = round((value / base) * 100, 1)
 
-        fig = go.Figure(go.Pie(
-            values=[value, base - value],
-            hole=0.78,
-            marker=dict(colors=[color, "#eef2f7"]),
-            textinfo="none"
-        ))
+        col1, col2 = st.columns([1, 1])
 
-        fig.update_layout(
-            height=260,
-            showlegend=False,
-            margin=dict(t=0, b=0, l=0, r=0),
-            paper_bgcolor="rgba(0,0,0,0)"
-        )
+        with col1:
+            fig = go.Figure(go.Pie(
+                values=[value, base - value],
+                hole=0.78,
+                marker=dict(colors=[color, "#eef2f7"]),
+                textinfo="none"
+            ))
+
+            fig.update_layout(
+                height=260,
+                margin=dict(t=0, b=0, l=0, r=0),
+                showlegend=False,
+                paper_bgcolor="rgba(0,0,0,0)"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            # 🚨 DO NOT print HTML under chart anymore
+
+        with col2:
+            # ✅ PROPER KPI CARD (NOT FLOATING HTML)
+            st.markdown(f"""
+            <div style="
+                height:260px;
+                display:flex;
+                flex-direction:column;
+                justify-content:center;
+                align-items:center;
+                text-align:center;
+                background:#f9fafb;
+                border-radius:12px;
+                border:1px solid #e5e7eb;
+            ">
+
+                <div style="font-size:34px;font-weight:700;color:#111827;">
+                    {value}
+                </div>
+
+                <div style="font-size:14px;color:#6b7280;margin-top:6px;">
+                    {label}
+                </div>
+
+                <div style="font-size:13px;color:#9ca3af;margin-top:4px;">
+                    {pct}%
+                </div>
+
+            </div>
+            """, unsafe_allow_html=True)
 
         # 🔵 chart only (clean ring)
         st.plotly_chart(fig, use_container_width=True)

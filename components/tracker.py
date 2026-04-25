@@ -60,19 +60,19 @@ def render_tracker(df):
     left, right = st.columns([2.5, 1])
 
     # =========================
-    # LEFT SIDE VISUAL
+    # LEFT VISUAL DASHBOARD
     # =========================
     with left:
 
         fig = go.Figure()
 
         # =========================
-        # OUTER BORDER (CARD)
+        # OUTER CARD BORDER
         # =========================
         fig.add_shape(
             type="rect",
             x0=-0.4, y0=-0.3,
-            x1=3.9, y1=2.1,
+            x1=4.2, y1=2.2,
             line=dict(color="rgba(255,255,255,0.25)", width=2),
             fillcolor="rgba(255,255,255,0.02)",
             layer="below"
@@ -82,53 +82,51 @@ def render_tracker(df):
         # TITLE
         # =========================
         fig.add_annotation(
-            x=1.7, y=1.95,
+            x=1.8, y=2.05,
             text="<b>TQ AND RFI OVERVIEW</b>",
             showarrow=False,
             font=dict(size=22, color="white")
         )
 
         # =========================
-        # CIRCLES (SAME SIZE)
+        # SAME SIZE CIRCLES
         # =========================
 
-        radius = 1.1
+        size = 1.2
 
-        # LEFT - TQ (blue)
+        # TQ (blue)
         fig.add_shape(
             type="circle",
-            x0=0.2, y0=0.25,
-            x1=0.2 + radius, y1=0.25 + radius,
+            x0=0.2, y0=0.3,
+            x1=0.2 + size, y1=0.3 + size,
             fillcolor="rgba(59,130,246,0.45)",
             line=dict(color="#3b82f6", width=4),
             layer="below"
         )
 
-        # RIGHT - RFI (green)
+        # RFI (green)
         fig.add_shape(
             type="circle",
-            x0=2.0, y0=0.25,
-            x1=2.0 + radius, y1=0.25 + radius,
+            x0=2.2, y0=0.3,
+            x1=2.2 + size, y1=0.3 + size,
             fillcolor="rgba(34,197,94,0.45)",
             line=dict(color="#22c55e", width=4),
             layer="below"
         )
 
-        # =========================
-        # MIDDLE - TOTAL (LIGHT RED, DOMINANT)
-        # =========================
+        # TOTAL (LIGHT RED, DOMINANT)
         fig.add_shape(
             type="circle",
-            x0=1.1, y0=0.15,
-            x1=1.1 + radius + 0.2,
-            y1=0.15 + radius + 0.2,
-            fillcolor="rgba(255,99,99,0.65)",  # light red
+            x0=1.2, y0=0.15,
+            x1=1.2 + size + 0.2,
+            y1=0.15 + size + 0.2,
+            fillcolor="rgba(255,120,120,0.65)",
             line=dict(color="#ff4d4d", width=5),
             layer="above"
         )
 
         # =========================
-        # TEXT (READABLE CARDS)
+        # READABLE LABELS
         # =========================
 
         def label(x, y, title, value, pct):
@@ -151,23 +149,24 @@ def render_tracker(df):
                 """
             )
 
-        label(0.65, 0.75, "TQ", tq_total, tq_pct)
-        label(1.75, 0.85, "TOTAL", total, 100)
-        label(2.75, 0.75, "RFI", rfi_total, rfi_pct)
+        label(0.8, 0.8, "TQ", tq_total, tq_pct)
+        label(1.8, 0.9, "TOTAL", total, 100)
+        label(2.8, 0.8, "RFI", rfi_total, rfi_pct)
 
         # =========================
-        # LAYOUT
+        # LAYOUT FIX (IMPORTANT)
         # =========================
         fig.update_layout(
-            height=400,
+            height=420,
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[-0.5, 4.2]),
-            yaxis=dict(visible=False, range=[-0.4, 2.3]),
+            xaxis=dict(visible=False, range=[-0.5, 4.5]),
+            yaxis=dict(visible=False, range=[-0.5, 2.5]),
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        # ✅ FIXED STREAMLIT CALL
+        st.plotly_chart(fig, width="stretch")
 
     # =========================
     # RIGHT PANEL

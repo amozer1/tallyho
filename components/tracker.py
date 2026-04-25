@@ -7,7 +7,7 @@ from datetime import datetime
 def render_tracker(df):
 
     # =========================
-    # SAFETY CHECK
+    # SAFETY
     # =========================
     if df is None or df.empty:
         st.warning("No data available.")
@@ -19,11 +19,11 @@ def render_tracker(df):
     required_cols = ["doc type", "date sent", "reply date", "status"]
 
     if not all(col in df.columns for col in required_cols):
-        st.error("Missing required columns in dataset.")
+        st.error("Missing required columns.")
         return
 
     # =========================
-    # DATA PROCESSING
+    # DATA
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
@@ -51,13 +51,10 @@ def render_tracker(df):
     # =========================
     st.markdown("## 📊 TQ & RFI Tracker Overview")
 
-    # =========================
-    # LAYOUT
-    # =========================
     left, right = st.columns([1.7, 1])
 
     # =========================
-    # KPI CIRCLE FUNCTION (FIXED CENTER)
+    # KPI CIRCLE (TRUE CENTERED CARD)
     # =========================
     def kpi_circle(value, base, color, label, key):
 
@@ -66,28 +63,40 @@ def render_tracker(df):
 
         fig = go.Figure(go.Pie(
             values=[value, base - value],
-            hole=0.78,
-            marker=dict(colors=[color, "#eef2f7"]),
+            hole=0.80,
+            marker=dict(colors=[color, "#e5e7eb"]),
             textinfo="none"
         ))
 
         fig.update_layout(
-            height=260,
-            showlegend=False,
+            height=270,
             margin=dict(t=10, b=10, l=10, r=10),
+            showlegend=False,
             paper_bgcolor="rgba(0,0,0,0)"
         )
 
         # =========================
-        # TRUE CENTER KPI TEXT
+        # CLEAN BACKGROUND CARD INSIDE DONUT
+        # =========================
+        fig.add_shape(
+            type="circle",
+            x0=0.32, x1=0.68,
+            y0=0.32, y1=0.68,
+            fillcolor="white",
+            line=dict(color="rgba(0,0,0,0)"),
+            layer="above"
+        )
+
+        # =========================
+        # CENTER KPI TEXT (PROPERLY ALIGNED)
         # =========================
         fig.add_annotation(
             x=0.5,
-            y=0.5,
+            y=0.52,
             text=f"""
-            <b style='font-size:24px'>{value}</b><br>
-            <span style='font-size:13px;color:#6b7280'>{label}</span><br>
-            <span style='font-size:12px;color:#9ca3af'>{pct}%</span>
+            <b style='font-size:26px;color:#111827'>{value}</b><br>
+            <span style='font-size:13px;color:#374151'>{label}</span><br>
+            <span style='font-size:12px;color:#6b7280'>{pct}%</span>
             """,
             showarrow=False,
             align="center"
@@ -103,16 +112,16 @@ def render_tracker(df):
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            kpi_circle(tq_total, total, "#3b82f6", "TQ", "tq_kpi")
+            kpi_circle(tq_total, total, "#3b82f6", "Total TQ", "kpi_tq")
 
         with c2:
-            kpi_circle(rfi_total, total, "#f59e0b", "RFI", "rfi_kpi")
+            kpi_circle(rfi_total, total, "#f59e0b", "Total RFI", "kpi_rfi")
 
         with c3:
-            kpi_circle(combined_total, total, "#22c55e", "TOTAL", "total_kpi")
+            kpi_circle(combined_total, total, "#22c55e", "TQ + RFI", "kpi_total")
 
     # =========================
-    # RIGHT CONTROL PANEL
+    # RIGHT PANEL
     # =========================
     with right:
 

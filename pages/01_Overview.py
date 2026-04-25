@@ -1,114 +1,195 @@
 import streamlit as st
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
 from utils.data_loader import load_data
 from utils.metrics import compute_metrics
-from utils.theme import *
 
-st.set_page_config(layout="wide")
+# ---------------------------------------------------
+# PAGE CONFIG
+# ---------------------------------------------------
+st.set_page_config(layout="wide", page_title="Executive Control Hub")
 
-# ================= THEME =================
-st.markdown(f"""
+# ---------------------------------------------------
+# CUSTOM STYLE
+# ---------------------------------------------------
+st.markdown("""
 <style>
-.block-container {{
-    padding: 1rem 2rem;
-}}
-
-[data-testid="stMetric"] {{
-    background-color: {CARD_BG};
-    border: 1px solid {BORDER};
-    border-radius: 12px;
-    padding: 12px;
-    box-shadow: 0px 0px 10px rgba(77,163,255,0.15);
-    color: {TEXT};
-}}
+.block-container {
+    padding-top: 1rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    max-width: 100%;
+}
+[data-testid="stMetric"] {
+    background: #111827;
+    border: 1px solid #243244;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 0 10px rgba(77,163,255,0.12);
+}
+h1,h2,h3 {
+    color: white;
+}
 </style>
 """, unsafe_allow_html=True)
 
-
-# ================= DATA =================
-file = st.file_uploader("Upload Excel", type=["xlsx"])
-df = load_data(file) if file else load_data("data/TQ_TH.xlsx")
-
+# ---------------------------------------------------
+# LOAD DATA
+# ---------------------------------------------------
+df = load_data("data/TQ_TH.xlsx")
 m = compute_metrics(df)
 
+# ---------------------------------------------------
+# HEADER
+# ---------------------------------------------------
+col1, col2 = st.columns([4,1])
 
-# ================= KPI COLOUR METRICS =================
-c1, c2, c3, c4, c5 = st.columns(5)
+with col1:
+    st.title("📊 TQ & RFI ML Dashboard")
+    st.caption("Project Overview & Response Analytics")
 
-c1.metric("TQs", m["tq"], delta_color="off")
-c2.metric("RFIs", m["rfi"], delta_color="off")
-
-c3.metric("Open Items", m["open"], delta_color="inverse")
-
-c4.metric("Overdue >7d", m["overdue7"], delta_color="inverse")
-
-c5.metric("SLA %", f"{m['sla']}%", delta_color="normal")
+with col2:
+    st.markdown("### 📅 Today")
+    st.write(pd.Timestamp.today().strftime("%d %b %Y"))
+    st.download_button("⬇ Download Report", "Report Placeholder")
 
 st.markdown("---")
 
+# ===================================================
+# ROW 1 KPI CARDS
+# ===================================================
+k1, k2, k3, k4, k5, k6 = st.columns(6)
 
-# ================= MAIN GRID =================
+k1.metric("Total TQs", m["tq"])
+k2.metric("Total RFIs", m["rfi"])
+k3.metric("Closed", len(df[df["Reply Date"].notna()]))
+k4.metric("Open", m["open"])
+k5.metric("Overdue >7d", m["overdue7"])
+k6.metric("SLA %", f"{m['sla']}%")
+
+st.markdown("##")
+
+# ===================================================
+# ROW 2 OVERVIEW + KPI STACK
+# ===================================================
 left, right = st.columns([2,1])
 
-
-# ================= LEFT =================
+# ---------------- LEFT VENN / PIE ----------------
 with left:
+    st.subheader("🧠 Project Overview Analytics")
 
-    st.subheader("🟣 TQ vs RFI Intelligence")
-
-    fig = px.pie(
-        names=["TQ", "RFI"],
-        values=[m["tq"], m["rfi"]],
-        hole=0.6,
-        color_discrete_sequence=[BLUE, PINK]
+    fig_pie = px.pie(
+        names=["TQ Only", "RFI Only", "Both Risk"],
+        values=[m["tq"], m["rfi"], m["overdue7"]],
+        hole=0.55,
+        color_discrete_sequence=["#4DA3FF", "#EC4899", "#FACC15"]
     )
+    st.plotly_chart(fig_pie, use_container_width=True)
 
-    st.plotly_chart(fig, use_container_width=True)
+# ---------------- RIGHT KPI MINI ----------------
+with right:
+    st.subheader("📌 Response Summary")
 
+    s1, s2 = st.columns(2)
+    s1.metric("Not Responded", m["overdue7"])
+    s2.metric("Critical >30d", m["overdue30"])
 
-    st.subheader("📊 Communication Trend")
+    s3, s4 = st.columns(2)
+    s3.metric("TQ Risk", f"{round((m['tq']/len(df))*100,1)}%")
+    s4.metric("RFI Risk", f"{round((m['rfi']/len(df))*100,1)}%")
 
-    trend = m["df"].groupby(m["df"]["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
+st.markdown("##")
 
-    fig2 = go.Figure()
+# ===================================================
+# ROW 3 TREND + AGEING + RISK
+# ===================================================
+c1, c2, c3 = st.columns([1.5,1.2,1])
+
+# ---------------- TREND ----------------
+with c1:
+    st.subheader("📈 TQ & RFI Trend")
+
+    trend = df.groupby(df["Date Sent"].dt.date)["Doc Type"].value_counts().unstack().fillna(0)
+
+    fig_trend = go.Figure()
 
     if "TQ" in trend:
-        fig2.add_trace(go.Scatter(
+        fig_trend.add_trace(go.Scatter(
+            x=trend.index,
             y=trend["TQ"],
+            mode="lines+markers",
             name="TQ",
-            line=dict(color=YELLOW, width=3)
+            line=dict(color="#FACC15", width=3)
         ))
 
     if "RFI" in trend:
-        fig2.add_trace(go.Scatter(
+        fig_trend.add_trace(go.Scatter(
+            x=trend.index,
             y=trend["RFI"],
+            mode="lines+markers",
             name="RFI",
-            line=dict(color=RED, width=3)
+            line=dict(color="#EF4444", width=3)
         ))
 
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig_trend, use_container_width=True)
 
-
-# ================= RIGHT =================
-with right:
-
-    st.subheader("🧠 Ageing Heat Map")
+# ---------------- AGEING ----------------
+with c2:
+    st.subheader("⏳ Outstanding by Age")
 
     bins = [0,2,7,14,30,999]
     labels = ["0-2","3-7","8-14","15-30","30+"]
 
-    temp = m["df"].copy()
+    temp = df.copy()
     temp["AgeBand"] = pd.cut(temp["AgeDays"], bins=bins, labels=labels)
 
     age_counts = temp["AgeBand"].value_counts().reindex(labels).fillna(0)
 
-    st.bar_chart(age_counts)
+    fig_age = px.bar(
+        x=age_counts.values,
+        y=age_counts.index,
+        orientation="h",
+        text=age_counts.values,
+        color=age_counts.values,
+        color_continuous_scale="RdYlGn_r"
+    )
+    st.plotly_chart(fig_age, use_container_width=True)
 
-    st.markdown("")
+# ---------------- RISK ----------------
+with c3:
+    st.subheader("🤖 AI Risk")
 
-    st.subheader("⚠ Risk Summary")
+    risk_score = min(100, (m["overdue7"]/max(1,len(df)))*100)
 
-    st.metric("Critical (>30d)", m["overdue30"], delta_color="inverse")
-    st.metric("Warning (>7d)", m["overdue7"], delta_color="inverse")
+    fig_gauge = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=risk_score,
+        title={"text":"Risk %"},
+        gauge={
+            "axis": {"range":[0,100]},
+            "bar":{"color":"#EF4444"},
+            "steps":[
+                {"range":[0,40],"color":"green"},
+                {"range":[40,70],"color":"yellow"},
+                {"range":[70,100],"color":"red"}
+            ]
+        }
+    ))
+    st.plotly_chart(fig_gauge, use_container_width=True)
+
+st.markdown("##")
+
+# ===================================================
+# ROW 4 AI INSIGHTS
+# ===================================================
+st.subheader("🧠 AI Insights & Recommendations")
+
+ins1, ins2 = st.columns(2)
+
+with ins1:
+    st.info(f"🔴 {m['overdue7']} items are at high risk of delay.")
+
+with ins2:
+    st.warning("🟡 Mechanical discipline likely has highest overdue items.")

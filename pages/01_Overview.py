@@ -26,8 +26,8 @@ def classify(data):
     outstanding_items = data[data["AgeDays"] > 7]
     return len(open_items), len(closed_items), len(outstanding_items)
 
-tq_open, tq_closed, tq_out = classify(tq)
-rfi_open, rfi_closed, rfi_out = classify(rfi)
+tq_open, tq_closed, tq_outstanding = classify(tq)
+rfi_open, rfi_closed, rfi_outstanding = classify(rfi)
 
 def pct(x, total):
     return round((x / total) * 100, 1) if total else 0
@@ -36,7 +36,7 @@ tq_total = len(tq)
 rfi_total = len(rfi)
 
 # =========================
-# HEADER (IMPROVED + PROFESSIONAL)
+# HEADER (PROFESSIONAL BOXED)
 # =========================
 st.markdown(f"""
 <div style="
@@ -74,16 +74,16 @@ st.markdown(f"""
 </div>
 
 <hr style="
-    margin-top:14px;
-    margin-bottom:20px;
     border:none;
     height:1px;
     background:linear-gradient(to right, transparent, #00bfff55, transparent);
+    margin-top:12px;
+    margin-bottom:20px;
 ">
 """, unsafe_allow_html=True)
 
 # =========================
-# SAFE SVG RING FUNCTION (UNCHANGED)
+# SAFE SVG RING FUNCTION (UNCHANGED STRUCTURE)
 # =========================
 def render_ring(title, open_v, closed_v, out_v, total, color):
 
@@ -128,7 +128,7 @@ def render_ring(title, open_v, closed_v, out_v, total, color):
         </text>
 
         <text x="18" y="25" text-anchor="middle" fill="#FF4B4B" font-size="1.3">
-            Out {out_v} ({pct(out_v,total)}%)
+            Outstanding {out_v} ({pct(out_v,total)}%)
         </text>
 
     </svg>
@@ -136,12 +136,18 @@ def render_ring(title, open_v, closed_v, out_v, total, color):
     """
 
 # =========================
-# CIRCLES DISPLAY (UNCHANGED)
+# DISPLAY CIRCLES
 # =========================
 c1, c2 = st.columns(2)
 
 with c1:
-    components.html(render_ring("TQ", tq_open, tq_closed, tq_out, tq_total, "#FFA500"), height=380)
+    components.html(
+        render_ring("TQ", tq_open, tq_closed, tq_outstanding, tq_total, "#FFA500"),
+        height=380
+    )
 
 with c2:
-    components.html(render_ring("RFI", rfi_open, rfi_closed, rfi_out, rfi_total, "#2F80ED"), height=380)
+    components.html(
+        render_ring("RFI", rfi_open, rfi_closed, rfi_outstanding, rfi_total, "#2F80ED"),
+        height=380
+    )

@@ -5,6 +5,9 @@ from datetime import datetime
 
 def render_tracker(df):
 
+    # =========================
+    # SAFETY CHECK
+    # =========================
     if df is None or df.empty:
         st.warning("No data available.")
         return
@@ -14,12 +17,12 @@ def render_tracker(df):
 
     required = ["doc type", "date sent", "reply date", "status"]
 
-    if not all(c in df.columns for c in required):
-        st.error("Missing required columns")
+    if not all(col in df.columns for col in required):
+        st.error("Missing required columns in dataset")
         return
 
     # =========================
-    # DATA
+    # CLEAN DATA
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
@@ -34,7 +37,10 @@ def render_tracker(df):
 
     tq_total = len(tq)
     rfi_total = len(rfi)
-    combined = tq_total + rfi_total
+    combined_total = tq_total + rfi_total
+
+    tq_pct = round(tq_total / total * 100, 1) if total else 0
+    rfi_pct = round(rfi_total / total * 100, 1) if total else 0
 
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
@@ -50,64 +56,47 @@ def render_tracker(df):
     left, right = st.columns([2, 1])
 
     # =========================
-    # KPI BOX (STREAMLIT NATIVE)
-    # =========================
-    def kpi_box(value, label, pct, color):
-
-        with st.container(border=True):
-
-            st.markdown(
-                f"""
-                <div style="
-                    text-align:center;
-                    padding:10px;
-                ">
-                    <div style="font-size:38px;font-weight:700;color:{color};">
-                        {value}
-                    </div>
-
-                    <div style="font-size:15px;margin-top:5px;font-weight:600;">
-                        {label}
-                    </div>
-
-                    <div style="font-size:13px;color:gray;">
-                        {pct}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-    # =========================
-    # LEFT KPIs
+    # LEFT KPI SECTION
     # =========================
     with left:
 
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            kpi_box(tq_total, "TOTAL TQ", f"{round(tq_total/total*100,1) if total else 0}%", "#3b82f6")
+            st.metric(
+                label="TOTAL TQ",
+                value=tq_total,
+                delta=f"{tq_pct}% of total"
+            )
 
         with c2:
-            kpi_box(rfi_total, "TOTAL RFI", f"{round(rfi_total/total*100,1) if total else 0}%", "#f59e0b")
+            st.metric(
+                label="TOTAL RFI",
+                value=rfi_total,
+                delta=f"{rfi_pct}% of total"
+            )
 
         with c3:
-            kpi_box(combined, "TQ + RFI", "100%", "#22c55e")
+            st.metric(
+                label="TOTAL (TQ + RFI)",
+                value=combined_total,
+                delta="100%"
+            )
 
     # =========================
-    # RIGHT PANEL
+    # RIGHT CONTROL PANEL
     # =========================
     with right:
 
         st.markdown("### ⚙ Control Panel")
 
-        st.write(f"🔵 TQ not responded: **{tq_not}** ({round(tq_not/tq_total*100,1) if tq_total else 0}%)")
-        st.write(f"🟠 RFI not responded: **{rfi_not}** ({round(rfi_not/rfi_total*100,1) if rfi_total else 0}%)")
-        st.write(f"⚫ Total not responded: **{total_not}** ({round(total_not/total*100,1) if total else 0}%)")
+        st.metric("TQ not responded", tq_not)
+        st.metric("RFI not responded", rfi_not)
+        st.metric("Total not responded", total_not)
 
     # =========================
-    # FOOTER
+    # FOOTER RISK
     # =========================
     st.markdown("---")
 
-    st.error(f"⚠ Outstanding > 7 Days: {overdue} ({round(overdue/total*100,1) if total else 0}%)")
+    st.error(f"⚠ Outstanding > 7 Days: {overdue}")

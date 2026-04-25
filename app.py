@@ -28,6 +28,44 @@ def load_data():
 df = load_data()
 
 # =========================
+# METRICS FOR OVERDUE ALERT
+# =========================
+
+df = df.copy()
+df.columns = [c.strip().lower() for c in df.columns]
+
+df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
+df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
+
+today = pd.Timestamp(pd.Timestamp.today().date())
+df["age"] = (today - df["date sent"]).dt.days
+
+total = len(df)
+
+tq = df[df["doc type"].str.lower() == "tq"]
+rfi = df[df["doc type"].str.lower() == "rfi"]
+
+tq_total = len(tq)
+rfi_total = len(rfi)
+
+tq_not = len(tq[tq["reply date"].isna()])
+rfi_not = len(rfi[rfi["reply date"].isna()])
+total_not = len(df[df["reply date"].isna()])
+
+tq_not_pct = round((tq_not / tq_total) * 100, 1) if tq_total else 0
+rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
+
+overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
+
+# =========================
 # TRACKER MODULE (STAGE 3 ANALYTICS)
 # =========================
+render_overdue_alert(
+    overdue=overdue,
+    total=total,
+    tq_not=tq_not,
+    rfi_not=rfi_not,
+    tq_not_pct=tq_not_pct,
+    rfi_not_pct=rfi_not_pct
+)
 render_tracker(df)

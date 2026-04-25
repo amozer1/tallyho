@@ -6,6 +6,9 @@ from datetime import datetime
 
 def render_tracker(df):
 
+    # =========================
+    # SAFETY CHECK
+    # =========================
     if df is None or df.empty:
         st.warning("No data available.")
         return
@@ -13,6 +16,15 @@ def render_tracker(df):
     df = df.copy()
     df.columns = [c.strip().lower() for c in df.columns]
 
+    required = ["doc type", "date sent", "reply date", "status"]
+
+    if not all(col in df.columns for col in required):
+        st.error("Missing required columns in dataset.")
+        return
+
+    # =========================
+    # DATA PROCESSING
+    # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
@@ -28,101 +40,69 @@ def render_tracker(df):
     rfi_total = len(rfi)
     combined_total = tq_total + rfi_total
 
-    overdue = len(df[df["age"] > 7])
+    tq_not = len(tq[tq["reply date"].isna()])
+    rfi_not = len(rfi[rfi["reply date"].isna()])
+    total_not = len(df[df["reply date"].isna()])
 
+    overdue_count = len(df[df["age"] > 7])
+
+    # =========================
+    # LAYOUT
+    # =========================
     left, right = st.columns([1.7, 1])
 
+    st.markdown("### 📊 TQ & RFI Tracker Overview")
+
     # =========================
-    # 🎯 PRO KPI CIRCLE
+    # KPI CIRCLE FUNCTION (FIXED)
     # =========================
-    def kpi_circle(value, base, color, label):
+    def kpi_circle(value, base, color, label, idx):
+
         base = base if base > 0 else 1
         pct = round((value / base) * 100, 1)
 
-        col1, col2 = st.columns([1, 1])
+        fig = go.Figure(go.Pie(
+            values=[value, base - value],
+            hole=0.78,
+            marker=dict(colors=[color, "#eef2f7"]),
+            textinfo="none"
+        ))
 
-        with col1:
-            fig = go.Figure(go.Pie(
-                values=[value, base - value],
-                hole=0.78,
-                marker=dict(colors=[color, "#eef2f7"]),
-                textinfo="none"
-            ))
+        fig.update_layout(
+            height=260,
+            showlegend=False,
+            margin=dict(t=0, b=0, l=0, r=0),
+            paper_bgcolor="rgba(0,0,0,0)"
+        )
 
-            fig.update_layout(
-                height=260,
-                margin=dict(t=0, b=0, l=0, r=0),
-                showlegend=False,
-                paper_bgcolor="rgba(0,0,0,0)"
-            )
+        # =========================
+        # IMPORTANT FIX: UNIQUE KEY
+        # =========================
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            key=f"kpi_{label}_{idx}"
+        )
 
-            st.plotly_chart(fig, use_container_width=True)
-
-            # 🚨 DO NOT print HTML under chart anymore
-
-        with col2:
-            # ✅ PROPER KPI CARD (NOT FLOATING HTML)
-            st.markdown(f"""
-            <div style="
-                height:260px;
-                display:flex;
-                flex-direction:column;
-                justify-content:center;
-                align-items:center;
-                text-align:center;
-                background:#f9fafb;
-                border-radius:12px;
-                border:1px solid #e5e7eb;
-            ">
-
-                <div style="font-size:34px;font-weight:700;color:#111827;">
-                    {value}
-                </div>
-
-                <div style="font-size:14px;color:#6b7280;margin-top:6px;">
-                    {label}
-                </div>
-
-                <div style="font-size:13px;color:#9ca3af;margin-top:4px;">
-                    {pct}%
-                </div>
-
-            </div>
-            """, unsafe_allow_html=True)
-
-        # 🔵 chart only (clean ring)
-        st.plotly_chart(fig, use_container_width=True)
-
-        # 🟢 PERFECT CENTER OVERLAY (REAL FIX)
+        # =========================
+        # CENTER TEXT (PRO CLEAN)
+        # =========================
         st.markdown(
             f"""
             <div style="
-                position: relative;
-                top: -170px;
-                text-align: center;
-                pointer-events: none;
+                text-align:center;
+                margin-top:-140px;
+                pointer-events:none;
             ">
-                <div style="
-                    font-size:26px;
-                    font-weight:700;
-                    color:#111827;
-                ">
+                <div style="font-size:26px;font-weight:700;color:#111827;">
                     {value}
                 </div>
 
-                <div style="
-                    font-size:13px;
-                    color:#6b7280;
-                    margin-top:-4px;
-                ">
+                <div style="font-size:13px;color:#6b7280;">
                     {label}
                 </div>
 
-                <div style="
-                    font-size:12px;
-                    color:#9ca3af;
-                    margin-top:2px;
-                ">
+                <div style="font-size:12px;color:#9ca3af;">
                     {pct}%
                 </div>
             </div>
@@ -131,21 +111,20 @@ def render_tracker(df):
         )
 
     # =========================
-    # LEFT
+    # LEFT SIDE (KPIs)
     # =========================
     with left:
-        st.markdown("### 📊 TQ & RFI Tracker")
 
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            kpi_circle(tq_total, total, "#3b82f6", "TQ")
+            kpi_circle(tq_total, total, "#3b82f6", "TQ", 1)
 
         with c2:
-            kpi_circle(rfi_total, total, "#f59e0b", "RFI")
+            kpi_circle(rfi_total, total, "#f59e0b", "RFI", 2)
 
         with c3:
-            kpi_circle(combined_total, total, "#22c55e", "TOTAL")
+            kpi_circle(combined_total, total, "#22c55e", "TOTAL", 3)
 
     # =========================
     # RIGHT PANEL
@@ -154,7 +133,7 @@ def render_tracker(df):
 
         st.markdown("### ⚙ Control Panel")
 
-        st.markdown("""
+        st.markdown(f"""
         <div style="
             background:#0f172a;
             color:#f8fafc;
@@ -162,13 +141,21 @@ def render_tracker(df):
             border-radius:14px;
             line-height:2;
         ">
-        KPI Status Summary
+
+        🔵 <b>TQ not responded:</b> {tq_not} ({round(tq_not/tq_total*100,1) if tq_total else 0}%)<br>
+
+        🟠 <b>RFI not responded:</b> {rfi_not} ({round(rfi_not/rfi_total*100,1) if rfi_total else 0}%)<br>
+
+        ⚫ <b>Total not responded:</b> {total_not} ({round(total_not/total*100,1) if total else 0}%)
+
         </div>
         """, unsafe_allow_html=True)
 
     # =========================
-    # FOOTER
+    # FOOTER RISK STRIP
     # =========================
+    st.markdown("<br>", unsafe_allow_html=True)
+
     st.markdown(f"""
     <div style="
         background:#fee2e2;
@@ -177,6 +164,6 @@ def render_tracker(df):
         border-radius:10px;
         font-weight:600;
     ">
-    ⚠ Outstanding > 7 Days: {overdue}
+    ⚠ Outstanding > 7 Days: {overdue_count} ({round(overdue_count/total*100,1) if total else 0}%)
     </div>
     """, unsafe_allow_html=True)

@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import plotly.graph_objects as go
 from utils.data_loader import load_data
 
 # =========================
@@ -101,112 +102,42 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# CLEAN VENN DASHBOARD (FIXED)
+# DONUT CHART (SEGMENTED CIRCLE)
 # =========================
 
-st.markdown("""
-<div style="
-    background:#0b1a2f;
-    padding:20px;
-    border-radius:18px;
-    border:1px solid rgba(0,191,255,0.2);
-">
-""", unsafe_allow_html=True)
+labels = ["TQ Overdue", "RFI Overdue", "Both Risk", "Other / Healthy"]
+values = [
+    len(tq_over),
+    len(rfi_over),
+    len(both_risk),
+    max(total_overdue - (len(tq_over) + len(rfi_over)), 0)
+]
 
-c1, c2, c3 = st.columns([1, 1.2, 1])
+colors = ["#00bfff", "#ff6bd6", "#00ffd5", "#1b2b3a"]
 
-# =========================
-# TQ OVERDUE
-# =========================
-with c1:
-    st.markdown(f"""
-    <div style="
-        width:140px;
-        height:140px;
-        border-radius:50%;
-        margin:auto;
-        background:rgba(0,150,255,0.18);
-        border:2px solid #00bfff;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        text-align:center;
-    ">
-        <div style="color:#00bfff;font-size:13px;font-weight:600;">
-            TQ Overdue
-        </div>
-        <div style="color:white;font-size:22px;font-weight:bold;">
-            {len(tq_over)}
-        </div>
-        <div style="color:#9fb3c8;font-size:12px;">
-            {pct(tq_over)}%
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+fig = go.Figure(
+    data=[
+        go.Pie(
+            labels=labels,
+            values=values,
+            hole=0.65,
+            marker=dict(colors=colors),
+            textinfo="label+percent",
+            hoverinfo="label+value"
+        )
+    ]
+)
 
-# =========================
-# BOTH RISK
-# =========================
-with c2:
-    st.markdown(f"""
-    <div style="
-        width:160px;
-        height:160px;
-        border-radius:50%;
-        margin:auto;
-        background:rgba(0,255,200,0.12);
-        border:2px solid #00ffd5;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        text-align:center;
-        transform: translateY(-8px);
-    ">
-        <div style="color:#00ffd5;font-size:12px;font-weight:600;">
-            Both Risk (Overlap)
-        </div>
-        <div style="color:white;font-size:22px;font-weight:bold;">
-            {len(both_risk)}
-        </div>
-        <div style="color:#9fb3c8;font-size:12px;">
-            {pct(both_risk)}%
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+fig.update_layout(
+    paper_bgcolor="#0b1a2f",
+    plot_bgcolor="#0b1a2f",
+    font=dict(color="white"),
+    margin=dict(t=30, b=10, l=10, r=10),
+    showlegend=True,
+    title="Overdue Risk Distribution"
+)
 
-# =========================
-# RFI OVERDUE
-# =========================
-with c3:
-    st.markdown(f"""
-    <div style="
-        width:140px;
-        height:140px;
-        border-radius:50%;
-        margin:auto;
-        background:rgba(255,100,255,0.12);
-        border:2px solid #ff6bd6;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        text-align:center;
-    ">
-        <div style="color:#ff6bd6;font-size:13px;font-weight:600;">
-            RFI Overdue
-        </div>
-        <div style="color:white;font-size:22px;font-weight:bold;">
-            {len(rfi_over)}
-        </div>
-        <div style="color:#9fb3c8;font-size:12px;">
-            {pct(rfi_over)}%
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("</div>", unsafe_allow_html=True)
+st.plotly_chart(fig, use_container_width=True)
 
 # =========================
 # KPI STRIP

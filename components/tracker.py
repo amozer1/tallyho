@@ -70,15 +70,29 @@ def render_tracker(df):
         fig = go.Figure()
 
         # =========================
-        # RECTANGLE BOUNDARY (MAIN CONTAINER)
+        # OUTER RECTANGLE BOUNDARY
         # =========================
         fig.add_shape(
             type="rect",
             x0=-0.2, y0=0.0,
-            x1=3.4, y1=1.7,
+            x1=3.4, y1=1.85,
             line=dict(color="rgba(255,255,255,0.6)", width=2),
             fillcolor="rgba(0,0,0,0)",
             layer="above"
+        )
+
+        # =========================
+        # HEADER INSIDE BOUNDARY
+        # =========================
+        fig.add_annotation(
+            x=1.6, y=1.72,
+            text="""
+            <b>Not Responded Within 7 Days</b><br>
+            <span style='font-size:13px; opacity:0.8;'>TQ & RFI AGING OVERVIEW</span>
+            """,
+            showarrow=False,
+            font=dict(color="white", size=18),
+            align="center"
         )
 
         # =========================
@@ -139,12 +153,12 @@ def render_tracker(df):
         # LAYOUT
         # =========================
         fig.update_layout(
-            height=340,
+            height=360,
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             margin=dict(l=0, r=0, t=0, b=0),
             xaxis=dict(visible=False, range=[-0.3, 3.5]),
-            yaxis=dict(visible=False, range=[0, 1.7]),
+            yaxis=dict(visible=False, range=[0, 1.9]),
         )
 
         st.plotly_chart(fig, use_container_width=True)

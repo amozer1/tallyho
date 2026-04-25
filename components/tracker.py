@@ -6,17 +6,20 @@ from datetime import datetime
 
 def render_tracker(df):
 
+    # =========================
+    # SAFETY CHECKS
+    # =========================
     if df is None or df.empty:
-        st.warning("No data available.")
+        st.warning("No data available in tracker.")
         return
 
     df = df.copy()
     df.columns = [c.strip().lower() for c in df.columns]
 
-    required = ["doc type", "date sent", "reply date", "status"]
+    required_cols = ["doc type", "date sent", "reply date", "status"]
 
-    if not all(col in df.columns for col in required):
-        st.error("Missing required columns in dataset.")
+    if not all(col in df.columns for col in required_cols):
+        st.error(f"Missing required columns: {required_cols}")
         return
 
     # =========================
@@ -30,15 +33,18 @@ def render_tracker(df):
 
     total = len(df)
 
-    tq = df[df["doc type"] == "tq"]
-    rfi = df[df["doc type"] == "rfi"]
+    # =========================
+    # FILTERS (LINKED TO YOUR DATA)
+    # =========================
+    tq = df[df["doc type"].str.lower() == "tq"]
+    rfi = df[df["doc type"].str.lower() == "rfi"]
 
     tq_total = len(tq)
     rfi_total = len(rfi)
     combined_total = tq_total + rfi_total
 
     # =========================
-    # RESPONSE METRICS
+    # NOT RESPONDED LOGIC
     # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
@@ -50,26 +56,31 @@ def render_tracker(df):
     overdue = df[df["age"] > 7]
     overdue_count = len(overdue)
 
-    # =========================
-    # LAYOUT
-    # =========================
+    # =========================================================
+    # 🟦 LEFT: KPI CIRCLES
+    # =========================================================
     left, right = st.columns([1.6, 1])
 
-    # =========================
-    # LEFT: KPI CIRCLES
-    # =========================
     with left:
 
         c1, c2, c3 = st.columns(3)
 
-        def circle(value, total, color, label):
+        def draw_kpi(value, base, color, label):
+            base = base if base > 0 else 1
+
             fig = go.Figure(go.Pie(
-                values=[value, max(total - value, 0)],
+                values=[value, base - value],
                 hole=0.72,
                 marker=dict(colors=[color, "#f3f4f6"]),
                 textinfo="none"
             ))
-            fig.update_layout(height=240, showlegend=False, margin=dict(t=10, b=10))
+
+            fig.update_layout(
+                height=240,
+                showlegend=False,
+                margin=dict(t=10, b=10)
+            )
+
             st.plotly_chart(fig, use_container_width=True)
 
             st.markdown(
@@ -83,17 +94,17 @@ def render_tracker(df):
             )
 
         with c1:
-            circle(tq_total, total, "#4da3ff", "TQ Volume")
+            draw_kpi(tq_total, total, "#4da3ff", "TQ Volume")
 
         with c2:
-            circle(rfi_total, total, "#fbbf24", "RFI Volume")
+            draw_kpi(rfi_total, total, "#fbbf24", "RFI Volume")
 
         with c3:
-            circle(combined_total, total, "#22c55e", "Total Workload")
+            draw_kpi(combined_total, total, "#22c55e", "Total Workload")
 
-    # =========================
-    # RIGHT: CONTROL PANEL
-    # =========================
+    # =========================================================
+    # 🟪 RIGHT: CONTROL PANEL
+    # =========================================================
     with right:
 
         st.markdown(f"""
@@ -114,9 +125,9 @@ def render_tracker(df):
         </div>
         """, unsafe_allow_html=True)
 
-    # =========================
-    # FOOTER: RISK STRIP
-    # =========================
+    # =========================================================
+    # 🟥 FOOTER: RISK STRIP
+    # =========================================================
     st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown(f"""

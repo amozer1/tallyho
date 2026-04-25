@@ -42,53 +42,56 @@ tq_total = len(tq)
 rfi_total = len(rfi)
 
 # =========================
-# HEADER (CLEAN + STABLE)
+# DOWNLOAD FILE PREPARATION
+# =========================
+output = io.BytesIO()
+df.to_excel(output, index=False)
+output.seek(0)
+
+# =========================
+# HEADER (TRUE HORIZONTAL FIX)
 # =========================
 st.markdown("---")
 
-col1, col2 = st.columns([3, 1])
+col1, col2 = st.columns([5, 1])
 
 with col1:
-    st.markdown("""
+    st.markdown(f"""
     <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
         background: linear-gradient(90deg, #0b1a2f, #0f2747);
         padding: 18px 22px;
         border-radius: 14px;
         border: 1px solid rgba(0,191,255,0.35);
         box-shadow: 0 6px 20px rgba(0,0,0,0.35);
     ">
-        <div style="color:white;font-size:22px;font-weight:800;">
-            TQ and RFI Dashboard
+
+        <!-- LEFT -->
+        <div>
+            <div style="color:white;font-size:22px;font-weight:800;">
+                TQ and RFI Dashboard
+            </div>
+            <div style="color:#9fb3c8;font-size:13px;margin-top:4px;">
+                Project Overview and Service Level Agreement Performance
+            </div>
         </div>
-        <div style="color:#9fb3c8;font-size:13px;margin-top:4px;">
-            Project Overview and Service Level Agreement Performance
+
+        <!-- RIGHT -->
+        <div style="text-align:right;">
+            <div style="color:white;font-size:15px;font-weight:600;">
+                {datetime.today().strftime('%d %b %Y')}
+            </div>
+            <div style="color:#9fb3c8;font-size:11px;margin-top:4px;">
+                Last Updated
+            </div>
         </div>
+
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
-
-    # =========================
-    # REAL DOWNLOAD (FIXED)
-    # =========================
-    output = io.BytesIO()
-    df.to_excel(output, index=False)
-    output.seek(0)
-
-    st.markdown(f"""
-    <div style="
-        background: linear-gradient(90deg, #0b1a2f, #0f2747);
-        padding: 18px 22px;
-        border-radius: 14px;
-        border: 1px solid rgba(0,191,255,0.35);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-        text-align:right;
-    ">
-        <div style="color:white;font-size:15px;font-weight:600;">
-            {datetime.today().strftime('%d %b %Y')}
-        </div>
-    """, unsafe_allow_html=True)
-
     st.download_button(
         label="⬇ Download Report",
         data=output,
@@ -96,19 +99,12 @@ with col2:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    st.markdown("""
-        <div style="color:#9fb3c8;font-size:11px;margin-top:6px;">
-            Last Updated
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
 st.markdown("---")
 
 # =========================
-# CIRCLE FUNCTION (UNCHANGED LOGIC)
+# CIRCLE FUNCTION
 # =========================
-def render_ring(title, open_v, closed_v, out_v, total, color):
+def render_ring(title, open_v, closed_v, out_v, total):
 
     return f"""
     <div style="display:flex;justify-content:center;">
@@ -160,12 +156,12 @@ c1, c2 = st.columns(2)
 
 with c1:
     components.html(
-        render_ring("TQ", tq_open, tq_closed, tq_outstanding, tq_total, "#FFA500"),
+        render_ring("TQ", tq_open, tq_closed, tq_outstanding, tq_total),
         height=380
     )
 
 with c2:
     components.html(
-        render_ring("RFI", rfi_open, rfi_closed, rfi_outstanding, rfi_total, "#2F80ED"),
+        render_ring("RFI", rfi_open, rfi_closed, rfi_outstanding, rfi_total),
         height=380
     )

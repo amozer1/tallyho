@@ -6,19 +6,25 @@ def render_header():
     st.markdown("""
     <style>
 
+    /* =========================
+       HEADER CONTAINER
+    ========================= */
     .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.25);
         border-radius: 16px;
         padding: 16px 20px;
         box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
-
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
     }
 
+    /* =========================
+       LEFT BRAND
+    ========================= */
     .brand {
         display: flex;
         flex-direction: column;
@@ -37,22 +43,41 @@ def render_header():
         margin-top: 4px;
     }
 
+    /* =========================
+       CENTER STATUS
+    ========================= */
     .status {
         color: #cbd5e1;
         font-size: 13px;
         font-weight: 600;
-        text-align: center;
+
         padding: 8px 14px;
         border-radius: 10px;
+
         background: rgba(122, 60, 255, 0.12);
         border: 1px solid rgba(122, 60, 255, 0.25);
+
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
     }
 
     .status-dot {
         color: #22c55e;
-        margin-right: 6px;
+        font-size: 14px;
+        animation: pulse 1.8s infinite;
     }
 
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+
+    /* =========================
+       RIGHT SECTION
+    ========================= */
     .right {
         display: flex;
         flex-direction: column;
@@ -71,10 +96,18 @@ def render_header():
         color: white;
         font-size: 13px;
         font-weight: 800;
+
         padding: 10px 14px;
         border-radius: 10px;
+
         box-shadow: 0 0 12px rgba(122, 60, 255, 0.35);
         text-align: center;
+        cursor: pointer;
+    }
+
+    .export:hover {
+        transform: scale(1.02);
+        transition: 0.2s ease-in-out;
     }
 
     </style>

@@ -69,34 +69,48 @@ def render_tracker(df):
 
         fig = go.Figure()
 
-        # Left circle - TQ
+        # =========================
+        # RECTANGLE BOUNDARY (MAIN CONTAINER)
+        # =========================
         fig.add_shape(
-            type="circle",
-            x0=0.0, y0=0.2, x1=1.2, y1=1.4,
-            fillcolor="rgba(59,130,246,0.45)",
-            line=dict(color="#3b82f6", width=4),
-            layer="below"
-        )
-
-        # Right circle - RFI
-        fig.add_shape(
-            type="circle",
-            x0=2.0, y0=0.2, x1=3.2, y1=1.4,
-            fillcolor="rgba(34,197,94,0.45)",
-            line=dict(color="#22c55e", width=4),
-            layer="below"
-        )
-
-        # Middle circle - TOTAL (larger)
-        fig.add_shape(
-            type="circle",
-            x0=0.9, y0=0.05, x1=2.3, y1=1.55,
-            fillcolor="rgba(168,85,247,0.65)",
-            line=dict(color="#a855f7", width=5),
+            type="rect",
+            x0=-0.2, y0=0.0,
+            x1=3.4, y1=1.7,
+            line=dict(color="rgba(255,255,255,0.6)", width=2),
+            fillcolor="rgba(0,0,0,0)",
             layer="above"
         )
 
-        # Text annotations
+        # =========================
+        # CIRCLES
+        # =========================
+        fig.add_shape(
+            type="circle",
+            x0=0.0, y0=0.2, x1=1.2, y1=1.4,
+            fillcolor="rgba(59,130,246,0.55)",
+            line=dict(color="#3b82f6", width=2),
+            layer="below"
+        )
+
+        fig.add_shape(
+            type="circle",
+            x0=2.0, y0=0.2, x1=3.2, y1=1.4,
+            fillcolor="rgba(34,197,94,0.55)",
+            line=dict(color="#22c55e", width=2),
+            layer="below"
+        )
+
+        fig.add_shape(
+            type="circle",
+            x0=0.9, y0=0.05, x1=2.3, y1=1.55,
+            fillcolor="rgba(168,85,247,0.70)",
+            line=dict(color="#a855f7", width=2),
+            layer="above"
+        )
+
+        # =========================
+        # TEXT ANNOTATIONS
+        # =========================
         fig.add_annotation(
             x=0.6, y=0.8,
             text=f"<b>Total TQ</b><br><span style='font-size:28px'>{tq_total}</span><br>{tq_pct}%",
@@ -121,12 +135,15 @@ def render_tracker(df):
             align="center"
         )
 
+        # =========================
+        # LAYOUT
+        # =========================
         fig.update_layout(
-            height=320,
+            height=340,
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[-0.2, 3.4]),
+            xaxis=dict(visible=False, range=[-0.3, 3.5]),
             yaxis=dict(visible=False, range=[0, 1.7]),
         )
 

@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 
-def render_venn_overview(df):
+def render_dashboard(df):
 
     if df is None or df.empty:
         st.warning("No data available.")
@@ -36,9 +36,7 @@ def render_venn_overview(df):
 
     tq_total = len(tq)
     rfi_total = len(rfi)
-
-    # BOTH (intersection logic approximation = duplicate or linked records placeholder)
-    both_total = len(df[(df["doc type"].isin(["tq", "rfi"]))])
+    combined_total = tq_total + rfi_total
 
     # =========================
     # NOT RESPONDED
@@ -59,15 +57,13 @@ def render_venn_overview(df):
     left, right = st.columns([1.6, 1])
 
     # =========================================================
-    # 🟦 LEFT: 3 CIRCLES (VENN STYLE VISUAL)
+    # 🟦 LEFT → KPI CIRCLES (VOLUME ONLY)
     # =========================================================
     with left:
 
         c1, c2, c3 = st.columns(3)
 
-        # -------------------------
-        # TQ CIRCLE
-        # -------------------------
+        # ---- TQ VOLUME ----
         with c1:
             fig = go.Figure(go.Pie(
                 values=[tq_total, total - tq_total],
@@ -75,70 +71,66 @@ def render_venn_overview(df):
                 marker=dict(colors=["#4da3ff", "#f3f4f6"]),
                 textinfo="none"
             ))
-            fig.update_layout(height=250, showlegend=False, margin=dict(t=10, b=10))
+            fig.update_layout(height=240, showlegend=False, margin=dict(t=10, b=10))
 
             st.plotly_chart(fig, use_container_width=True)
 
             st.markdown(
                 f"""
                 <div style="text-align:center">
-                    <b>Total TQ</b><br>
-                    {tq_total} ({round(tq_total/total*100,1) if total else 0}%)
+                    <b>TQ Volume</b><br>
+                    <h3>{tq_total}</h3>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-        # -------------------------
-        # BOTH / OVERLAP CIRCLE
-        # -------------------------
+        # ---- RFI VOLUME ----
         with c2:
-            fig = go.Figure(go.Pie(
-                values=[both_total, total - both_total],
-                hole=0.65,
-                marker=dict(colors=["#22c55e", "#f3f4f6"]),
-                textinfo="none"
-            ))
-            fig.update_layout(height=280, showlegend=False, margin=dict(t=10, b=10))
-
-            st.plotly_chart(fig, use_container_width=True)
-
-            st.markdown(
-                f"""
-                <div style="text-align:center">
-                    <b>TQ & RFI (Combined)</b><br>
-                    {both_total} ({round(both_total/total*100,1) if total else 0}%)
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        # -------------------------
-        # RFI CIRCLE
-        # -------------------------
-        with c3:
             fig = go.Figure(go.Pie(
                 values=[rfi_total, total - rfi_total],
                 hole=0.72,
                 marker=dict(colors=["#fbbf24", "#f3f4f6"]),
                 textinfo="none"
             ))
-            fig.update_layout(height=250, showlegend=False, margin=dict(t=10, b=10))
+            fig.update_layout(height=240, showlegend=False, margin=dict(t=10, b=10))
 
             st.plotly_chart(fig, use_container_width=True)
 
             st.markdown(
                 f"""
                 <div style="text-align:center">
-                    <b>Total RFI</b><br>
-                    {rfi_total} ({round(rfi_total/total*100,1) if total else 0}%)
+                    <b>RFI Volume</b><br>
+                    <h3>{rfi_total}</h3>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        # ---- TOTAL WORKLOAD ----
+        with c3:
+            fig = go.Figure(go.Pie(
+                values=[combined_total, total - combined_total],
+                hole=0.72,
+                marker=dict(colors=["#22c55e", "#f3f4f6"]),
+                textinfo="none"
+            ))
+            fig.update_layout(height=240, showlegend=False, margin=dict(t=10, b=10))
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.markdown(
+                f"""
+                <div style="text-align:center">
+                    <b>Total Workload</b><br>
+                    <h3>{combined_total}</h3>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
     # =========================================================
-    # 🟪 RIGHT: CONTROL PANEL BOX
+    # 🟪 RIGHT → CONTROL INTELLIGENCE PANEL
     # =========================================================
     with right:
 
@@ -149,8 +141,7 @@ def render_venn_overview(df):
             border:1px solid #eee;
             background:#fafafa;
         ">
-
-        <h4>Response Overview</h4>
+        <h4>Control Intelligence</h4>
 
         🔵 <b>TQ not responded:</b> {tq_not} ({round(tq_not/tq_total*100,1) if tq_total else 0}%)<br><br>
 
@@ -162,7 +153,7 @@ def render_venn_overview(df):
         """, unsafe_allow_html=True)
 
     # =========================================================
-    # 🟥 OUTSTANDING BOX (BOTTOM)
+    # 🟥 FOOTER → RISK ALERT STRIP
     # =========================================================
     st.markdown("<br>", unsafe_allow_html=True)
 

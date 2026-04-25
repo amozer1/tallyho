@@ -36,7 +36,9 @@ def render_venn_overview(df):
 
     tq_total = len(tq)
     rfi_total = len(rfi)
-    combined_total = tq_total + rfi_total
+
+    # BOTH (intersection logic approximation = duplicate or linked records placeholder)
+    both_total = len(df[(df["doc type"].isin(["tq", "rfi"]))])
 
     # =========================
     # NOT RESPONDED
@@ -51,113 +53,126 @@ def render_venn_overview(df):
     overdue = df[df["age"] > 7]
     overdue_count = len(overdue)
 
-    # =========================
+    # =========================================================
     # LAYOUT
-    # =========================
+    # =========================================================
     left, right = st.columns([1.6, 1])
 
     # =========================================================
-    # 🟦 LEFT: 3 MINI CIRCLES / DONUTS
+    # 🟦 LEFT: 3 CIRCLES (VENN STYLE VISUAL)
     # =========================================================
     with left:
 
         c1, c2, c3 = st.columns(3)
 
-        # ---- TQ ----
+        # -------------------------
+        # TQ CIRCLE
+        # -------------------------
         with c1:
             fig = go.Figure(go.Pie(
-                values=[tq_total],
-                labels=["TQ"],
-                hole=0.7,
-                marker=dict(colors=["#4da3ff"])
+                values=[tq_total, total - tq_total],
+                hole=0.72,
+                marker=dict(colors=["#4da3ff", "#f3f4f6"]),
+                textinfo="none"
             ))
-            fig.update_layout(height=200, margin=dict(t=10, b=10, l=10, r=10))
+            fig.update_layout(height=250, showlegend=False, margin=dict(t=10, b=10))
+
             st.plotly_chart(fig, use_container_width=True)
 
-            st.markdown(f"""
-            <div style="text-align:center;">
-                <b>Total TQ</b><br>
-                {tq_total} ({round(tq_total/total*100,1) if total else 0}%)
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style="text-align:center">
+                    <b>Total TQ</b><br>
+                    {tq_total} ({round(tq_total/total*100,1) if total else 0}%)
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-        # ---- RFI ----
+        # -------------------------
+        # BOTH / OVERLAP CIRCLE
+        # -------------------------
         with c2:
             fig = go.Figure(go.Pie(
-                values=[rfi_total],
-                labels=["RFI"],
-                hole=0.7,
-                marker=dict(colors=["#fbbf24"])
+                values=[both_total, total - both_total],
+                hole=0.65,
+                marker=dict(colors=["#22c55e", "#f3f4f6"]),
+                textinfo="none"
             ))
-            fig.update_layout(height=200, margin=dict(t=10, b=10, l=10, r=10))
+            fig.update_layout(height=280, showlegend=False, margin=dict(t=10, b=10))
+
             st.plotly_chart(fig, use_container_width=True)
 
-            st.markdown(f"""
-            <div style="text-align:center;">
-                <b>Total RFI</b><br>
-                {rfi_total} ({round(rfi_total/total*100,1) if total else 0}%)
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style="text-align:center">
+                    <b>TQ & RFI (Combined)</b><br>
+                    {both_total} ({round(both_total/total*100,1) if total else 0}%)
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-        # ---- COMBINED ----
+        # -------------------------
+        # RFI CIRCLE
+        # -------------------------
         with c3:
             fig = go.Figure(go.Pie(
-                values=[combined_total],
-                labels=["Total"],
-                hole=0.7,
-                marker=dict(colors=["#22c55e"])
+                values=[rfi_total, total - rfi_total],
+                hole=0.72,
+                marker=dict(colors=["#fbbf24", "#f3f4f6"]),
+                textinfo="none"
             ))
-            fig.update_layout(height=200, margin=dict(t=10, b=10, l=10, r=10))
+            fig.update_layout(height=250, showlegend=False, margin=dict(t=10, b=10))
+
             st.plotly_chart(fig, use_container_width=True)
 
-            st.markdown(f"""
-            <div style="text-align:center;">
-                <b>Total Combined</b><br>
-                {combined_total} (100%)
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style="text-align:center">
+                    <b>Total RFI</b><br>
+                    {rfi_total} ({round(rfi_total/total*100,1) if total else 0}%)
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
     # =========================================================
     # 🟪 RIGHT: CONTROL PANEL BOX
     # =========================================================
     with right:
 
-        st.markdown(
-            """
-            <div style="
-                padding:18px;
-                border-radius:12px;
-                border:1px solid #eee;
-                background:#fafafa;
-            ">
-            <h4>Control Panel</h4>
-            """,
-            unsafe_allow_html=True
-        )
-
         st.markdown(f"""
-        🔵 <b>TQs not responded:</b> {tq_not} ({round(tq_not/tq_total*100,1) if tq_total else 0}%)<br><br>
+        <div style="
+            padding:16px;
+            border-radius:12px;
+            border:1px solid #eee;
+            background:#fafafa;
+        ">
 
-        🟠 <b>RFIs not responded:</b> {rfi_not} ({round(rfi_not/rfi_total*100,1) if rfi_total else 0}%)<br><br>
+        <h4>Response Overview</h4>
+
+        🔵 <b>TQ not responded:</b> {tq_not} ({round(tq_not/tq_total*100,1) if tq_total else 0}%)<br><br>
+
+        🟠 <b>RFI not responded:</b> {rfi_not} ({round(rfi_not/rfi_total*100,1) if rfi_total else 0}%)<br><br>
 
         ⚫ <b>Total not responded:</b> {total_not} ({round(total_not/total*100,1) if total else 0}%)
+
+        </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
     # =========================================================
-    # 🟥 FOOTER NOTE
+    # 🟥 OUTSTANDING BOX (BOTTOM)
     # =========================================================
     st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown(f"""
     <div style="
-        padding:12px;
+        padding:14px;
         border-radius:10px;
-        border-left:5px solid #ef4444;
+        border-left:6px solid #ef4444;
         background:#fff5f5;
-        font-size:14px;
     ">
-    ⚠ Outstanding > 7 days: <b>{overdue_count}</b> ({round(overdue_count/total*100,1) if total else 0}%)
+    ⚠ <b>Outstanding > 7 Days:</b> {overdue_count} ({round(overdue_count/total*100,1) if total else 0}%)
     </div>
     """, unsafe_allow_html=True)

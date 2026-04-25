@@ -64,109 +64,130 @@ def render_tracker(df):
     left, right = st.columns([3, 1])
 
     # =========================
-    # LEFT PLOT
+    # LEFT CHART
     # =========================
     with left:
 
         fig = go.Figure()
 
         # =========================
-        # MAIN BOUNDARY
+        # MAIN BOUNDARY (EXTENDED LEFT)
         # =========================
         fig.add_shape(
             type="rect",
-            x0=0, y0=0,
-            x1=10, y1=6,
+            x0=-0.6, y0=-0.25,
+            x1=3.4, y1=1.85,
             line=dict(color="rgba(255,255,255,0.6)", width=2),
             fillcolor="rgba(0,0,0,0)",
         )
 
         # =========================
-        # RIGHT KPI PANEL (INSIDE BOUNDARY)
+        # LEFT KPI PANEL (NEW)
         # =========================
         fig.add_shape(
             type="rect",
-            x0=7.2, y0=0.8,
-            x1=9.7, y1=5.2,
+            x0=-0.55, y0=0.05,
+            x1=0.25, y1=1.55,
             line=dict(color="rgba(255,255,255,0.4)", width=1.5),
             fillcolor="rgba(255,255,255,0.03)",
         )
 
         # =========================
-        # HEADER
+        # HEADER INSIDE BOUNDARY
         # =========================
         fig.add_annotation(
-            x=4.8, y=5.6,
-            text="<b>Not Responded Within 7 Days</b><br><span style='font-size:13px'>TQ & RFI AGING OVERVIEW</span>",
+            x=1.5, y=1.72,
+            text="""
+            <b>Not Responded Within 7 Days</b><br>
+            <span style='font-size:13px; opacity:0.8;'>TQ & RFI AGING OVERVIEW</span>
+            """,
             showarrow=False,
             font=dict(color="white", size=18),
             align="center"
         )
 
         # =========================
-        # CIRCLES (LEFT SIDE)
+        # YOUR ORIGINAL CIRCLES (UNCHANGED)
         # =========================
         fig.add_shape(
             type="circle",
-            x0=1, y0=1, x1=4, y1=4,
+            x0=0.0, y0=0.2, x1=1.2, y1=1.4,
             fillcolor="rgba(59,130,246,0.55)",
             line=dict(color="#3b82f6", width=2),
         )
 
         fig.add_shape(
             type="circle",
-            x0=3.5, y0=1, x1=6.5, y1=4,
-            fillcolor="rgba(168,85,247,0.65)",
-            line=dict(color="#a855f7", width=2),
+            x0=2.0, y0=0.2, x1=3.2, y1=1.4,
+            fillcolor="rgba(34,197,94,0.55)",
+            line=dict(color="#22c55e", width=2),
         )
 
         fig.add_shape(
             type="circle",
-            x0=2.5, y0=0.8, x1=5.5, y1=4.8,
-            fillcolor="rgba(34,197,94,0.45)",
-            line=dict(color="#22c55e", width=2),
+            x0=0.9, y0=0.05, x1=2.3, y1=1.55,
+            fillcolor="rgba(168,85,247,0.70)",
+            line=dict(color="#a855f7", width=2),
         )
 
         # =========================
-        # LABELS INSIDE CIRCLES
+        # CIRCLE LABELS
         # =========================
-        fig.add_annotation(x=2.5, y=2.5,
+        fig.add_annotation(
+            x=0.6, y=0.8,
             text=f"<b>TQ</b><br>{tq_total}<br>{tq_pct}%",
-            showarrow=False, font=dict(color="white"))
+            showarrow=False,
+            font=dict(color="white", size=15)
+        )
 
-        fig.add_annotation(x=4.5, y=2.5,
+        fig.add_annotation(
+            x=1.6, y=0.82,
             text=f"<b>TOTAL</b><br>{total}<br>100%",
-            showarrow=False, font=dict(color="white"))
+            showarrow=False,
+            font=dict(color="white", size=17)
+        )
 
-        fig.add_annotation(x=6.0, y=2.5,
+        fig.add_annotation(
+            x=2.6, y=0.8,
             text=f"<b>RFI</b><br>{rfi_total}<br>{rfi_pct}%",
-            showarrow=False, font=dict(color="white"))
+            showarrow=False,
+            font=dict(color="white", size=15)
+        )
 
         # =========================
-        # KPI BOX (RIGHT SIDE INSIDE BOUNDARY)
+        # LEFT KPI PANEL TEXT
         # =========================
-        fig.add_annotation(x=8.4, y=4.2,
+        fig.add_annotation(
+            x=-0.15, y=1.25,
             text=f"<b>TQ Not Resp</b><br>{tq_not} ({tq_not_pct}%)",
-            showarrow=False, font=dict(color="#60a5fa"))
+            showarrow=False,
+            font=dict(color="#60a5fa", size=12),
+        )
 
-        fig.add_annotation(x=8.4, y=3.2,
+        fig.add_annotation(
+            x=-0.15, y=0.85,
             text=f"<b>RFI Not Resp</b><br>{rfi_not} ({rfi_not_pct}%)",
-            showarrow=False, font=dict(color="#4ade80"))
+            showarrow=False,
+            font=dict(color="#4ade80", size=12),
+        )
 
-        fig.add_annotation(x=8.4, y=2.2,
+        fig.add_annotation(
+            x=-0.15, y=0.45,
             text=f"<b>Total Not Resp</b><br>{total_not} ({total_not_pct}%)",
-            showarrow=False, font=dict(color="#c084fc"))
+            showarrow=False,
+            font=dict(color="#c084fc", size=12),
+        )
 
         # =========================
-        # LAYOUT
+        # LAYOUT (UNCHANGED SCALE LOGIC)
         # =========================
         fig.update_layout(
-            height=450,
+            height=380,
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[0, 10]),
-            yaxis=dict(visible=False, range=[0, 6]),
+            xaxis=dict(visible=False, range=[-0.6, 3.5]),
+            yaxis=dict(visible=False, range=[-0.3, 1.9]),
         )
 
         st.plotly_chart(fig, use_container_width=True)

@@ -5,9 +5,6 @@ from datetime import datetime
 
 def render_tracker(df):
 
-    # =========================
-    # SAFETY CHECK
-    # =========================
     if df is None or df.empty:
         st.warning("No data available.")
         return
@@ -15,14 +12,14 @@ def render_tracker(df):
     df = df.copy()
     df.columns = [c.strip().lower() for c in df.columns]
 
-    required_cols = ["doc type", "date sent", "reply date", "status"]
+    required = ["doc type", "date sent", "reply date", "status"]
 
-    if not all(col in df.columns for col in required_cols):
-        st.error("Missing required columns.")
+    if not all(c in df.columns for c in required):
+        st.error("Missing required columns")
         return
 
     # =========================
-    # DATA PREP
+    # DATA
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
@@ -37,7 +34,7 @@ def render_tracker(df):
 
     tq_total = len(tq)
     rfi_total = len(rfi)
-    combined_total = tq_total + rfi_total
+    combined = tq_total + rfi_total
 
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
@@ -53,73 +50,55 @@ def render_tracker(df):
     left, right = st.columns([2, 1])
 
     # =========================
-    # KPI CARD FUNCTION (CLEAN + CENTERED)
+    # KPI CARD (PURE STREAMLIT FIX)
     # =========================
-    def kpi_card(value, label, pct, color):
+    def kpi_box(value, label, pct, color):
 
         st.markdown(
             f"""
             <div style="
                 background:{color};
-                padding:25px;
+                padding:20px;
                 border-radius:16px;
                 text-align:center;
                 color:white;
-                height:150px;
+                min-height:140px;
                 display:flex;
                 flex-direction:column;
                 justify-content:center;
                 align-items:center;
-                box-shadow:0 4px 12px rgba(0,0,0,0.08);
             ">
-
-                <div style="font-size:34px;font-weight:700;">
+                <div style="font-size:36px;font-weight:700;">
                     {value}
                 </div>
 
-                <div style="font-size:14px;font-weight:600;margin-top:6px;">
+                <div style="font-size:15px;margin-top:5px;">
                     {label}
                 </div>
 
-                <div style="font-size:13px;opacity:0.9;margin-top:4px;">
+                <div style="font-size:13px;opacity:0.9;">
                     {pct}
                 </div>
-
             </div>
             """,
             unsafe_allow_html=True
         )
 
     # =========================
-    # LEFT: KPI GRID (FIXED ALIGNMENT)
+    # LEFT KPIs
     # =========================
     with left:
 
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            kpi_card(
-                tq_total,
-                "TOTAL TQ",
-                f"{round(tq_total/total*100,1) if total else 0}%",
-                "#3b82f6"
-            )
+            kpi_box(tq_total, "TOTAL TQ", f"{round(tq_total/total*100,1) if total else 0}%", "#3b82f6")
 
         with c2:
-            kpi_card(
-                rfi_total,
-                "TOTAL RFI",
-                f"{round(rfi_total/total*100,1) if total else 0}%",
-                "#f59e0b"
-            )
+            kpi_box(rfi_total, "TOTAL RFI", f"{round(rfi_total/total*100,1) if total else 0}%", "#f59e0b")
 
         with c3:
-            kpi_card(
-                combined_total,
-                "TQ + RFI",
-                "100%",
-                "#22c55e"
-            )
+            kpi_box(combined, "TQ + RFI", "100%", "#22c55e")
 
     # =========================
     # RIGHT PANEL
@@ -128,35 +107,13 @@ def render_tracker(df):
 
         st.markdown("### ⚙ Control Panel")
 
-        st.markdown(f"""
-        <div style="
-            background:#0f172a;
-            color:#f8fafc;
-            padding:18px;
-            border-radius:14px;
-            line-height:2;
-        ">
-        🔵 <b>TQ not responded:</b> {tq_not} ({round(tq_not/tq_total*100,1) if tq_total else 0}%)<br>
-
-        🟠 <b>RFI not responded:</b> {rfi_not} ({round(rfi_not/rfi_total*100,1) if rfi_total else 0}%)<br>
-
-        ⚫ <b>Total not responded:</b> {total_not} ({round(total_not/total*100,1) if total else 0}%)
-        </div>
-        """, unsafe_allow_html=True)
+        st.write(f"🔵 TQ not responded: **{tq_not}** ({round(tq_not/tq_total*100,1) if tq_total else 0}%)")
+        st.write(f"🟠 RFI not responded: **{rfi_not}** ({round(rfi_not/rfi_total*100,1) if rfi_total else 0}%)")
+        st.write(f"⚫ Total not responded: **{total_not}** ({round(total_not/total*100,1) if total else 0}%)")
 
     # =========================
     # FOOTER
     # =========================
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("---")
 
-    st.markdown(f"""
-    <div style="
-        background:#fee2e2;
-        border-left:6px solid #ef4444;
-        padding:14px;
-        border-radius:10px;
-        font-weight:600;
-    ">
-    ⚠ Outstanding > 7 Days: {overdue} ({round(overdue/total*100,1) if total else 0}%)
-    </div>
-    """, unsafe_allow_html=True)
+    st.error(f"⚠ Outstanding > 7 Days: {overdue} ({round(overdue/total*100,1) if total else 0}%)")

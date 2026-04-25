@@ -36,6 +36,18 @@ tq_open, tq_closed, tq_outstanding = classify(tq_df)
 rfi_open, rfi_closed, rfi_outstanding = classify(rfi_df)
 
 # =========================
+# TOTALS
+# =========================
+tq_total = tq_open + tq_closed + tq_outstanding
+rfi_total = rfi_open + rfi_closed + rfi_outstanding
+
+# =========================
+# PERCENT FUNCTION
+# =========================
+def pct(val, total):
+    return round((val / total) * 100, 1) if total else 0
+
+# =========================
 # HEADER
 # =========================
 l, m, r = st.columns([2, 3, 1])
@@ -52,24 +64,41 @@ with r:
 st.markdown("---")
 
 # =========================
-# DONUT FUNCTION (REUSABLE)
+# CAKE DONUT FUNCTION
 # =========================
-def donut(title, open_v, closed_v, outstanding_v):
+def cake_donut(title, open_v, closed_v, outstanding_v, total):
     fig = go.Figure(data=[go.Pie(
         labels=["Open", "Closed", "Outstanding"],
         values=[open_v, closed_v, outstanding_v],
-        hole=0.75,
-        textinfo="label+value+percent",
-        insidetextorientation="radial",
-        marker=dict(colors=["#FFA500", "#00FFD5", "#FF4B4B"])
+        hole=0.65,   # thick "cake"
+        marker=dict(colors=["#FFA500", "#00FFD5", "#FF4B4B"]),
+        textinfo="none"   # IMPORTANT: remove outer text
     )])
 
+    # Central annotation (THIS is the key)
     fig.update_layout(
         title=title,
         paper_bgcolor="#0b1a2f",
-        font=dict(color="white", size=12),
-        height=360,
-        margin=dict(t=40, b=20, l=10, r=10)
+        font=dict(color="white"),
+        height=380,
+        annotations=[
+            dict(
+                text=f"""
+                <b>{title}</b><br>
+                Total: {total}<br>
+                Open: {open_v} ({pct(open_v, total)}%)<br>
+                Closed: {closed_v} ({pct(closed_v, total)}%)<br>
+                Overdue: {outstanding_v} ({pct(outstanding_v, total)}%)
+                """,
+                x=0.5,
+                y=0.5,
+                font=dict(size=14, color="white"),
+                showarrow=False,
+                align="center"
+            )
+        ],
+        showlegend=True,
+        legend=dict(font=dict(color="white"))
     )
 
     return fig
@@ -80,9 +109,13 @@ def donut(title, open_v, closed_v, outstanding_v):
 c1, c2 = st.columns(2)
 
 with c1:
-    st.markdown("### TQ Lifecycle")
-    st.plotly_chart(donut("TQ", tq_open, tq_closed, tq_outstanding), use_container_width=True)
+    st.plotly_chart(
+        cake_donut("TQ", tq_open, tq_closed, tq_outstanding, tq_total),
+        use_container_width=True
+    )
 
 with c2:
-    st.markdown("### RFI Lifecycle")
-    st.plotly_chart(donut("RFI", rfi_open, rfi_closed, rfi_outstanding), use_container_width=True)
+    st.plotly_chart(
+        cake_donut("RFI", rfi_open, rfi_closed, rfi_outstanding, rfi_total),
+        use_container_width=True
+    )

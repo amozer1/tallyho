@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 from datetime import datetime
 from utils.data_loader import load_data
 
@@ -18,7 +17,7 @@ today = pd.Timestamp.today().normalize()
 df["AgeDays"] = (today - df["Date Sent"]).dt.days
 
 # =========================
-# FILTERS
+# FILTERS (>7 DAYS)
 # =========================
 tq_over = df[(df["Doc Type"] == "TQ") & (df["AgeDays"] > 7)]
 rfi_over = df[(df["Doc Type"] == "RFI") & (df["AgeDays"] > 7)]
@@ -26,13 +25,10 @@ rfi_over = df[(df["Doc Type"] == "RFI") & (df["AgeDays"] > 7)]
 tq_count = len(tq_over)
 rfi_count = len(rfi_over)
 
-# overlap logic (based on Recipient)
 tq_set = set(tq_over["Recipient"])
 rfi_set = set(rfi_over["Recipient"])
 
-both_set = tq_set.intersection(rfi_set)
-
-both_count = len(both_set)
+both_count = len(tq_set.intersection(rfi_set))
 
 total_overdue = len(df[df["AgeDays"] > 7])
 
@@ -64,85 +60,67 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# MAIN LAYOUT
+# KPI ROW (CLEAN BLOCKS)
 # =========================
-left, right = st.columns([2.2, 1])
+k1, k2, k3 = st.columns(3)
 
-# =========================
-# VENN DIAGRAM (PROPER CLEAN VERSION)
-# =========================
-with left:
-
-    fig = go.Figure()
-
-    # Left circle (TQ)
-    fig.add_shape(type="circle",
-        x0=0.5, y0=0.5, x1=3, y1=3,
-        line=dict(color="#2F80ED", width=3),
-    )
-
-    # Right circle (RFI)
-    fig.add_shape(type="circle",
-        x0=2, y0=0.5, x1=4.5, y1=3,
-        line=dict(color="#EB5757", width=3),
-    )
-
-    # Labels
-    fig.add_annotation(x=1.3, y=2,
-        text=f"TQ<br>{tq_count} ({pct(tq_count)}%)",
-        showarrow=False,
-        font=dict(color="#2F80ED", size=14)
-    )
-
-    fig.add_annotation(x=3.2, y=2,
-        text=f"RFI<br>{rfi_count} ({pct(rfi_count)}%)",
-        showarrow=False,
-        font=dict(color="#EB5757", size=14)
-    )
-
-    fig.add_annotation(x=2.4, y=1.5,
-        text=f"Both<br>{both_count}",
-        showarrow=False,
-        font=dict(color="#00FFD5", size=13)
-    )
-
-    fig.update_layout(
-        height=450,
-        paper_bgcolor="#0b1a2f",
-        plot_bgcolor="#0b1a2f",
-        xaxis=dict(visible=False),
-        yaxis=dict(visible=False)
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-# =========================
-# RIGHT PANEL (CLEAN KPI LIST)
-# =========================
-with right:
-
-    st.markdown("### Breakdown")
-
+with k1:
     st.markdown(f"""
-    <div style="color:white;line-height:2;font-size:15px;">
-        🔵 TQ Not Responded: <b>{tq_count}</b> ({pct(tq_count)}%)<br>
-        🔴 RFI Not Responded: <b>{rfi_count}</b> ({pct(rfi_count)}%)<br>
-        🟢 Both (Overlap): <b>{both_count}</b><br>
+    <div style="background:#1b2b3a;padding:20px;border-radius:12px;">
+        <h4 style="color:#2F80ED;margin:0;">TQ Not Responded</h4>
+        <h2 style="color:white;margin:5px 0;">{tq_count}</h2>
+        <p style="color:#9fb3c8;">{pct(tq_count)}% of overdue</p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("---")
+with k2:
+    st.markdown(f"""
+    <div style="background:#1b2b3a;padding:20px;border-radius:12px;">
+        <h4 style="color:#EB5757;margin:0;">RFI Not Responded</h4>
+        <h2 style="color:white;margin:5px 0;">{rfi_count}</h2>
+        <p style="color:#9fb3c8;">{pct(rfi_count)}% of overdue</p>
+    </div>
+    """, unsafe_allow_html=True)
 
+with k3:
+    st.markdown(f"""
+    <div style="background:#1b2b3a;padding:20px;border-radius:12px;">
+        <h4 style="color:#00FFD5;margin:0;">Both (Overlap)</h4>
+        <h2 style="color:white;margin:5px 0;">{both_count}</h2>
+        <p style="color:#9fb3c8;">Shared recipients</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# =========================
+# SECOND ROW (INSIGHT + TOTAL)
+# =========================
+left, right = st.columns([2, 1])
+
+with left:
+    st.markdown(f"""
+    <div style="background:#0b1a2f;padding:20px;border-radius:12px;">
+        <h4 style="color:white;">Summary Insight</h4>
+        <ul style="color:#9fb3c8;line-height:2;">
+            <li>TQ Not Responded: {tq_count} ({pct(tq_count)}%)</li>
+            <li>RFI Not Responded: {rfi_count} ({pct(rfi_count)}%)</li>
+            <li>Both Overdue Recipients: {both_count}</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+with right:
     st.markdown(f"""
     <div style="
         background:#1b2b3a;
-        padding:15px;
+        padding:25px;
         border-radius:12px;
-        border-left:4px solid #2F80ED;
-        color:white;
+        border-left:5px solid #2F80ED;
+        text-align:center;
     ">
-        <b>Total Outstanding &gt; 7 Days</b><br><br>
-        {total_overdue} items<br>
-        {pct(total_overdue)}%
+        <h4 style="color:white;">Total Outstanding</h4>
+        <h1 style="color:white;margin:10px 0;">{total_overdue}</h1>
+        <p style="color:#9fb3c8;">{pct(total_overdue)}% of dataset</p>
     </div>
     """, unsafe_allow_html=True)

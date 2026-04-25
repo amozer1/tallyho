@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 from datetime import datetime
 
 
@@ -51,74 +50,61 @@ def render_tracker(df):
     # =========================
     st.markdown("## 📊 TQ & RFI Tracker Overview")
 
-    left, right = st.columns([1.7, 1])
+    left, right = st.columns([2, 1])
 
     # =========================
-    # KPI CIRCLE (TRUE CENTERED CARD)
+    # PURE KPI CARD (NO RING)
     # =========================
-    def kpi_circle(value, base, color, label, key):
+    def kpi_card(value, label, subtext, color):
 
-        base = base if base > 0 else 1
-        pct = round((value / base) * 100, 1)
+        st.markdown(
+            f"""
+            <div style="
+                background:{color};
+                padding:28px 10px;
+                border-radius:18px;
+                text-align:center;
+                color:white;
+                box-shadow:0 6px 18px rgba(0,0,0,0.1);
+                height:160px;
+                display:flex;
+                flex-direction:column;
+                justify-content:center;
+                align-items:center;
+            ">
 
-        fig = go.Figure(go.Pie(
-            values=[value, base - value],
-            hole=0.80,
-            marker=dict(colors=[color, "#e5e7eb"]),
-            textinfo="none"
-        ))
+                <div style="font-size:34px;font-weight:700;">
+                    {value}
+                </div>
 
-        fig.update_layout(
-            height=270,
-            margin=dict(t=10, b=10, l=10, r=10),
-            showlegend=False,
-            paper_bgcolor="rgba(0,0,0,0)"
-        )
+                <div style="font-size:15px;font-weight:500;margin-top:6px;">
+                    {label}
+                </div>
 
-        # =========================
-        # CLEAN BACKGROUND CARD INSIDE DONUT
-        # =========================
-        fig.add_shape(
-            type="circle",
-            x0=0.32, x1=0.68,
-            y0=0.32, y1=0.68,
-            fillcolor="white",
-            line=dict(color="rgba(0,0,0,0)"),
-            layer="above"
-        )
+                <div style="font-size:13px;opacity:0.9;margin-top:4px;">
+                    {subtext}
+                </div>
 
-        # =========================
-        # CENTER KPI TEXT (PROPERLY ALIGNED)
-        # =========================
-        fig.add_annotation(
-            x=0.5,
-            y=0.52,
-            text=f"""
-            <b style='font-size:26px;color:#111827'>{value}</b><br>
-            <span style='font-size:13px;color:#374151'>{label}</span><br>
-            <span style='font-size:12px;color:#6b7280'>{pct}%</span>
+            </div>
             """,
-            showarrow=False,
-            align="center"
+            unsafe_allow_html=True
         )
 
-        st.plotly_chart(fig, use_container_width=True, key=key)
-
     # =========================
-    # LEFT: KPI CIRCLES
+    # LEFT KPI SECTION
     # =========================
     with left:
 
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            kpi_circle(tq_total, total, "#3b82f6", "Total TQ", "kpi_tq")
+            kpi_card(tq_total, "TOTAL TQ", f"{round(tq_total/total*100,1) if total else 0}%", "#3b82f6")
 
         with c2:
-            kpi_circle(rfi_total, total, "#f59e0b", "Total RFI", "kpi_rfi")
+            kpi_card(rfi_total, "TOTAL RFI", f"{round(rfi_total/total*100,1) if total else 0}%", "#f59e0b")
 
         with c3:
-            kpi_circle(combined_total, total, "#22c55e", "TQ + RFI", "kpi_total")
+            kpi_card(combined_total, "TQ + RFI", "100%", "#22c55e")
 
     # =========================
     # RIGHT PANEL
@@ -135,11 +121,13 @@ def render_tracker(df):
             border-radius:14px;
             line-height:2;
         ">
+
         🔵 <b>TQ not responded:</b> {tq_not} ({round(tq_not/tq_total*100,1) if tq_total else 0}%)<br>
 
         🟠 <b>RFI not responded:</b> {rfi_not} ({round(rfi_not/rfi_total*100,1) if rfi_total else 0}%)<br>
 
         ⚫ <b>Total not responded:</b> {total_not} ({round(total_not/total*100,1) if total else 0}%)
+
         </div>
         """, unsafe_allow_html=True)
 

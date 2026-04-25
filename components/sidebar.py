@@ -10,58 +10,55 @@ def get_base64_image(image_path):
 def render_sidebar():
     logo_base64 = get_base64_image("assets/logo.png")
 
+    # HIDE STREAMLIT DEFAULT MULTIPAGE NAV
+    st.markdown("""
+    <style>
+        [data-testid="stSidebarNav"] {display:none;}
+        [data-testid="stSidebarNavItems"] {display:none;}
+
+        section[data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #08111f 0%, #0b1a2f 100%);
+        }
+
+        .nav-button {
+            display:block;
+            width:100%;
+            padding:12px 14px;
+            margin:6px 0;
+            border-radius:10px;
+            text-decoration:none;
+            font-size:14px;
+            font-weight:500;
+            color:white;
+            background:#0f223b;
+            border:1px solid rgba(255,255,255,0.05);
+            transition:0.3s;
+        }
+
+        .nav-button:hover {
+            background:#1f5eff;
+            color:white;
+        }
+
+        .assistant-box {
+            background:#17113a;
+            padding:16px;
+            border-radius:12px;
+            border:1px solid rgba(168,85,247,0.25);
+            margin-top:30px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     with st.sidebar:
-        # =========================
-        # SIDEBAR STYLE
-        # =========================
-        st.markdown("""
-        <style>
-            section[data-testid="stSidebar"] {
-                background: linear-gradient(180deg, #08111f 0%, #0b1a2f 100%);
-            }
-
-            .nav-button {
-                display:block;
-                width:100%;
-                padding:12px 14px;
-                margin:6px 0;
-                border-radius:10px;
-                text-decoration:none;
-                font-size:14px;
-                font-weight:500;
-                color:white;
-                background:#0f223b;
-                border:1px solid rgba(255,255,255,0.05);
-                transition:0.3s;
-            }
-
-            .nav-button:hover {
-                background:#1f5eff;
-                color:white;
-            }
-
-            .assistant-box {
-                background:#17113a;
-                padding:16px;
-                border-radius:12px;
-                border:1px solid rgba(168,85,247,0.25);
-                margin-top:30px;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # =========================
         # LOGO
-        # =========================
         st.markdown(f"""
         <div style="text-align:center; padding:10px 0 25px 0;">
             <img src="data:image/png;base64,{logo_base64}" width="85">
         </div>
         """, unsafe_allow_html=True)
 
-        # =========================
         # NAVIGATION
-        # =========================
         nav_items = [
             "Overview",
             "TQs",
@@ -80,9 +77,7 @@ def render_sidebar():
                 unsafe_allow_html=True
             )
 
-        # =========================
         # AI ASSISTANT
-        # =========================
         st.markdown("""
         <div class="assistant-box">
             <div style="
@@ -92,7 +87,6 @@ def render_sidebar():
             ">
                 AI Assistant
             </div>
-
             <div style="
                 color:#b8b8d1;
                 font-size:12px;

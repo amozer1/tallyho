@@ -6,9 +6,6 @@ from components.header import render_header
 from components.tracker import render_tracker
 from components.overdue_alert import render_overdue_alert, render_overdue_button
 
-# =========================
-# PAGE CONFIG (MUST BE FIRST)
-# =========================
 st.set_page_config(
     page_title="TQ / RFI Intelligence Hub",
     layout="wide"
@@ -21,7 +18,7 @@ render_sidebar()
 render_header()
 
 # =========================
-# DATA LOADING (GITHUB SAFE)
+# DATA LOADING
 # =========================
 @st.cache_data
 def load_data():
@@ -30,7 +27,7 @@ def load_data():
 df = load_data()
 
 # =========================
-# CLEAN DATA + METRICS
+# CLEAN + METRICS (NEW ADDITION SAFE)
 # =========================
 df = df.copy()
 df.columns = [c.strip().lower() for c in df.columns]
@@ -51,7 +48,6 @@ rfi_total = len(rfi)
 
 tq_not = len(tq[tq["reply date"].isna()])
 rfi_not = len(rfi[rfi["reply date"].isna()])
-total_not = len(df[df["reply date"].isna()])
 
 tq_not_pct = round((tq_not / tq_total) * 100, 1) if tq_total else 0
 rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
@@ -59,7 +55,7 @@ rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
 overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
 # =========================
-# 🔴 OVERDUE ALERT (NOW SAFE)
+# 🔴 OVERDUE ALERT (SAFE POSITION)
 # =========================
 render_overdue_alert(
     overdue=overdue,
@@ -73,6 +69,6 @@ render_overdue_alert(
 render_overdue_button(df)
 
 # =========================
-# MAIN TRACKER
+# TRACKER MODULE
 # =========================
 render_tracker(df)

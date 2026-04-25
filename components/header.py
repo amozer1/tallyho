@@ -14,14 +14,14 @@ def render_header():
             min-height: 95px;
         }
 
-        .header-title {
+        .title {
             color: white;
             font-size: 26px;
-            font-weight: 800;
+            font-weight: 900;
             letter-spacing: 0.4px;
         }
 
-        .header-subtitle {
+        .subtitle {
             color: #9fb3c8;
             font-size: 13px;
             margin-top: 4px;
@@ -39,40 +39,59 @@ def render_header():
             margin-top: 4px;
         }
 
-        .download-btn {
+        .download {
             background: linear-gradient(135deg, #00bfff 0%, #00ffd5 100%);
             color: black;
             font-size: 14px;
-            font-weight: 700;
+            font-weight: 800;
             padding: 12px;
             border-radius: 12px;
             text-align:center;
             box-shadow: 0 0 15px rgba(0,255,213,0.35);
         }
 
-        .download-sub {
-            color:#9fb3c8;
-            font-size:11px;
-            margin-top:5px;
-            text-align:center;
+        .rainbow-line {
+            height: 3px;
+            width: 100%;
+            margin-top: 12px;
+            border-radius: 5px;
+            background: linear-gradient(
+                90deg,
+                #ff0000,
+                #ff7f00,
+                #ffff00,
+                #00ff00,
+                #00ffff,
+                #0000ff,
+                #8b00ff
+            );
+            box-shadow: 0 0 10px rgba(0,191,255,0.25);
         }
     </style>
     """, unsafe_allow_html=True)
 
     left, middle, right = st.columns([4, 2, 1.5])
 
+    # =========================
+    # LEFT TITLE
+    # =========================
     with left:
         st.markdown("""
         <div class="header-card">
-            <div class="header-title">
-                TQ and RFI Dashboard
+            <div class="title">
+                TQ & RFI Performance Control Centre
             </div>
-            <div class="header-subtitle">
+            <div class="subtitle">
                 Project Overview and Service Level Agreement Performance
             </div>
         </div>
+
+        <div class="rainbow-line"></div>
         """, unsafe_allow_html=True)
 
+    # =========================
+    # DATE
+    # =========================
     with middle:
         st.markdown(f"""
         <div class="header-card" style="text-align:center;">
@@ -83,18 +102,28 @@ def render_header():
                 Last Updated
             </div>
         </div>
+
+        <div class="rainbow-line"></div>
         """, unsafe_allow_html=True)
 
+    # =========================
+    # DOWNLOAD
+    # =========================
     with right:
         st.markdown("""
         <div class="header-card">
-            <div class="download-btn">
+            <div class="download">
                 ⬇ Export Report
             </div>
-            <div class="download-sub">
+            <div style="
+                color:#9fb3c8;
+                font-size:11px;
+                margin-top:5px;
+                text-align:center;
+            ">
                 Download latest analytics
             </div>
         </div>
-        """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        <div class="rainbow-line"></div>
+        """, unsafe_allow_html=True)

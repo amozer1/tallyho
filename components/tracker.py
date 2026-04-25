@@ -64,14 +64,14 @@ def render_tracker(df):
     left, right = st.columns([3, 1])
 
     # =========================
-    # LEFT CHART
+    # LEFT PLOT
     # =========================
     with left:
 
         fig = go.Figure()
 
         # =========================
-        # MAIN BOUNDARY (EXTENDED LEFT)
+        # MAIN BOUNDARY
         # =========================
         fig.add_shape(
             type="rect",
@@ -82,32 +82,7 @@ def render_tracker(df):
         )
 
         # =========================
-        # LEFT KPI PANEL (NEW)
-        # =========================
-        fig.add_shape(
-            type="rect",
-            x0=-0.55, y0=0.05,
-            x1=0.25, y1=1.55,
-            line=dict(color="rgba(255,255,255,0.4)", width=1.5),
-            fillcolor="rgba(255,255,255,0.03)",
-        )
-
-        # =========================
-        # HEADER INSIDE BOUNDARY
-        # =========================
-        fig.add_annotation(
-            x=1.5, y=1.72,
-            text="""
-            <b>Not Responded Within 7 Days</b><br>
-            <span style='font-size:13px; opacity:0.8;'>TQ & RFI AGING OVERVIEW</span>
-            """,
-            showarrow=False,
-            font=dict(color="white", size=18),
-            align="center"
-        )
-
-        # =========================
-        # YOUR ORIGINAL CIRCLES (UNCHANGED)
+        # CIRCLES (UNCHANGED)
         # =========================
         fig.add_shape(
             type="circle",
@@ -131,7 +106,7 @@ def render_tracker(df):
         )
 
         # =========================
-        # CIRCLE LABELS
+        # LABELS
         # =========================
         fig.add_annotation(
             x=0.6, y=0.8,
@@ -155,31 +130,40 @@ def render_tracker(df):
         )
 
         # =========================
-        # LEFT KPI PANEL TEXT
+        # RIGHT BULLET SUMMARY PANEL
         # =========================
-        fig.add_annotation(
-            x=-0.15, y=1.25,
-            text=f"<b>TQ Not Resp</b><br>{tq_not} ({tq_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#60a5fa", size=12),
+        fig.add_shape(
+            type="rect",
+            x0=2.35, y0=0.05,
+            x1=3.35, y1=1.55,
+            line=dict(color="rgba(255,255,255,0.4)", width=1.5),
+            fillcolor="rgba(255,255,255,0.03)",
         )
 
         fig.add_annotation(
-            x=-0.15, y=0.85,
-            text=f"<b>RFI Not Resp</b><br>{rfi_not} ({rfi_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#4ade80", size=12),
-        )
+            x=2.85, y=1.35,
+            text=f"""
+⚙ <b>Summary</b><br><br>
 
-        fig.add_annotation(
-            x=-0.15, y=0.45,
-            text=f"<b>Total Not Resp</b><br>{total_not} ({total_not_pct}%)",
+🔵 TQ Not Responded:<br>
+<b>{tq_not} ({tq_not_pct}%)</b><br><br>
+
+🟢 RFI Not Responded:<br>
+<b>{rfi_not} ({rfi_not_pct}%)</b><br><br>
+
+⚫ Total Not Responded:<br>
+<b>{total_not} ({total_not_pct}%)</b><br><br>
+
+⚠ Overdue > 7 Days:<br>
+<b>{overdue}</b>
+""",
             showarrow=False,
-            font=dict(color="#c084fc", size=12),
+            font=dict(color="white", size=12),
+            align="left"
         )
 
         # =========================
-        # LAYOUT (UNCHANGED SCALE LOGIC)
+        # LAYOUT
         # =========================
         fig.update_layout(
             height=380,
@@ -193,10 +177,9 @@ def render_tracker(df):
         st.plotly_chart(fig, use_container_width=True)
 
     # =========================
-    # RIGHT STREAMLIT PANEL
+    # RIGHT STREAMLIT PANEL (OPTIONAL)
     # =========================
     with right:
-
         st.markdown("#### ⚙ Summary")
 
         st.markdown(f"""

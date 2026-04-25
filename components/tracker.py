@@ -67,14 +67,14 @@ def render_tracker(df):
         fig = go.Figure()
 
         # =========================
-        # BACKGROUND CARD BORDER
+        # OUTER BORDER (CARD)
         # =========================
         fig.add_shape(
             type="rect",
             x0=-0.4, y0=-0.3,
-            x1=3.8, y1=2.2,
-            line=dict(color="rgba(255,120,120,0.35)", width=2),
-            fillcolor="rgba(255,80,80,0.05)",
+            x1=3.9, y1=2.1,
+            line=dict(color="rgba(255,255,255,0.25)", width=2),
+            fillcolor="rgba(255,255,255,0.02)",
             layer="below"
         )
 
@@ -82,93 +82,89 @@ def render_tracker(df):
         # TITLE
         # =========================
         fig.add_annotation(
-            x=1.7, y=2.05,
+            x=1.7, y=1.95,
             text="<b>TQ AND RFI OVERVIEW</b>",
             showarrow=False,
             font=dict(size=22, color="white")
         )
 
         # =========================
-        # CIRCLES (OVERLAPPING ALLOWED)
-        # LIGHT RED THEME
+        # CIRCLES (SAME SIZE)
         # =========================
 
-        # TQ (left)
+        radius = 1.1
+
+        # LEFT - TQ (blue)
         fig.add_shape(
             type="circle",
-            x0=0.2, y0=0.3,
-            x1=1.35, y1=1.45,
-            fillcolor="rgba(255,99,132,0.45)",
-            line=dict(color="rgba(255,120,120,1)", width=3),
+            x0=0.2, y0=0.25,
+            x1=0.2 + radius, y1=0.25 + radius,
+            fillcolor="rgba(59,130,246,0.45)",
+            line=dict(color="#3b82f6", width=4),
             layer="below"
         )
 
-        # RFI (right)
+        # RIGHT - RFI (green)
         fig.add_shape(
             type="circle",
-            x0=2.2, y0=0.3,
-            x1=3.35, y1=1.45,
-            fillcolor="rgba(255,160,122,0.45)",
-            line=dict(color="rgba(255,140,100,1)", width=3),
+            x0=2.0, y0=0.25,
+            x1=2.0 + radius, y1=0.25 + radius,
+            fillcolor="rgba(34,197,94,0.45)",
+            line=dict(color="#22c55e", width=4),
             layer="below"
         )
 
         # =========================
-        # MIDDLE (TOTAL - DOMINANT)
-        # BIGGER + HIGHER OPACITY + ABOVE
+        # MIDDLE - TOTAL (LIGHT RED, DOMINANT)
         # =========================
         fig.add_shape(
             type="circle",
-            x0=1.05, y0=0.05,
-            x1=2.85, y1=1.75,
-            fillcolor="rgba(220,20,60,0.75)",
-            line=dict(color="rgba(255,80,80,1)", width=5),
+            x0=1.1, y0=0.15,
+            x1=1.1 + radius + 0.2,
+            y1=0.15 + radius + 0.2,
+            fillcolor="rgba(255,99,99,0.65)",  # light red
+            line=dict(color="#ff4d4d", width=5),
             layer="above"
         )
 
         # =========================
-        # TEXT FUNCTION (READABLE BADGES)
+        # TEXT (READABLE CARDS)
         # =========================
-        def badge(x, y, title, value, pct):
+
+        def label(x, y, title, value, pct):
             fig.add_annotation(
-                x=x,
-                y=y,
+                x=x, y=y,
                 showarrow=False,
                 text=f"""
                 <div style="
                     background: rgba(0,0,0,0.55);
-                    padding: 10px 12px;
-                    border-radius: 12px;
-                    color: white;
+                    padding: 10px 14px;
+                    border-radius: 10px;
                     text-align:center;
-                    min-width:90px;
+                    color:white;
+                    font-family:Arial;
                 ">
                     <b>{title}</b><br>
-                    <span style="font-size:22px">{value}</span><br>
+                    <span style="font-size:24px">{value}</span><br>
                     <span style="font-size:12px">{pct}%</span>
                 </div>
                 """
             )
 
-        # LEFT
-        badge(0.75, 0.85, "TQ", tq_total, tq_pct)
-
-        # MIDDLE (dominant)
-        badge(1.95, 0.95, "TOTAL", total, 100)
-
-        # RIGHT
-        badge(2.95, 0.85, "RFI", rfi_total, rfi_pct)
+        label(0.65, 0.75, "TQ", tq_total, tq_pct)
+        label(1.75, 0.85, "TOTAL", total, 100)
+        label(2.75, 0.75, "RFI", rfi_total, rfi_pct)
 
         # =========================
-        # LAYOUT SETTINGS
+        # LAYOUT
         # =========================
         fig.update_layout(
             height=400,
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[-0.5, 4.0]),
-            yaxis=dict(visible=False, range=[-0.4, 2.4]),
+            xaxis=dict(visible=False, range=[-0.5, 4.2]),
+            yaxis=dict(visible=False, range=[-0.4, 2.3]),
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -181,10 +177,10 @@ def render_tracker(df):
         st.markdown("#### ⚙ Control Panel")
 
         st.markdown(f"""
-🔴 **TQ not responded**  
+🔵 **TQ not responded**  
 **{tq_not} ({round((tq_not/tq_total)*100,1) if tq_total else 0}%)**
 
-🟠 **RFI not responded**  
+🟢 **RFI not responded**  
 **{rfi_not} ({round((rfi_not/rfi_total)*100,1) if rfi_total else 0}%)**
 
 ⚫ **Total not responded**  

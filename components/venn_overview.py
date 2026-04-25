@@ -1,48 +1,54 @@
 import streamlit as st
-import pandas as pd
 
 
 def render_venn_overview(df):
 
     # =========================
-    # SAFE COLUMN HANDLING
+    # SAFETY CHECK
     # =========================
-    def safe(col):
-        return df[col] if col in df.columns else ""
+    if df is None or df.empty:
+        st.warning("No data available for Venn analysis.")
+        return
 
-    # Normalize text fields
     df = df.copy()
+
+    # =========================
+    # NORMALISE COLUMNS
+    # =========================
     for col in df.columns:
         df[col] = df[col].astype(str).str.lower()
 
     # =========================
-    # SPLIT DATA
+    # REQUIRED FIELDS CHECK
     # =========================
-    tq = df[df["type"] == "tq"] if "type" in df.columns else pd.DataFrame()
-    rfi = df[df["type"] == "rfi"] if "type" in df.columns else pd.DataFrame()
+    required = ["type", "project", "originator", "recipient", "doc type"]
+
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        st.error(f"Missing required columns: {missing}")
+        return
 
     # =========================
-    # OVERLAP LOGIC (COMBINATION RULE)
+    # SPLIT TQ / RFI
+    # =========================
+    tq = df[df["type"] == "tq"]
+    rfi = df[df["type"] == "rfi"]
+
+    # =========================
+    # OVERLAP LOGIC (COMBINED INTELLIGENCE RULE)
     # =========================
     overlap_mask = (
         df["project"].isin(df["project"]) |
         df["originator"].isin(df["originator"]) |
         df["recipient"].isin(df["recipient"]) |
         df["doc type"].isin(df["doc type"])
-    ) if all(col in df.columns for col in ["project", "originator", "recipient", "doc type"]) else pd.Series([False]*len(df))
+    )
 
     overlap = df[overlap_mask]
 
-    # Remove overlap from pure groups
+    # Remove overlap duplicates from pure groups
     tq_only = tq.drop(overlap.index.intersection(tq.index), errors="ignore")
     rfi_only = rfi.drop(overlap.index.intersection(rfi.index), errors="ignore")
-
-    # =========================
-    # COUNTS
-    # =========================
-    tq_count = len(tq)
-    rfi_count = len(rfi)
-    overlap_count = len(overlap)
 
     # =========================
     # HEADER
@@ -50,7 +56,7 @@ def render_venn_overview(df):
     st.markdown("## TQ / RFI Relationship Overview")
 
     # =========================
-    # VISUAL LAYOUT (3 CIRCLES STYLE)
+    # VISUAL CIRCLES (STREAMLIT SAFE)
     # =========================
     col1, col2, col3 = st.columns(3)
 
@@ -58,29 +64,29 @@ def render_venn_overview(df):
         st.markdown(f"""
         <div style="
             background: rgba(0,123,255,0.15);
-            padding: 20px;
+            padding: 22px;
             border-radius: 16px;
             text-align:center;
             border: 1px solid rgba(0,123,255,0.4);
         ">
-            <h2 style="color:white;">TQs Only</h2>
-            <h1 style="color:#4da3ff;">{tq_count}</h1>
+            <h3 style="color:white;">TQs ONLY</h3>
+            <h1 style="color:#4da3ff;">{len(tq_only)}</h1>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
         st.markdown(f"""
         <div style="
-            background: rgba(138,43,226,0.18);
-            padding: 25px;
-            border-radius: 20px;
+            background: rgba(138,43,226,0.20);
+            padding: 26px;
+            border-radius: 18px;
             text-align:center;
-            border: 2px solid rgba(138,43,226,0.5);
+            border: 2px solid rgba(138,43,226,0.6);
         ">
-            <h2 style="color:white;">OVERLAP</h2>
-            <h1 style="color:#c084fc;">{overlap_count}</h1>
+            <h3 style="color:white;">OVERLAP</h3>
+            <h1 style="color:#c084fc;">{len(overlap)}</h1>
             <p style="color:#cbd5e1;font-size:12px;">
-                Shared Project / Originator / Doc Type
+                Shared Project • Originator • Doc Type • Recipient
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -89,26 +95,27 @@ def render_venn_overview(df):
         st.markdown(f"""
         <div style="
             background: rgba(255,165,0,0.15);
-            padding: 20px;
+            padding: 22px;
             border-radius: 16px;
             text-align:center;
             border: 1px solid rgba(255,165,0,0.4);
         ">
-            <h2 style="color:white;">RFIs Only</h2>
-            <h1 style="color:#ffb347;">{rfi_count}</h1>
+            <h3 style="color:white;">RFIs ONLY</h3>
+            <h1 style="color:#ffb347;">{len(rfi_only)}</h1>
         </div>
         """, unsafe_allow_html=True)
 
     # =========================
-    # INSIGHT SUMMARY
+    # INSIGHT BLOCK
     # =========================
     st.markdown("---")
 
     st.markdown(f"""
     ### Insight Summary
-    - Total TQs: **{tq_count}**
-    - Total RFIs: **{rfi_count}**
-    - Overlapping Items: **{overlap_count}**
 
-    > Overlap indicates shared project context, originator linkage, or document dependency between TQs and RFIs.
+    - TQs (clean): **{len(tq_only)}**
+    - RFIs (clean): **{len(rfi_only)}**
+    - Overlap (linked items): **{len(overlap)}**
+
+    > Overlap represents cross-linked communication items based on project, originator, recipient, and document type relationships.
     """)

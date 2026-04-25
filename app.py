@@ -6,6 +6,16 @@ from components.header import render_header
 from components.tracker import render_tracker  # ✅ UPDATED IMPORT
 from components.overdue_alert import render_overdue_alert, render_overdue_button
 
+render_overdue_alert(
+    overdue=overdue,
+    total=total,
+    tq_not=tq_not,
+    rfi_not=rfi_not,
+    tq_not_pct=tq_not_pct,
+    rfi_not_pct=rfi_not_pct
+)
+
+render_overdue_button(df)
 
 st.set_page_config(
     page_title="TQ / RFI Intelligence Hub",
@@ -60,12 +70,4 @@ overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 # =========================
 # TRACKER MODULE (STAGE 3 ANALYTICS)
 # =========================
-render_overdue_alert(
-    overdue=overdue,
-    total=total,
-    tq_not=tq_not,
-    rfi_not=rfi_not,
-    tq_not_pct=tq_not_pct,
-    rfi_not_pct=rfi_not_pct
-)
 render_tracker(df)

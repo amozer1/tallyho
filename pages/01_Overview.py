@@ -10,14 +10,15 @@ df = load_data()
 df.columns = df.columns.str.strip()
 
 # =========================
-# DATE + AGE
+# DATE + AGE CALCULATION
 # =========================
 df["Date Sent"] = pd.to_datetime(df["Date Sent"], errors="coerce", dayfirst=True)
+
 today = pd.Timestamp.today().normalize()
 df["AgeDays"] = (today - df["Date Sent"]).dt.days
 
 # =========================
-# OVERDUE FILTER
+# OVERDUE FILTER (>7 DAYS)
 # =========================
 tq_over = df[(df["Doc Type"] == "TQ") & (df["AgeDays"] > 7)]
 rfi_over = df[(df["Doc Type"] == "RFI") & (df["AgeDays"] > 7)]
@@ -100,95 +101,110 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# VENN STYLE CIRCLES (IMPROVED)
+# CLEAN VENN DASHBOARD (FIXED)
 # =========================
+
 st.markdown("""
 <div style="
-    position:relative;
-    width:100%;
-    height:260px;
-    margin-top:20px;
-    border:1px solid rgba(0,191,255,0.15);
+    background:#0b1a2f;
+    padding:20px;
     border-radius:18px;
-    background:rgba(11,26,47,0.4);
+    border:1px solid rgba(0,191,255,0.2);
 ">
 """, unsafe_allow_html=True)
 
-# LEFT CIRCLE (TQ)
-st.markdown(f"""
-<div style="
-    position:absolute;
-    left:18%;
-    top:50px;
-    width:140px;
-    height:140px;
-    border-radius:50%;
-    background:rgba(0,150,255,0.18);
-    border:2px solid #00bfff;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-">
-    <div style="color:#00bfff;font-size:13px;font-weight:600;">TQ Overdue</div>
-    <div style="color:white;font-size:22px;font-weight:bold;">{len(tq_over)}</div>
-    <div style="color:#9fb3c8;font-size:12px;">{pct(tq_over)}%</div>
-</div>
-""", unsafe_allow_html=True)
+c1, c2, c3 = st.columns([1, 1.2, 1])
 
-# CENTER CIRCLE (BOTH RISK)
-st.markdown(f"""
-<div style="
-    position:absolute;
-    left:42%;
-    top:30px;
-    width:150px;
-    height:150px;
-    border-radius:50%;
-    background:rgba(0,255,200,0.12);
-    border:2px solid #00ffd5;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    z-index:2;
-">
-    <div style="color:#00ffd5;font-size:12px;font-weight:600;">
-        Both Risk
+# =========================
+# TQ OVERDUE
+# =========================
+with c1:
+    st.markdown(f"""
+    <div style="
+        width:140px;
+        height:140px;
+        border-radius:50%;
+        margin:auto;
+        background:rgba(0,150,255,0.18);
+        border:2px solid #00bfff;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+    ">
+        <div style="color:#00bfff;font-size:13px;font-weight:600;">
+            TQ Overdue
+        </div>
+        <div style="color:white;font-size:22px;font-weight:bold;">
+            {len(tq_over)}
+        </div>
+        <div style="color:#9fb3c8;font-size:12px;">
+            {pct(tq_over)}%
+        </div>
     </div>
-    <div style="color:white;font-size:22px;font-weight:bold;">
-        {len(both_risk)}
-    </div>
-    <div style="color:#9fb3c8;font-size:12px;">
-        {pct(both_risk)}%
-    </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# RIGHT CIRCLE (RFI)
-st.markdown(f"""
-<div style="
-    position:absolute;
-    right:18%;
-    top:50px;
-    width:140px;
-    height:140px;
-    border-radius:50%;
-    background:rgba(255,100,255,0.12);
-    border:2px solid #ff6bd6;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-">
-    <div style="color:#ff6bd6;font-size:13px;font-weight:600;">RFI Overdue</div>
-    <div style="color:white;font-size:22px;font-weight:bold;">{len(rfi_over)}</div>
-    <div style="color:#9fb3c8;font-size:12px;">{pct(rfi_over)}%</div>
-</div>
-""", unsafe_allow_html=True)
+# =========================
+# BOTH RISK
+# =========================
+with c2:
+    st.markdown(f"""
+    <div style="
+        width:160px;
+        height:160px;
+        border-radius:50%;
+        margin:auto;
+        background:rgba(0,255,200,0.12);
+        border:2px solid #00ffd5;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+        transform: translateY(-8px);
+    ">
+        <div style="color:#00ffd5;font-size:12px;font-weight:600;">
+            Both Risk (Overlap)
+        </div>
+        <div style="color:white;font-size:22px;font-weight:bold;">
+            {len(both_risk)}
+        </div>
+        <div style="color:#9fb3c8;font-size:12px;">
+            {pct(both_risk)}%
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# =========================
+# RFI OVERDUE
+# =========================
+with c3:
+    st.markdown(f"""
+    <div style="
+        width:140px;
+        height:140px;
+        border-radius:50%;
+        margin:auto;
+        background:rgba(255,100,255,0.12);
+        border:2px solid #ff6bd6;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+    ">
+        <div style="color:#ff6bd6;font-size:13px;font-weight:600;">
+            RFI Overdue
+        </div>
+        <div style="color:white;font-size:22px;font-weight:bold;">
+            {len(rfi_over)}
+        </div>
+        <div style="color:#9fb3c8;font-size:12px;">
+            {pct(rfi_over)}%
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("</div>", unsafe_allow_html=True)
 

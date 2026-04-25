@@ -50,39 +50,33 @@ def render_tracker(df):
     left, right = st.columns([2, 1])
 
     # =========================
-    # KPI CARD (PURE STREAMLIT FIX)
+    # KPI BOX (STREAMLIT NATIVE)
     # =========================
     def kpi_box(value, label, pct, color):
 
-        st.markdown(
-            f"""
-            <div style="
-                background:{color};
-                padding:20px;
-                border-radius:16px;
-                text-align:center;
-                color:white;
-                min-height:140px;
-                display:flex;
-                flex-direction:column;
-                justify-content:center;
-                align-items:center;
-            ">
-                <div style="font-size:36px;font-weight:700;">
-                    {value}
-                </div>
+        with st.container(border=True):
 
-                <div style="font-size:15px;margin-top:5px;">
-                    {label}
-                </div>
+            st.markdown(
+                f"""
+                <div style="
+                    text-align:center;
+                    padding:10px;
+                ">
+                    <div style="font-size:38px;font-weight:700;color:{color};">
+                        {value}
+                    </div>
 
-                <div style="font-size:13px;opacity:0.9;">
-                    {pct}
+                    <div style="font-size:15px;margin-top:5px;font-weight:600;">
+                        {label}
+                    </div>
+
+                    <div style="font-size:13px;color:gray;">
+                        {pct}
+                    </div>
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+                """,
+                unsafe_allow_html=True
+            )
 
     # =========================
     # LEFT KPIs

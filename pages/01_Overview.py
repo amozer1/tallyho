@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import plotly.graph_objects as go
 from utils.data_loader import load_data
 
 # =========================
@@ -17,37 +18,46 @@ today = pd.Timestamp.today().normalize()
 df["AgeDays"] = (today - df["Date Sent"]).dt.days
 
 # =========================
-# FILTERS (>7 DAYS)
+# FILTERS
 # =========================
 tq_over = df[(df["Doc Type"] == "TQ") & (df["AgeDays"] > 7)]
 rfi_over = df[(df["Doc Type"] == "RFI") & (df["AgeDays"] > 7)]
 
-tq_count = len(tq_over)
-rfi_count = len(rfi_over)
-
-tq_set = set(tq_over["Recipient"])
-rfi_set = set(rfi_over["Recipient"])
-
-both_count = len(tq_set.intersection(rfi_set))
-
 total_overdue = len(df[df["AgeDays"] > 7])
 
+# =========================
+# PERCENT FUNCTION
+# =========================
 def pct(x):
-    return round((x / total_overdue) * 100, 1) if total_overdue else 0
+    return round((len(x) / total_overdue) * 100, 1) if total_overdue else 0
 
 # =========================
 # HEADER
 # =========================
-l, m, r = st.columns([2, 3, 1])
+left, middle, right = st.columns([2, 3, 1])
 
-with l:
-    st.markdown("<h2 style='color:white;'>TQ & RFI Dashboard</h2>", unsafe_allow_html=True)
+with left:
+    st.markdown("""
+    <h2 style="color:white;margin:0;">
+        TQ & RFI Dashboard
+    </h2>
+    """, unsafe_allow_html=True)
 
-with m:
-    st.markdown("<p style='color:#9fb3c8;'>Project Overview and Response Analytics</p>", unsafe_allow_html=True)
+with middle:
+    st.markdown("""
+    <p style="color:#9fb3c8;margin:10px 0 0 0;">
+        Project Overview and Response Analytics
+    </p>
+    """, unsafe_allow_html=True)
 
-with r:
-    st.markdown(f"<h4 style='text-align:right;color:white;'>{datetime.today().strftime('%d %b %Y')}</h4>", unsafe_allow_html=True)
+with right:
+    st.markdown(f"""
+    <div style="text-align:right;">
+        <h4 style="color:white;margin:0;">
+            {datetime.today().strftime('%d %b %Y')}
+        </h4>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -55,72 +65,100 @@ st.markdown("---")
 # SECTION TITLE
 # =========================
 st.markdown("""
-<h3 style="color:white;">Project Overview Analytics</h3>
-<p style="color:#9fb3c8;">Not responded within 7 days – TQ & RFI ageing overview</p>
+<div style="
+    background:#0b1a2f;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:10px;
+">
+<h3 style="color:white;margin:0;">
+Project Overview Analytics
+</h3>
+<p style="color:#9fb3c8;margin:5px 0 0 0;">
+Not Responded within 7 days – TQ & RFI Ageing Overview
+</p>
+</div>
 """, unsafe_allow_html=True)
 
 # =========================
-# KPI ROW (CLEAN BLOCKS)
+# KPI BOXES (SMALL EXECUTIVE CARDS)
 # =========================
-k1, k2, k3 = st.columns(3)
+k1, k2, k3, k4 = st.columns(4)
 
 with k1:
-    st.markdown(f"""
-    <div style="background:#1b2b3a;padding:20px;border-radius:12px;">
-        <h4 style="color:#2F80ED;margin:0;">TQ Not Responded</h4>
-        <h2 style="color:white;margin:5px 0;">{tq_count}</h2>
-        <p style="color:#9fb3c8;">{pct(tq_count)}% of overdue</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("TQ Not Responded", len(tq_over), f"{pct(tq_over)}%")
 
 with k2:
-    st.markdown(f"""
-    <div style="background:#1b2b3a;padding:20px;border-radius:12px;">
-        <h4 style="color:#EB5757;margin:0;">RFI Not Responded</h4>
-        <h2 style="color:white;margin:5px 0;">{rfi_count}</h2>
-        <p style="color:#9fb3c8;">{pct(rfi_count)}% of overdue</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("RFI Not Responded", len(rfi_over), f"{pct(rfi_over)}%")
 
 with k3:
-    st.markdown(f"""
-    <div style="background:#1b2b3a;padding:20px;border-radius:12px;">
-        <h4 style="color:#00FFD5;margin:0;">Both (Overlap)</h4>
-        <h2 style="color:white;margin:5px 0;">{both_count}</h2>
-        <p style="color:#9fb3c8;">Shared recipients</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("Both (Derived)", min(len(tq_over), len(rfi_over)), "-")
 
-st.markdown("---")
+with k4:
+    st.metric("Total >7 Days", total_overdue)
 
 # =========================
-# SECOND ROW (INSIGHT + TOTAL)
+# MAIN COMPARISON VISUAL (PROFESSIONAL)
 # =========================
-left, right = st.columns([2, 1])
 
-with left:
-    st.markdown(f"""
-    <div style="background:#0b1a2f;padding:20px;border-radius:12px;">
-        <h4 style="color:white;">Summary Insight</h4>
-        <ul style="color:#9fb3c8;line-height:2;">
-            <li>TQ Not Responded: {tq_count} ({pct(tq_count)}%)</li>
-            <li>RFI Not Responded: {rfi_count} ({pct(rfi_count)}%)</li>
-            <li>Both Overdue Recipients: {both_count}</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown("### TQ vs RFI Ageing Overview")
 
-with right:
-    st.markdown(f"""
-    <div style="
-        background:#1b2b3a;
-        padding:25px;
-        border-radius:12px;
-        border-left:5px solid #2F80ED;
-        text-align:center;
-    ">
-        <h4 style="color:white;">Total Outstanding</h4>
-        <h1 style="color:white;margin:10px 0;">{total_overdue}</h1>
-        <p style="color:#9fb3c8;">{pct(total_overdue)}% of dataset</p>
-    </div>
-    """, unsafe_allow_html=True)
+fig = go.Figure()
+
+fig.add_trace(go.Bar(
+    name="TQ Not Responded",
+    x=["TQ"],
+    y=[len(tq_over)],
+    text=[f"{len(tq_over)} ({pct(tq_over)}%)"],
+    textposition="auto",
+    marker_color="#2F80ED"
+))
+
+fig.add_trace(go.Bar(
+    name="RFI Not Responded",
+    x=["RFI"],
+    y=[len(rfi_over)],
+    text=[f"{len(rfi_over)} ({pct(rfi_over)}%)"],
+    textposition="auto",
+    marker_color="#EB5757"
+))
+
+fig.update_layout(
+    barmode="group",
+    paper_bgcolor="#0b1a2f",
+    plot_bgcolor="#0b1a2f",
+    font=dict(color="white"),
+    height=400,
+    legend=dict(font=dict(color="white"))
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+# =========================
+# FINAL SUMMARY PANEL (SMALL BOX STYLE)
+# =========================
+
+st.markdown("### Summary Snapshot")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.info(f"""
+    **TQ Not Responded**  
+    {len(tq_over)} items  
+    {pct(tq_over)}%
+    """)
+
+with c2:
+    st.info(f"""
+    **RFI Not Responded**  
+    {len(rfi_over)} items  
+    {pct(rfi_over)}%
+    """)
+
+with c3:
+    st.warning(f"""
+    **Total Outstanding >7 Days**  
+    {total_overdue} items  
+    100%
+    """)

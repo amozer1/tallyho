@@ -63,71 +63,104 @@ def render_tracker(df):
     left, right = st.columns([2.5, 1])
 
     # =========================
-    # LEFT SIDE KPI CIRCLES
+    # LEFT SIDE (CIRCLES + BORDER CARD)
     # =========================
     with left:
 
         fig = go.Figure()
 
-        # Left circle - TQ
+        # =========================
+        # OUTER BORDER RECTANGLE (CARD)
+        # =========================
+        fig.add_shape(
+            type="rect",
+            x0=-0.3, y0=-0.2,
+            x1=3.5, y1=2.0,
+            line=dict(color="rgba(255,255,255,0.35)", width=2),
+            fillcolor="rgba(255,255,255,0.03)",
+            layer="below"
+        )
+
+        # =========================
+        # TITLE ABOVE CIRCLES
+        # =========================
+        fig.add_annotation(
+            x=1.6, y=1.85,
+            text="<b>TQ AND RFI OVERVIEW</b>",
+            showarrow=False,
+            font=dict(size=20, color="white"),
+            align="center"
+        )
+
+        # =========================
+        # CIRCLES
+        # =========================
+
+        # TQ
         fig.add_shape(
             type="circle",
-            x0=0.0, y0=0.2, x1=1.2, y1=1.4,
+            x0=0.1, y0=0.2,
+            x1=1.3, y1=1.4,
             fillcolor="rgba(59,130,246,0.45)",
             line=dict(color="#3b82f6", width=4),
             layer="below"
         )
 
-        # Right circle - RFI
+        # RFI
         fig.add_shape(
             type="circle",
-            x0=2.0, y0=0.2, x1=3.2, y1=1.4,
+            x0=1.9, y0=0.2,
+            x1=3.1, y1=1.4,
             fillcolor="rgba(34,197,94,0.45)",
             line=dict(color="#22c55e", width=4),
             layer="below"
         )
 
-        # Middle circle - TOTAL (larger)
+        # TOTAL (middle, slightly larger)
         fig.add_shape(
             type="circle",
-            x0=0.9, y0=0.05, x1=2.3, y1=1.55,
+            x0=0.95, y0=0.05,
+            x1=2.35, y1=1.55,
             fillcolor="rgba(168,85,247,0.65)",
             line=dict(color="#a855f7", width=5),
             layer="above"
         )
 
-        # Text annotations
+        # =========================
+        # TEXT INSIDE CIRCLES
+        # =========================
+
         fig.add_annotation(
-            x=0.6, y=0.8,
-            text=f"<b>Total TQ</b><br><span style='font-size:28px'>{tq_total}</span><br>{tq_pct}%",
+            x=0.7, y=0.8,
+            text=f"<b>Total TQ</b><br><span style='font-size:26px'>{tq_total}</span><br>{tq_pct}%",
             showarrow=False,
-            font=dict(color="white", size=16),
-            align="center"
+            font=dict(color="white")
         )
 
         fig.add_annotation(
-            x=1.6, y=0.82,
-            text=f"<b>Total</b><br><span style='font-size:34px'>{total}</span><br>100%",
+            x=1.65, y=0.85,
+            text=f"<b>Total</b><br><span style='font-size:32px'>{total}</span><br>100%",
             showarrow=False,
-            font=dict(color="white", size=18),
-            align="center"
+            font=dict(color="white")
         )
 
         fig.add_annotation(
             x=2.6, y=0.8,
-            text=f"<b>Total RFI</b><br><span style='font-size:28px'>{rfi_total}</span><br>{rfi_pct}%",
+            text=f"<b>Total RFI</b><br><span style='font-size:26px'>{rfi_total}</span><br>{rfi_pct}%",
             showarrow=False,
-            font=dict(color="white", size=16),
-            align="center"
+            font=dict(color="white")
         )
 
+        # =========================
+        # LAYOUT
+        # =========================
         fig.update_layout(
-            height=320,
+            height=360,
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[-0.2, 3.4]),
-            yaxis=dict(visible=False, range=[0, 1.7]),
+            xaxis=dict(visible=False, range=[-0.5, 3.7]),
+            yaxis=dict(visible=False, range=[-0.3, 2.1]),
         )
 
         st.plotly_chart(fig, use_container_width=True)

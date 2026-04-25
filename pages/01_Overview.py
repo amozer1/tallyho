@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import io
 import streamlit.components.v1 as components
 from utils.data_loader import load_data
 
@@ -41,7 +42,7 @@ tq_total = len(tq)
 rfi_total = len(rfi)
 
 # =========================
-# HEADER (PROFESSIONAL + DOWNLOAD)
+# HEADER (CLEAN + STABLE)
 # =========================
 st.markdown("---")
 
@@ -66,6 +67,14 @@ with col1:
     """, unsafe_allow_html=True)
 
 with col2:
+
+    # =========================
+    # REAL DOWNLOAD (FIXED)
+    # =========================
+    output = io.BytesIO()
+    df.to_excel(output, index=False)
+    output.seek(0)
+
     st.markdown(f"""
     <div style="
         background: linear-gradient(90deg, #0b1a2f, #0f2747);
@@ -78,21 +87,16 @@ with col2:
         <div style="color:white;font-size:15px;font-weight:600;">
             {datetime.today().strftime('%d %b %Y')}
         </div>
+    """, unsafe_allow_html=True)
 
-        <div style="margin-top:10px;">
-            <a href="#" style="
-                background:#00bfff;
-                color:black;
-                padding:6px 10px;
-                border-radius:6px;
-                text-decoration:none;
-                font-size:12px;
-                font-weight:600;
-            ">
-                ⬇ Download Report
-            </a>
-        </div>
+    st.download_button(
+        label="⬇ Download Report",
+        data=output,
+        file_name=f"TQ_RFI_Report_{datetime.today().strftime('%d_%b_%Y')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
+    st.markdown("""
         <div style="color:#9fb3c8;font-size:11px;margin-top:6px;">
             Last Updated
         </div>
@@ -102,7 +106,7 @@ with col2:
 st.markdown("---")
 
 # =========================
-# CIRCLE FUNCTION
+# CIRCLE FUNCTION (UNCHANGED LOGIC)
 # =========================
 def render_ring(title, open_v, closed_v, out_v, total, color):
 
@@ -110,31 +114,26 @@ def render_ring(title, open_v, closed_v, out_v, total, color):
     <div style="display:flex;justify-content:center;">
     <svg width="320" height="320" viewBox="0 0 36 36">
 
-        <!-- BACKGROUND -->
         <circle cx="18" cy="18" r="15.915" fill="none"
             stroke="#1b2b3a" stroke-width="3.8"/>
 
-        <!-- OPEN -->
         <circle cx="18" cy="18" r="15.915" fill="none"
             stroke="#FFA500" stroke-width="3.8"
             stroke-dasharray="{pct(open_v,total)} 100"
             transform="rotate(-90 18 18)"/>
 
-        <!-- CLOSED -->
         <circle cx="18" cy="18" r="15.915" fill="none"
             stroke="#00FFD5" stroke-width="3.8"
             stroke-dasharray="{pct(closed_v,total)} 100"
             stroke-dashoffset="-{pct(open_v,total)}"
             transform="rotate(-90 18 18)"/>
 
-        <!-- OUTSTANDING -->
         <circle cx="18" cy="18" r="15.915" fill="none"
             stroke="#FF4B4B" stroke-width="3.8"
             stroke-dasharray="{pct(out_v,total)} 100"
             stroke-dashoffset="-{pct(open_v,total)+pct(closed_v,total)}"
             transform="rotate(-90 18 18)"/>
 
-        <!-- TEXT -->
         <text x="18" y="15" text-anchor="middle" fill="white" font-size="2.5">{title}</text>
         <text x="18" y="18" text-anchor="middle" fill="white" font-size="1.8">Total: {total}</text>
 

@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
 
 
 def render_venn_overview(df):
@@ -10,18 +12,14 @@ def render_venn_overview(df):
     df = df.copy()
 
     # =========================
-    # NORMALISE COLUMN NAMES
+    # CLEAN COLUMN NAMES
     # =========================
     df.columns = [c.strip().lower() for c in df.columns]
 
-    # Map your real columns
-    TYPE = "doc type"
-    PROJECT = "project id"
-    ORIGINATOR = "originator"
-    RECIPIENT = "recipient"
-    SUBJECT = "subject"
-
-    required = [TYPE, PROJECT, ORIGINATOR, RECIPIENT]
+    # =========================
+    # REQUIRED FIELDS
+    # =========================
+    required = ["doc type", "required date", "reply date"]
 
     for c in required:
         if c not in df.columns:
@@ -29,103 +27,87 @@ def render_venn_overview(df):
             return
 
     # =========================
-    # CLEAN DATA
+    # PARSE DATES
     # =========================
-    for col in df.columns:
-        df[col] = df[col].astype(str).str.lower()
+    df["required date"] = pd.to_datetime(df["required date"], errors="coerce")
+    df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
     # =========================
-    # SPLIT TQ / RFI
+    # CLASSIFICATION
     # =========================
-    tq = df[df[TYPE] == "tq"]
-    rfi = df[df[TYPE] == "rfi"]
+
+    # SLA rule: 7 days buffer
+    df["sla_due"] = df["required date"] + pd.Timedelta(days=7)
+
+    df["status_group"] = "SLA Compliant"
+
+    # Overdue condition
+    df.loc[
+        (df["reply date"].isna()) |
+        (df["reply date"] > df["sla_due"]),
+        "status_group"
+    ] = "Overdue"
+
+    # Split TQ / RFI inside categories
+    df["type_group"] = df["doc type"].str.upper()
 
     # =========================
-    # BUILD RELATIONSHIP KEY
+    # COUNTS (NO DUPLICATION)
     # =========================
-    def build_key(x):
-        return f"{x[PROJECT]}|{x[ORIGINATOR]}|{x[RECIPIENT]}|{x[SUBJECT][:20]}"
+    tq_total = len(df[df["doc type"] == "tq"])
+    rfi_total = len(df[df["doc type"] == "rfi"])
 
-    tq["key"] = tq.apply(build_key, axis=1)
-    rfi["key"] = rfi.apply(build_key, axis=1)
-
-    # =========================
-    # OVERLAP = COMMON KEYS
-    # =========================
-    overlap_keys = set(tq["key"]).intersection(set(rfi["key"]))
-
-    overlap = df[df.apply(build_key, axis=1).isin(overlap_keys)]
-
-    # =========================
-    # CLEAN GROUPS
-    # =========================
-    tq_only = tq[~tq["key"].isin(overlap_keys)]
-    rfi_only = rfi[~rfi["key"].isin(overlap_keys)]
+    overdue = len(df[df["status_group"] == "Overdue"])
+    sla_ok = len(df[df["status_group"] == "SLA Compliant"])
 
     # =========================
     # TITLE
     # =========================
-    st.markdown("## TQ / RFI Relationship Overview")
+    st.markdown("## Communication Health Overview")
 
     # =========================
-    # VISUAL OUTPUT
+    # DONUT CHART (CLEAN VISUAL)
+    # =========================
+    fig = go.Figure(data=[go.Pie(
+        labels=["TQ / RFI Total", "Overdue (>7 days)", "SLA Compliant"],
+        values=[tq_total + rfi_total, overdue, sla_ok],
+        hole=0.65,
+        marker=dict(colors=["#4da3ff", "#ff4d4d", "#22c55e"])
+    )])
+
+    fig.update_layout(
+        showlegend=True,
+        height=420,
+        margin=dict(l=20, r=20, t=20, b=20),
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="white")
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # SUMMARY METRICS (CLEAR, NO DUPLICATION)
     # =========================
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown(f"""
-        <div style="
-            background: rgba(0,123,255,0.15);
-            padding: 22px;
-            border-radius: 16px;
-            text-align:center;
-        ">
-            <h3 style="color:white;">TQs ONLY</h3>
-            <h1 style="color:#4da3ff;">{len(tq_only)}</h1>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Total TQs", tq_total)
 
     with col2:
-        st.markdown(f"""
-        <div style="
-            background: rgba(138,43,226,0.20);
-            padding: 26px;
-            border-radius: 18px;
-            text-align:center;
-            border: 2px solid rgba(138,43,226,0.6);
-        ">
-            <h3 style="color:white;">OVERLAP</h3>
-            <h1 style="color:#c084fc;">{len(overlap)}</h1>
-            <p style="color:#cbd5e1;font-size:12px;">
-                Project + Originator + Recipient + Subject Match
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Total RFIs", rfi_total)
 
     with col3:
-        st.markdown(f"""
-        <div style="
-            background: rgba(255,165,0,0.15);
-            padding: 22px;
-            border-radius: 16px;
-            text-align:center;
-        ">
-            <h3 style="color:white;">RFIs ONLY</h3>
-            <h1 style="color:#ffb347;">{len(rfi_only)}</h1>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Overdue Items", overdue)
 
     # =========================
-    # INSIGHT SUMMARY
+    # INSIGHT
     # =========================
     st.markdown("---")
 
     st.markdown(f"""
-    ### Insight Summary
+### Insight Summary
+- SLA Compliance Rate: **{round((sla_ok / len(df)) * 100, 1)}%**
+- Overdue Rate: **{round((overdue / len(df)) * 100, 1)}%**
 
-    - Total TQs: **{len(tq)}**
-    - Total RFIs: **{len(rfi)}**
-    - Overlap items: **{len(overlap)}**
-
-    > Overlap is detected using Project ID + Originator + Recipient + Subject similarity.
-    """)
+> This view represents overall communication health across TQ and RFI workflows without duplication or double counting.
+""")

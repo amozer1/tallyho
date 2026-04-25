@@ -36,7 +36,7 @@ tq_total = len(tq)
 rfi_total = len(rfi)
 
 # =========================
-# HEADER (PROFESSIONAL BOXED)
+# HEADER (PROFESSIONAL)
 # =========================
 st.markdown(f"""
 <div style="
@@ -83,7 +83,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =========================
-# SAFE SVG RING FUNCTION (UNCHANGED STRUCTURE)
+# CIRCLE FUNCTION (UNCHANGED LOGIC)
 # =========================
 def render_ring(title, open_v, closed_v, out_v, total, color):
 
@@ -115,7 +115,7 @@ def render_ring(title, open_v, closed_v, out_v, total, color):
             stroke-dashoffset="-{pct(open_v,total)+pct(closed_v,total)}"
             transform="rotate(-90 18 18)"/>
 
-        <!-- CENTER TEXT -->
+        <!-- TEXT -->
         <text x="18" y="15" text-anchor="middle" fill="white" font-size="2.5">{title}</text>
         <text x="18" y="18" text-anchor="middle" fill="white" font-size="1.8">Total: {total}</text>
 

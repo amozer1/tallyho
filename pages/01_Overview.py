@@ -24,23 +24,15 @@ tq_df = df[df["Doc Type"] == "TQ"]
 rfi_df = df[df["Doc Type"] == "RFI"]
 
 # =========================
-# CLASSIFICATION FUNCTION
+# CLASSIFICATION
 # =========================
 def classify(data):
     open_items = data[(data["Status"].str.lower() == "open") & (data["AgeDays"] <= 7)]
     closed_items = data[data["Status"].str.lower() == "closed"]
     outstanding_items = data[data["AgeDays"] > 7]
-
     return len(open_items), len(closed_items), len(outstanding_items)
 
-# =========================
-# TQ VALUES
-# =========================
 tq_open, tq_closed, tq_outstanding = classify(tq_df)
-
-# =========================
-# RFI VALUES
-# =========================
 rfi_open, rfi_closed, rfi_outstanding = classify(rfi_df)
 
 # =========================
@@ -60,52 +52,37 @@ with r:
 st.markdown("---")
 
 # =========================
-# TWO DONUTS (FINAL MODEL)
+# DONUT FUNCTION (REUSABLE)
+# =========================
+def donut(title, open_v, closed_v, outstanding_v):
+    fig = go.Figure(data=[go.Pie(
+        labels=["Open", "Closed", "Outstanding"],
+        values=[open_v, closed_v, outstanding_v],
+        hole=0.75,
+        textinfo="label+value+percent",
+        insidetextorientation="radial",
+        marker=dict(colors=["#FFA500", "#00FFD5", "#FF4B4B"])
+    )])
+
+    fig.update_layout(
+        title=title,
+        paper_bgcolor="#0b1a2f",
+        font=dict(color="white", size=12),
+        height=360,
+        margin=dict(t=40, b=20, l=10, r=10)
+    )
+
+    return fig
+
+# =========================
+# LAYOUT
 # =========================
 c1, c2 = st.columns(2)
 
-# =========================
-# TQ DONUT
-# =========================
 with c1:
     st.markdown("### TQ Lifecycle")
+    st.plotly_chart(donut("TQ", tq_open, tq_closed, tq_outstanding), use_container_width=True)
 
-    fig_tq = go.Figure(data=[go.Pie(
-        labels=["Open (≤7d)", "Closed", "Outstanding (>7d)"],
-        values=[tq_open, tq_closed, tq_outstanding],
-        hole=0.70,
-        marker=dict(colors=["#FFA500", "#00FFD5", "#FF4B4B"]),
-        textinfo="label+percent",
-        hoverinfo="label+value+percent"
-    )])
-
-    fig_tq.update_layout(
-        paper_bgcolor="#0b1a2f",
-        font=dict(color="white"),
-        height=350
-    )
-
-    st.plotly_chart(fig_tq, use_container_width=True)
-
-# =========================
-# RFI DONUT
-# =========================
 with c2:
     st.markdown("### RFI Lifecycle")
-
-    fig_rfi = go.Figure(data=[go.Pie(
-        labels=["Open (≤7d)", "Closed", "Outstanding (>7d)"],
-        values=[rfi_open, rfi_closed, rfi_outstanding],
-        hole=0.70,
-        marker=dict(colors=["#FFA500", "#00FFD5", "#FF4B4B"]),
-        textinfo="label+percent",
-        hoverinfo="label+value+percent"
-    )])
-
-    fig_rfi.update_layout(
-        paper_bgcolor="#0b1a2f",
-        font=dict(color="white"),
-        height=350
-    )
-
-    st.plotly_chart(fig_rfi, use_container_width=True)
+    st.plotly_chart(donut("RFI", rfi_open, rfi_closed, rfi_outstanding), use_container_width=True)

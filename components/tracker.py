@@ -64,7 +64,7 @@ def render_tracker(df):
     left, right = st.columns([3, 1])
 
     # =========================
-    # LEFT PLOT
+    # LEFT CHART
     # =========================
     with left:
 
@@ -75,73 +75,76 @@ def render_tracker(df):
         # =========================
         fig.add_shape(
             type="rect",
-            x0=-0.6, y0=-0.25,
-            x1=3.4, y1=1.85,
+            x0=-0.6, y0=-0.2,
+            x1=3.6, y1=1.9,
             line=dict(color="rgba(255,255,255,0.6)", width=2),
             fillcolor="rgba(0,0,0,0)",
         )
 
         # =========================
-        # CIRCLES (UNCHANGED)
+        # RIGHT KPI PANEL (CLEAN BOX)
+        # =========================
+        fig.add_shape(
+            type="rect",
+            x0=2.55, y0=0.1,
+            x1=3.5, y1=1.7,
+            line=dict(color="rgba(255,255,255,0.4)", width=1.5),
+            fillcolor="rgba(255,255,255,0.03)",
+        )
+
+        # =========================
+        # CIRCLES (SLIGHTLY REDUCED SIZE FOR FIT)
         # =========================
         fig.add_shape(
             type="circle",
-            x0=0.0, y0=0.2, x1=1.2, y1=1.4,
+            x0=0.1, y0=0.35, x1=1.1, y1=1.35,
             fillcolor="rgba(59,130,246,0.55)",
             line=dict(color="#3b82f6", width=2),
         )
 
         fig.add_shape(
             type="circle",
-            x0=2.0, y0=0.2, x1=3.2, y1=1.4,
-            fillcolor="rgba(34,197,94,0.55)",
-            line=dict(color="#22c55e", width=2),
+            x0=1.4, y0=0.35, x1=2.4, y1=1.35,
+            fillcolor="rgba(168,85,247,0.65)",
+            line=dict(color="#a855f7", width=2),
         )
 
         fig.add_shape(
             type="circle",
-            x0=0.9, y0=0.05, x1=2.3, y1=1.55,
-            fillcolor="rgba(168,85,247,0.70)",
-            line=dict(color="#a855f7", width=2),
+            x0=0.75, y0=0.15, x1=1.85, y1=1.55,
+            fillcolor="rgba(34,197,94,0.45)",
+            line=dict(color="#22c55e", width=2),
         )
 
         # =========================
         # LABELS
         # =========================
         fig.add_annotation(
-            x=0.6, y=0.8,
+            x=0.6, y=0.85,
             text=f"<b>TQ</b><br>{tq_total}<br>{tq_pct}%",
             showarrow=False,
-            font=dict(color="white", size=15)
+            font=dict(color="white", size=14)
         )
 
         fig.add_annotation(
-            x=1.6, y=0.82,
+            x=1.65, y=0.9,
             text=f"<b>TOTAL</b><br>{total}<br>100%",
             showarrow=False,
-            font=dict(color="white", size=17)
+            font=dict(color="white", size=16)
         )
 
         fig.add_annotation(
-            x=2.6, y=0.8,
+            x=2.2, y=0.85,
             text=f"<b>RFI</b><br>{rfi_total}<br>{rfi_pct}%",
             showarrow=False,
-            font=dict(color="white", size=15)
+            font=dict(color="white", size=14)
         )
 
         # =========================
-        # RIGHT BULLET SUMMARY PANEL
+        # RIGHT KPI PANEL TEXT (CLEAN BULLETS)
         # =========================
-        fig.add_shape(
-            type="rect",
-            x0=2.35, y0=0.05,
-            x1=3.35, y1=1.55,
-            line=dict(color="rgba(255,255,255,0.4)", width=1.5),
-            fillcolor="rgba(255,255,255,0.03)",
-        )
-
         fig.add_annotation(
-            x=2.85, y=1.35,
+            x=3.05, y=1.55,
             text=f"""
 ⚙ <b>Summary</b><br><br>
 
@@ -166,18 +169,18 @@ def render_tracker(df):
         # LAYOUT
         # =========================
         fig.update_layout(
-            height=380,
+            height=420,
             paper_bgcolor="#0b1220",
             plot_bgcolor="#0b1220",
             margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[-0.6, 3.5]),
-            yaxis=dict(visible=False, range=[-0.3, 1.9]),
+            xaxis=dict(visible=False, range=[-0.6, 3.6]),
+            yaxis=dict(visible=False, range=[-0.2, 1.9]),
         )
 
         st.plotly_chart(fig, use_container_width=True)
 
     # =========================
-    # RIGHT STREAMLIT PANEL (OPTIONAL)
+    # STREAMLIT SIDE PANEL
     # =========================
     with right:
         st.markdown("#### ⚙ Summary")

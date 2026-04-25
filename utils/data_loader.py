@@ -1,22 +1,53 @@
 import pandas as pd
+import os
 from datetime import datetime
 
-def load_data(path="data/TQ_TH.xlsx"):
-    df = pd.read_excel(path)
-    df.columns = df.columns.str.strip()
+def load_data():
+    file_path = "data/TQ_TH.xlsx"
 
-    for c in ["Date Sent","Required Date","Reply Date"]:
+    if not os.path.exists(file_path):
+        return pd.DataFrame()
+
+    df = pd.read_excel(file_path)
+
+    # Standardise column names
+    df.columns = [c.strip() for c in df.columns]
+
+    rename_map = {
+        "Doc Type": "Type",
+        "Date Sent": "DateSent",
+        "Required Date": "RequiredDate",
+        "Reply Date": "ReplyDate"
+    }
+
+    df.rename(columns=rename_map, inplace=True)
+
+    # Parse dates
+    for c in ["DateSent", "RequiredDate", "ReplyDate"]:
         if c in df.columns:
-            df[c] = pd.to_datetime(df[c], errors="coerce", dayfirst=True)
+            df[c] = pd.to_datetime(df[c], dayfirst=True, errors="coerce")
 
-    now = pd.Timestamp(datetime.now())
+    today = pd.Timestamp.today().normalize()
 
-    df["AgeDays"] = (now - df["Date Sent"]).dt.days
-    df["ResponseDays"] = (df["Reply Date"] - df["Date Sent"]).dt.days
-    df["ResponseDays"] = df["ResponseDays"].fillna(df["AgeDays"])
+    # Age Days
+    if "DateSent" in df.columns:
+        df["AgeDays"] = (today - df["DateSent"]).dt.days
+    else:
+        df["AgeDays"] = 0
 
-    df["Closed"] = df["Reply Date"].notna() | (df["Status"].str.lower()=="closed")
-    df["Open"] = ~df["Closed"]
-    df["Overdue"] = (df["AgeDays"] > 7) & df["Open"]
+    # Response Days
+    if "ReplyDate" in df.columns:
+        df["ResponseDays"] = (df["ReplyDate"] - df["DateSent"]).dt.days
+    else:
+        df["ResponseDays"] = 0
+
+    # Outstanding
+    df["Outstanding"] = df["ReplyDate"].isna()
+
+    # Overdue
+    if "RequiredDate" in df.columns:
+        df["Overdue"] = (today > df["RequiredDate"]) & (df["Outstanding"])
+    else:
+        df["Overdue"] = False
 
     return df

@@ -5,12 +5,16 @@ from datetime import datetime
 def render_header():
     st.markdown("""
     <style>
-        .header-card {
+        .header-wrapper {
             background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
             border: 1px solid rgba(122, 60, 255, 0.25);
             border-radius: 16px;
-            padding: 18px 22px;
+            padding: 18px 22px 10px 22px;
             box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
+        }
+
+        .header-card {
+            background: transparent;
             min-height: 95px;
         }
 
@@ -31,11 +35,13 @@ def render_header():
             color: white;
             font-size: 16px;
             font-weight: 700;
+            text-align: center;
         }
 
         .date-sub {
             color: #9fb3c8;
             font-size: 11px;
+            text-align: center;
             margin-top: 4px;
         }
 
@@ -50,7 +56,7 @@ def render_header():
             box-shadow: 0 0 15px rgba(122, 60, 255, 0.35);
         }
 
-        /* 🔥 PREMIUM PURPLE SEPARATOR LINE */
+        /* 🔥 FULL-WIDTH UNBROKEN LINE */
         .purple-line {
             height: 4px;
             width: 100%;
@@ -63,56 +69,40 @@ def render_header():
                 #6a00ff
             );
             box-shadow: 0 0 12px rgba(138, 43, 226, 0.35);
-            opacity: 0.95;
         }
     </style>
     """, unsafe_allow_html=True)
 
+    # =========================
+    # WRAPPER (IMPORTANT FIX)
+    # =========================
+    st.markdown('<div class="header-wrapper">', unsafe_allow_html=True)
+
     left, middle, right = st.columns([4, 2, 1.5])
 
-    # =========================
-    # LEFT - TITLE
-    # =========================
+    # LEFT
     with left:
         st.markdown("""
         <div class="header-card">
-            <div class="title">
-                TQ / RFI Intelligence Hub
-            </div>
-            <div class="subtitle">
-                Project Controls • SLA Monitoring • Response Analytics
-            </div>
+            <div class="title">TQ / RFI Intelligence Hub</div>
+            <div class="subtitle">Project Controls • SLA Monitoring • Response Analytics</div>
         </div>
-
-        <div class="purple-line"></div>
         """, unsafe_allow_html=True)
 
-    # =========================
-    # MIDDLE - DATE
-    # =========================
+    # MIDDLE
     with middle:
         st.markdown(f"""
-        <div class="header-card" style="text-align:center;">
-            <div class="date-title">
-                {datetime.today().strftime('%d %b %Y')}
-            </div>
-            <div class="date-sub">
-                Last Updated
-            </div>
+        <div class="header-card">
+            <div class="date-title">{datetime.today().strftime('%d %b %Y')}</div>
+            <div class="date-sub">Last Updated</div>
         </div>
-
-        <div class="purple-line"></div>
         """, unsafe_allow_html=True)
 
-    # =========================
-    # RIGHT - EXPORT
-    # =========================
+    # RIGHT
     with right:
         st.markdown("""
         <div class="header-card">
-            <div class="download">
-                ⬇ Export Report
-            </div>
+            <div class="download">⬇ Export Report</div>
             <div style="
                 color:#9fb3c8;
                 font-size:11px;
@@ -122,6 +112,11 @@ def render_header():
                 Download latest analytics
             </div>
         </div>
-
-        <div class="purple-line"></div>
         """, unsafe_allow_html=True)
+
+    # =========================
+    # FULL WIDTH LINE (FIXED)
+    # =========================
+    st.markdown('<div class="purple-line"></div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)

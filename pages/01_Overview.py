@@ -39,35 +39,41 @@ both_risk = df[
     (df["AgeDays"] > 7)
 ]
 
-# =========================
-# % FUNCTION
-# =========================
 def pct(x):
     return round((len(x) / total_overdue) * 100, 1) if total_overdue else 0
 
 # =========================
-# HEADER (MAIN TITLE)
+# TOP HEADER (MAIN LAYOUT ROW)
 # =========================
-st.markdown("""
-<div style="
-    background:#0b1a2f;
-    padding:18px;
-    border-radius:14px;
-    border:1px solid rgba(0,191,255,0.25);
-">
-    <h2 style="color:white;margin:0;">
-        Not Responded Within 7 Days
+left, middle, right = st.columns([2, 3, 1])
+
+with left:
+    st.markdown("""
+    <h2 style="margin:0;color:white;">
+        TQ & RFI Dashboard
     </h2>
-    <p style="color:#9fb3c8;margin:5px 0 0 0;">
-        TQ and RFI Ageing Overview
+    """, unsafe_allow_html=True)
+
+with middle:
+    st.markdown("""
+    <p style="margin:10px 0 0 0;color:#9fb3c8;font-size:14px;">
+        Project Overview and Response Analytics
     </p>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+with right:
+    st.markdown(f"""
+    <div style="text-align:right;">
+        <h4 style="color:white;margin:0;">
+            {datetime.today().strftime('%d %b %Y')}
+        </h4>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
 # =========================
-# SECTION HEADER
+# SECTION TITLE
 # =========================
 st.markdown("""
 <div style="
@@ -83,24 +89,24 @@ Project Overview Analytics
 """, unsafe_allow_html=True)
 
 # =========================
-# TOP RIGHT KPI PANEL (SMALL SQUARE STYLE)
+# KPI STRIP (TOP CORNER STYLE)
 # =========================
-k1, k2, k3, k4 = st.columns([1.2, 1, 1, 1])
+k1, k2, k3, k4 = st.columns(4)
 
 with k1:
-    st.markdown("")
-
-with k2:
     st.metric("TQ Not Responded", len(tq_over), f"{pct(tq_over)}%")
 
-with k3:
+with k2:
     st.metric("RFI Not Responded", len(rfi_over), f"{pct(rfi_over)}%")
+
+with k3:
+    st.metric("Both Risk", len(both_risk), f"{pct(both_risk)}%")
 
 with k4:
     st.metric("Total >7 Days", total_overdue)
 
 # =========================
-# MAIN DONUT CHART (OVERVIEW)
+# DONUT CHART (MAIN VISUAL)
 # =========================
 
 st.markdown("### TQ & RFI Ageing Overview")
@@ -139,7 +145,7 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # =========================
-# SMALL SUMMARY CARDS (BOTTOM INSIGHT ROW)
+# SUMMARY CARDS
 # =========================
 
 st.markdown("### Summary Breakdown")

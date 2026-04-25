@@ -63,7 +63,7 @@ overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 # =========================
 # 🔴 PLACE IT HERE (OUTSTANDING ALERT)
 # =========================
-render_outstanding(
+render_outstanding_line(
     overdue=overdue,
     total=total,
     tq_not=tq_not,

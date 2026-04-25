@@ -18,24 +18,30 @@ today = pd.Timestamp.today().normalize()
 df["AgeDays"] = (today - df["Date Sent"]).dt.days
 
 # =========================
-# SPLIT DATA
+# SPLIT
 # =========================
 tq_df = df[df["Doc Type"] == "TQ"]
 rfi_df = df[df["Doc Type"] == "RFI"]
 
 # =========================
-# STATUS COUNTS (TQ)
+# CLASSIFICATION FUNCTION
 # =========================
-tq_open = len(tq_df[tq_df["Status"].str.lower() == "open"])
-tq_closed = len(tq_df[tq_df["Status"].str.lower() == "closed"])
-tq_overdue = len(tq_df[tq_df["AgeDays"] > 7])
+def classify(data):
+    open_items = data[(data["Status"].str.lower() == "open") & (data["AgeDays"] <= 7)]
+    closed_items = data[data["Status"].str.lower() == "closed"]
+    outstanding_items = data[data["AgeDays"] > 7]
+
+    return len(open_items), len(closed_items), len(outstanding_items)
 
 # =========================
-# STATUS COUNTS (RFI)
+# TQ VALUES
 # =========================
-rfi_open = len(rfi_df[rfi_df["Status"].str.lower() == "open"])
-rfi_closed = len(rfi_df[rfi_df["Status"].str.lower() == "closed"])
-rfi_overdue = len(rfi_df[rfi_df["AgeDays"] > 7])
+tq_open, tq_closed, tq_outstanding = classify(tq_df)
+
+# =========================
+# RFI VALUES
+# =========================
+rfi_open, rfi_closed, rfi_outstanding = classify(rfi_df)
 
 # =========================
 # HEADER
@@ -46,7 +52,7 @@ with l:
     st.markdown("<h2 style='color:white;'>TQ & RFI Dashboard</h2>", unsafe_allow_html=True)
 
 with m:
-    st.markdown("<p style='color:#9fb3c8;'>Project Overview & Document Lifecycle</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#9fb3c8;'>Project Overview & SLA Performance</p>", unsafe_allow_html=True)
 
 with r:
     st.markdown(f"<h4 style='text-align:right;color:white;'>{datetime.today().strftime('%d %b %Y')}</h4>", unsafe_allow_html=True)
@@ -54,7 +60,7 @@ with r:
 st.markdown("---")
 
 # =========================
-# TWO DONUT CHARTS SIDE BY SIDE
+# TWO DONUTS (FINAL MODEL)
 # =========================
 c1, c2 = st.columns(2)
 
@@ -62,20 +68,21 @@ c1, c2 = st.columns(2)
 # TQ DONUT
 # =========================
 with c1:
-    st.markdown("### TQ Overview")
+    st.markdown("### TQ Lifecycle")
 
     fig_tq = go.Figure(data=[go.Pie(
-        labels=["Open", "Closed", "Overdue (>7d)"],
-        values=[tq_open, tq_closed, tq_overdue],
-        hole=0.65,
+        labels=["Open (≤7d)", "Closed", "Outstanding (>7d)"],
+        values=[tq_open, tq_closed, tq_outstanding],
+        hole=0.70,
         marker=dict(colors=["#FFA500", "#00FFD5", "#FF4B4B"]),
-        textinfo="label+value"
+        textinfo="label+percent",
+        hoverinfo="label+value+percent"
     )])
 
     fig_tq.update_layout(
         paper_bgcolor="#0b1a2f",
         font=dict(color="white"),
-        height=400
+        height=350
     )
 
     st.plotly_chart(fig_tq, use_container_width=True)
@@ -84,20 +91,21 @@ with c1:
 # RFI DONUT
 # =========================
 with c2:
-    st.markdown("### RFI Overview")
+    st.markdown("### RFI Lifecycle")
 
     fig_rfi = go.Figure(data=[go.Pie(
-        labels=["Open", "Closed", "Overdue (>7d)"],
-        values=[rfi_open, rfi_closed, rfi_overdue],
-        hole=0.65,
+        labels=["Open (≤7d)", "Closed", "Outstanding (>7d)"],
+        values=[rfi_open, rfi_closed, rfi_outstanding],
+        hole=0.70,
         marker=dict(colors=["#FFA500", "#00FFD5", "#FF4B4B"]),
-        textinfo="label+value"
+        textinfo="label+percent",
+        hoverinfo="label+value+percent"
     )])
 
     fig_rfi.update_layout(
         paper_bgcolor="#0b1a2f",
         font=dict(color="white"),
-        height=400
+        height=350
     )
 
     st.plotly_chart(fig_rfi, use_container_width=True)

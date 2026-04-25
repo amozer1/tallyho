@@ -7,10 +7,10 @@ def render_header():
     <style>
         .header-card {
             background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
-            border: 1px solid rgba(0,191,255,0.25);
+            border: 1px solid rgba(122, 60, 255, 0.25);
             border-radius: 16px;
             padding: 18px 22px;
-            box-shadow: 0 0 18px rgba(0,191,255,0.08);
+            box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
             min-height: 95px;
         }
 
@@ -40,32 +40,30 @@ def render_header():
         }
 
         .download {
-            background: linear-gradient(135deg, #00bfff 0%, #00ffd5 100%);
-            color: black;
+            background: linear-gradient(135deg, #7a3cff 0%, #8b5cf6 100%);
+            color: white;
             font-size: 14px;
             font-weight: 800;
             padding: 12px;
             border-radius: 12px;
-            text-align:center;
-            box-shadow: 0 0 15px rgba(0,255,213,0.35);
+            text-align: center;
+            box-shadow: 0 0 15px rgba(122, 60, 255, 0.35);
         }
 
-        .rainbow-line {
-            height: 3px;
+        /* 🔥 PREMIUM PURPLE SEPARATOR LINE */
+        .purple-line {
+            height: 4px;
             width: 100%;
-            margin-top: 12px;
-            border-radius: 5px;
+            margin-top: 14px;
+            border-radius: 6px;
             background: linear-gradient(
                 90deg,
-                #ff0000,
-                #ff7f00,
-                #ffff00,
-                #00ff00,
-                #00ffff,
-                #0000ff,
-                #8b00ff
+                #6a00ff,
+                #8b5cf6,
+                #6a00ff
             );
-            box-shadow: 0 0 10px rgba(0,191,255,0.25);
+            box-shadow: 0 0 12px rgba(138, 43, 226, 0.35);
+            opacity: 0.95;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -73,24 +71,24 @@ def render_header():
     left, middle, right = st.columns([4, 2, 1.5])
 
     # =========================
-    # LEFT TITLE
+    # LEFT - TITLE
     # =========================
     with left:
         st.markdown("""
         <div class="header-card">
             <div class="title">
-                TQ & RFI Performance Control Centre
+                TQ / RFI Intelligence Hub
             </div>
             <div class="subtitle">
-                Project Overview and Service Level Agreement Performance
+                Project Controls • SLA Monitoring • Response Analytics
             </div>
         </div>
 
-        <div class="rainbow-line"></div>
+        <div class="purple-line"></div>
         """, unsafe_allow_html=True)
 
     # =========================
-    # DATE
+    # MIDDLE - DATE
     # =========================
     with middle:
         st.markdown(f"""
@@ -103,11 +101,11 @@ def render_header():
             </div>
         </div>
 
-        <div class="rainbow-line"></div>
+        <div class="purple-line"></div>
         """, unsafe_allow_html=True)
 
     # =========================
-    # DOWNLOAD
+    # RIGHT - EXPORT
     # =========================
     with right:
         st.markdown("""
@@ -125,5 +123,5 @@ def render_header():
             </div>
         </div>
 
-        <div class="rainbow-line"></div>
+        <div class="purple-line"></div>
         """, unsafe_allow_html=True)

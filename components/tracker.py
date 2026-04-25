@@ -57,41 +57,12 @@ def render_tracker(df):
     # =========================
     # OUTSTANDING > 7 DAYS
     # =========================
-    overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
-
-    overdue = len(overdue_df)
-
-    overdue_tq = len(overdue_df[overdue_df["doc type"].str.lower() == "tq"])
-    overdue_rfi = len(overdue_df[overdue_df["doc type"].str.lower() == "rfi"])
+    overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
     # =========================
     # TITLE
     # =========================
     st.markdown("### 📊 TQ & RFI Tracker")
-
-    # =========================
-    # 🚨 OUTSIDE ALERT (TOP OF CHART)
-    # =========================
-    st.markdown(
-        f"""
-        <div style="
-            padding: 8px 12px;
-            border-radius: 8px;
-            background-color: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.8);
-            margin-bottom: 10px;
-            max-width: 520px;
-        ">
-            <div style="color:#ff4d4d; font-weight:800; font-size:14px;">
-                ⚠ Outstanding > 7 Days: {overdue} ({round((overdue/total)*100,1) if total else 0}%)
-            </div>
-            <div style="color:white; font-size:13px; margin-top:4px;">
-                🔵 TQ: {overdue_tq} &nbsp;&nbsp; 🟢 RFI: {overdue_rfi}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
     left, right = st.columns([2.5, 1])
 
@@ -102,16 +73,17 @@ def render_tracker(df):
 
         fig = go.Figure()
 
-        # OUTER BOUNDARY
+        # OUTER RECTANGLE BOUNDARY
         fig.add_shape(
             type="rect",
             x0=-0.2, y0=-0.25,
             x1=3.4, y1=1.85,
             line=dict(color="rgba(255,255,255,0.6)", width=2),
             fillcolor="rgba(0,0,0,0)",
+            layer="above"
         )
 
-        # HEADER
+        # HEADER INSIDE BOUNDARY
         fig.add_annotation(
             x=1.6, y=1.72,
             text="""
@@ -120,6 +92,7 @@ def render_tracker(df):
             """,
             showarrow=False,
             font=dict(color="white", size=18),
+            align="center"
         )
 
         # CIRCLES
@@ -128,6 +101,7 @@ def render_tracker(df):
             x0=0.0, y0=0.2, x1=1.2, y1=1.4,
             fillcolor="rgba(59,130,246,0.55)",
             line=dict(color="#3b82f6", width=2),
+            layer="below"
         )
 
         fig.add_shape(
@@ -135,6 +109,7 @@ def render_tracker(df):
             x0=2.0, y0=0.2, x1=3.2, y1=1.4,
             fillcolor="rgba(34,197,94,0.55)",
             line=dict(color="#22c55e", width=2),
+            layer="below"
         )
 
         fig.add_shape(
@@ -142,20 +117,58 @@ def render_tracker(df):
             x0=0.9, y0=0.05, x1=2.3, y1=1.55,
             fillcolor="rgba(168,85,247,0.70)",
             line=dict(color="#a855f7", width=2),
+            layer="above"
         )
 
-        # LABELS
-        fig.add_annotation(x=0.6, y=0.8,
+        # MAIN LABELS
+        fig.add_annotation(
+            x=0.6, y=0.8,
             text=f"<b>Total TQ</b><br>{tq_total}<br>{tq_pct}%",
-            showarrow=False, font=dict(color="white"))
+            showarrow=False,
+            font=dict(color="white", size=16),
+            align="center"
+        )
 
-        fig.add_annotation(x=1.6, y=0.82,
+        fig.add_annotation(
+            x=1.6, y=0.82,
             text=f"<b>Total</b><br>{total}<br>100%",
-            showarrow=False, font=dict(color="white"))
+            showarrow=False,
+            font=dict(color="white", size=18),
+            align="center"
+        )
 
-        fig.add_annotation(x=2.6, y=0.8,
+        fig.add_annotation(
+            x=2.6, y=0.8,
             text=f"<b>Total RFI</b><br>{rfi_total}<br>{rfi_pct}%",
-            showarrow=False, font=dict(color="white"))
+            showarrow=False,
+            font=dict(color="white", size=16),
+            align="center"
+        )
+
+        # NOT RESPONDED INSIDE BOUNDARY
+        fig.add_annotation(
+            x=0.6, y=-0.05,
+            text=f"<b>TQ Not Responded</b><br>{tq_not} ({tq_not_pct}%)",
+            showarrow=False,
+            font=dict(color="#60a5fa", size=14),
+            align="center"
+        )
+
+        fig.add_annotation(
+            x=1.6, y=-0.05,
+            text=f"<b>Total Not Responded</b><br>{total_not} ({total_not_pct}%)",
+            showarrow=False,
+            font=dict(color="#c084fc", size=14),
+            align="center"
+        )
+
+        fig.add_annotation(
+            x=2.6, y=-0.05,
+            text=f"<b>RFI Not Responded</b><br>{rfi_not} ({rfi_not_pct}%)",
+            showarrow=False,
+            font=dict(color="#4ade80", size=14),
+            align="center"
+        )
 
         # LAYOUT
         fig.update_layout(
@@ -168,21 +181,3 @@ def render_tracker(df):
         )
 
         st.plotly_chart(fig, use_container_width=True)
-
-    # =========================
-    # RIGHT PANEL
-    # =========================
-    with right:
-
-        st.markdown("#### ⚙ Control Panel")
-
-        st.markdown(f"""
-🔵 **TQ not responded**  
-**{tq_not} ({tq_not_pct}%)**
-
-🟢 **RFI not responded**  
-**{rfi_not} ({rfi_not_pct}%)**
-
-⚫ **Total not responded**  
-**{total_not} ({total_not_pct}%)**
-""")

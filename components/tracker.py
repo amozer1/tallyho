@@ -15,17 +15,11 @@ def render_tracker(df):
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-    today = pd.Timestamp(datetime.today().date())
-    df["age"] = (today - df["date sent"]).dt.days
-
     total = len(df)
 
     tq = df[df["doc type"].str.lower() == "tq"]
     rfi = df[df["doc type"].str.lower() == "rfi"]
 
-    # =========================
-    # COUNTS
-    # =========================
     tq_total = len(tq)
     rfi_total = len(rfi)
     combined = tq_total + rfi_total
@@ -47,79 +41,41 @@ def render_tracker(df):
     total_open = len(df[df["reply date"].isna()])
     total_closed = len(df[df["reply date"].notna()])
 
-    overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
+    overdue = len(df[(df["reply date"].isna()) & ((pd.Timestamp(datetime.today().date()) - df["date sent"]).dt.days > 7)])
 
     # =========================
-    # TITLE
+    # COMPACT TITLE (SMALL FOOTPRINT)
     # =========================
-    st.markdown("## 📊 TQ & RFI Control Room")
+    st.markdown("### 📊 TQ / RFI Tracker")
 
     # =========================
-    # TOP KPI ROW
+    # SINGLE KPI ROW (VERY COMPACT)
     # =========================
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        with st.container(border=True):
-            st.metric("TOTAL TQ", tq_total)
+        st.metric("TQ", tq_total, f"{tq_open_n} open")
 
     with c2:
-        with st.container(border=True):
-            st.metric("TOTAL RFI", rfi_total)
+        st.metric("RFI", rfi_total, f"{rfi_open_n} open")
 
     with c3:
-        with st.container(border=True):
-            st.metric("TOTAL WORK", combined)
-
-    st.markdown("---")
+        st.metric("TOTAL", combined, f"{total_open} open")
 
     # =========================
-    # TQ + RFI STATUS BLOCKS
+    # MINI STATUS LINE (NO BLOCK HEIGHT GROWTH)
     # =========================
-    col1, col2 = st.columns(2)
-
-    # ---------------- TQ ----------------
-    with col1:
-        with st.container(border=True):
-            st.subheader("🔵 TQ STATUS")
-
-            c1, c2, c3 = st.columns(3)
-
-            c1.metric("OPEN", tq_open_n, f"{round(tq_open_n/tq_total*100,1) if tq_total else 0}%")
-            c2.metric("CLOSED", tq_closed_n, f"{round(tq_closed_n/tq_total*100,1) if tq_total else 0}%")
-            c3.metric("OUTSTANDING", tq_open_n, f"{round(tq_open_n/tq_total*100,1) if tq_total else 0}%")
-
-    # ---------------- RFI ----------------
-    with col2:
-        with st.container(border=True):
-            st.subheader("🟠 RFI STATUS")
-
-            c1, c2, c3 = st.columns(3)
-
-            c1.metric("OPEN", rfi_open_n, f"{round(rfi_open_n/rfi_total*100,1) if rfi_total else 0}%")
-            c2.metric("CLOSED", rfi_closed_n, f"{round(rfi_closed_n/rfi_total*100,1) if rfi_total else 0}%")
-            c3.metric("OUTSTANDING", rfi_open_n, f"{round(rfi_open_n/rfi_total*100,1) if rfi_total else 0}%")
-
-    st.markdown("---")
+    st.markdown(
+        f"""
+        🔵 TQ Open: **{tq_open_n}** | Closed: **{tq_closed_n}**  
+        🟠 RFI Open: **{rfi_open_n}** | Closed: **{rfi_closed_n}**
+        """
+    )
 
     # =========================
-    # OVERALL STATUS
+    # RISK STRIP (SMALL + SHARP)
     # =========================
-    with st.container(border=True):
-        st.subheader("📌 OVERALL STATUS")
-
-        c1, c2, c3 = st.columns(3)
-
-        c1.metric("OPEN", total_open, f"{round(total_open/total*100,1) if total else 0}%")
-        c2.metric("CLOSED", total_closed, f"{round(total_closed/total*100,1) if total else 0}%")
-        c3.metric("TOTAL", total)
-
-    st.markdown("---")
-
-    # =========================
-    # RISK PANEL
-    # =========================
-    with st.container(border=True):
-        st.subheader("⚠ OUTSTANDING RISK")
-
-        st.error(f"OUTSTANDING > 7 DAYS: {overdue} ({round(overdue/total*100,1) if total else 0}%)")
+    if overdue > 0:
+        st.error(f"⚠ Overdue > 7 Days: {overdue}")
+    else:
+        st.success("✔ No overdue items")

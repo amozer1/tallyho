@@ -11,130 +11,123 @@ def render_venn_overview(df):
         return
 
     df = df.copy()
-
-    # =========================
-    # CLEAN COLUMNS
-    # =========================
     df.columns = [c.strip().lower() for c in df.columns]
 
-    required = ["date sent", "reply date", "status", "doc type"]
+    # =========================
+    REQUIRED COLUMNS
+    # =========================
+    required = ["doc type", "date sent", "reply date", "status"]
+
     for c in required:
         if c not in df.columns:
             st.error(f"Missing column: {c}")
             return
 
     # =========================
-    # PARSE DATES
+    DATE HANDLING
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
     today = pd.Timestamp(datetime.today().date())
-
-    # =========================
-    # AGE CALCULATION
-    # =========================
-    df["age_days"] = (today - df["date sent"]).dt.days
-
-    # =========================
-    # STATUS CLASSIFICATION
-    # =========================
-    def classify(row):
-
-        # CLOSED RULE
-        if pd.notna(row["reply date"]) or str(row["status"]).lower() == "closed":
-            return "Closed"
-
-        # OPEN / OUTSTANDING RULE
-        if row["age_days"] <= 7:
-            return "Open"
-        else:
-            return "Outstanding"
-
-    df["state"] = df.apply(classify, axis=1)
-
-    # =========================
-    # SPLIT COUNTS
-    # =========================
-    open_count = len(df[df["state"] == "Open"])
-    closed_count = len(df[df["state"] == "Closed"])
-    outstanding_count = len(df[df["state"] == "Outstanding"])
-
-    tq_count = len(df[df["doc type"] == "tq"])
-    rfi_count = len(df[df["doc type"] == "rfi"])
-
-    # =========================
-    # TITLE
-    # =========================
-    st.markdown("## TQ & RFI Controls Tracker")
-
-    # =========================
-    # MAIN DONUT (STATUS VIEW)
-    # =========================
-    fig1 = go.Figure(data=[go.Pie(
-        labels=["Open (≤7 days)", "Outstanding (>7 days)", "Closed"],
-        values=[open_count, outstanding_count, closed_count],
-        hole=0.65,
-        marker=dict(colors=["#4da3ff", "#ff4d4d", "#22c55e"])
-    )])
-
-    fig1.update_layout(
-        height=420,
-        margin=dict(l=20, r=20, t=20, b=20),
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="white")
-    )
-
-    st.plotly_chart(fig1, use_container_width=True)
-
-    # =========================
-    # SECONDARY BAR (TQ vs RFI)
-    # =========================
-    fig2 = go.Figure(data=[
-        go.Bar(name="TQ", x=["TQ"], y=[tq_count], marker_color="#60a5fa"),
-        go.Bar(name="RFI", x=["RFI"], y=[rfi_count], marker_color="#fbbf24")
-    ])
-
-    fig2.update_layout(
-        barmode="group",
-        height=300,
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="white"),
-        title="TQ vs RFI Volume"
-    )
-
-    st.plotly_chart(fig2, use_container_width=True)
-
-    # =========================
-    # KPI CARDS
-    # =========================
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("Open (≤7 days)", open_count)
-
-    with col2:
-        st.metric("Outstanding (>7 days)", outstanding_count)
-
-    with col3:
-        st.metric("Closed", closed_count)
-
-    # =========================
-    # INSIGHT BLOCK
-    # =========================
-    st.markdown("---")
+    df["age"] = (today - df["date sent"]).dt.days
 
     total = len(df)
 
-    st.markdown(f"""
-### Insight Summary
+    # =========================
+    TYPE SPLIT
+    # =========================
+    tq = df[df["doc type"] == "tq"]
+    rfi = df[df["doc type"] == "rfi"]
 
-- Total Records: **{total}**
-- Open Rate: **{round((open_count / total) * 100, 1)}%**
-- Outstanding Rate: **{round((outstanding_count / total) * 100, 1)}%**
-- Closure Rate: **{round((closed_count / total) * 100, 1)}%**
+    tq_total = len(tq)
+    rfi_total = len(rfi)
 
-> Open = within 7 days of issue  
-> Outstanding = older than 7 days without response  
-> Closed = response received
+    # =========================
+    NOT RESPONDED
+    # =========================
+    tq_not_resp = len(tq[tq["reply date"].isna()])
+    rfi_not_resp = len(rfi[rfi["reply date"].isna()])
+    total_not_resp = len(df[df["reply date"].isna()])
+
+    # =========================
+    OUTSTANDING (>7 DAYS)
+    # =========================
+    outstanding = df[df["age"] > 7]
+    outstanding_count = len(outstanding)
+
+    # =========================
+    HEADER
+    # =========================
+    st.markdown("### 🧭 TQ & RFI Controls Tracker")
+
+    # =========================
+    MAIN LAYOUT
+    # =========================
+    left, right = st.columns([1.6, 1])
+
+    # =========================
+    LEFT: 3 CIRCLES (DONUTS)
+    # =========================
+    with left:
+
+        c1, c2, c3 = st.columns(3)
+
+        # ---- TQ ----
+        with c1:
+            fig1 = go.Figure(go.Pie(
+                values=[tq_total],
+                labels=["TQ"],
+                hole=0.7,
+                marker=dict(colors=["#4da3ff"])
+            ))
+            fig1.update_layout(height=220, margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(fig1, use_container_width=True)
+            st.markdown(f"**TQ Total:** {tq_total} ({round(tq_total/total*100,1)}%)")
+
+        # ---- RFI ----
+        with c2:
+            fig2 = go.Figure(go.Pie(
+                values=[rfi_total],
+                labels=["RFI"],
+                hole=0.7,
+                marker=dict(colors=["#fbbf24"])
+            ))
+            fig2.update_layout(height=220, margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(fig2, use_container_width=True)
+            st.markdown(f"**RFI Total:** {rfi_total} ({round(rfi_total/total*100,1)}%)")
+
+        # ---- TOTAL ----
+        with c3:
+            fig3 = go.Figure(go.Pie(
+                values=[total],
+                labels=["Total"],
+                hole=0.7,
+                marker=dict(colors=["#22c55e"])
+            ))
+            fig3.update_layout(height=220, margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(fig3, use_container_width=True)
+            st.markdown(f"**Total:** {total} (100%)")
+
+    # =========================
+    # RIGHT: CONTROL PANEL
+    # =========================
+    with right:
+
+        st.markdown("#### Not Responded Summary")
+
+        st.markdown(f"""
+- 🔵 TQ not responded: **{tq_not_resp} ({round(tq_not_resp/tq_total*100 if tq_total else 0,1)}%)**
+- 🟠 RFI not responded: **{rfi_not_resp} ({round(rfi_not_resp/rfi_total*100 if rfi_total else 0,1)}%)**
+- ⚫ Total not responded: **{total_not_resp} ({round(total_not_resp/total*100 if total else 0,1)}%)**
+""")
+
+        st.markdown("---")
+
+        st.markdown(f"""
+### ⚠ Outstanding (>7 days)
+
+**{outstanding_count} ({round(outstanding_count/total*100 if total else 0,1)}%)**
+
+> Items exceeding 7 days without closure or response are flagged as operational risk.
 """)

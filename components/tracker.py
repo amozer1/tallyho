@@ -50,7 +50,6 @@ def render_tracker(df):
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
 
-    # percentages
     tq_not_pct = round((tq_not / tq_total) * 100, 1) if tq_total else 0
     rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
     total_not_pct = round((total_not / total) * 100, 1) if total else 0
@@ -58,7 +57,12 @@ def render_tracker(df):
     # =========================
     # OUTSTANDING > 7 DAYS
     # =========================
-    overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
+    overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
+
+    overdue = len(overdue_df)
+
+    overdue_tq = len(overdue_df[overdue_df["doc type"].str.lower() == "tq"])
+    overdue_rfi = len(overdue_df[overdue_df["doc type"].str.lower() == "rfi"])
 
     # =========================
     # TITLE
@@ -101,6 +105,26 @@ def render_tracker(df):
         )
 
         # =========================
+        # 🚨 OVERDUE ALERT (TOP RIGHT CORNER)
+        # =========================
+        fig.add_annotation(
+            x=3.25, y=1.75,
+            text=f"""
+            <b>⚠ OVERDUE > 7 DAYS</b><br>
+            <span style='font-size:18px'>{overdue} ({round((overdue/total)*100,1) if total else 0}%)</span><br><br>
+            🔵 TQ: {overdue_tq} ({round((overdue_tq/overdue)*100,1) if overdue else 0}%)<br>
+            🟢 RFI: {overdue_rfi} ({round((overdue_rfi/overdue)*100,1) if overdue else 0}%)
+            """,
+            showarrow=False,
+            align="left",
+            font=dict(color="#ff4d4d", size=12),
+            bgcolor="rgba(239,68,68,0.12)",
+            bordercolor="rgba(239,68,68,0.8)",
+            borderwidth=2,
+            borderpad=6
+        )
+
+        # =========================
         # CIRCLES
         # =========================
         fig.add_shape(
@@ -128,7 +152,7 @@ def render_tracker(df):
         )
 
         # =========================
-        # MAIN CIRCLE LABELS
+        # MAIN LABELS
         # =========================
         fig.add_annotation(
             x=0.6, y=0.8,
@@ -155,33 +179,6 @@ def render_tracker(df):
         )
 
         # =========================
-        # NOT RESPONDED KPI (INSIDE BOUNDARY)
-        # =========================
-        fig.add_annotation(
-            x=0.6, y=-0.05,
-            text=f"<b>TQ Not Responded</b><br>{tq_not} ({tq_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#60a5fa", size=14),
-            align="center"
-        )
-
-        fig.add_annotation(
-            x=1.6, y=-0.05,
-            text=f"<b>Total Not Responded</b><br>{total_not} ({total_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#c084fc", size=14),
-            align="center"
-        )
-
-        fig.add_annotation(
-            x=2.6, y=-0.05,
-            text=f"<b>RFI Not Responded</b><br>{rfi_not} ({rfi_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#4ade80", size=14),
-            align="center"
-        )
-
-        # =========================
         # LAYOUT
         # =========================
         fig.update_layout(
@@ -196,7 +193,7 @@ def render_tracker(df):
         st.plotly_chart(fig, use_container_width=True)
 
     # =========================
-    # RIGHT SIDE CONTROL PANEL
+    # RIGHT PANEL (UNCHANGED)
     # =========================
     with right:
 
@@ -212,9 +209,3 @@ def render_tracker(df):
 ⚫ **Total not responded**  
 **{total_not} ({total_not_pct}%)**
 """)
-
-        st.markdown("---")
-
-        st.error(
-            f"⚠ Outstanding > 7 Days: {overdue} ({round((overdue/total)*100,1) if total else 0}%)"
-        )

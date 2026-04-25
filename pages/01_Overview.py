@@ -11,15 +11,14 @@ df = load_data()
 df.columns = df.columns.str.strip()
 
 # =========================
-# DATE + AGE CALCULATION
+# DATE + AGE
 # =========================
 df["Date Sent"] = pd.to_datetime(df["Date Sent"], errors="coerce", dayfirst=True)
-
 today = pd.Timestamp.today().normalize()
 df["AgeDays"] = (today - df["Date Sent"]).dt.days
 
 # =========================
-# OVERDUE FILTER (>7 DAYS)
+# FILTERS
 # =========================
 tq_over = df[(df["Doc Type"] == "TQ") & (df["AgeDays"] > 7)]
 rfi_over = df[(df["Doc Type"] == "RFI") & (df["AgeDays"] > 7)]
@@ -27,26 +26,26 @@ rfi_over = df[(df["Doc Type"] == "RFI") & (df["AgeDays"] > 7)]
 total_overdue = len(df[df["AgeDays"] > 7])
 
 # =========================
-# % FUNCTION
+# PERCENT FUNCTION
 # =========================
 def pct(x):
     return round((len(x) / total_overdue) * 100, 1) if total_overdue else 0
 
 # =========================
-# TOP HEADER (TITLE + SUBTITLE + DATE)
+# HEADER
 # =========================
 left, middle, right = st.columns([2, 3, 1])
 
 with left:
     st.markdown("""
-    <h2 style="margin:0;color:white;">
+    <h2 style="color:white;margin:0;">
         TQ & RFI Dashboard
     </h2>
     """, unsafe_allow_html=True)
 
 with middle:
     st.markdown("""
-    <p style="margin:10px 0 0 0;color:#9fb3c8;font-size:14px;">
+    <p style="color:#9fb3c8;margin:10px 0 0 0;">
         Project Overview and Response Analytics
     </p>
     """, unsafe_allow_html=True)
@@ -63,25 +62,28 @@ with right:
 st.markdown("---")
 
 # =========================
-# SECTION HEADER
+# SECTION TITLE
 # =========================
 st.markdown("""
 <div style="
     background:#0b1a2f;
-    padding:10px;
+    padding:12px;
     border-radius:10px;
     margin-bottom:10px;
 ">
 <h3 style="color:white;margin:0;">
 Project Overview Analytics
 </h3>
+<p style="color:#9fb3c8;margin:5px 0 0 0;">
+Not Responded within 7 days – TQ & RFI Ageing Overview
+</p>
 </div>
 """, unsafe_allow_html=True)
 
 # =========================
-# KPI STRIP
+# KPI BOXES (SMALL EXECUTIVE CARDS)
 # =========================
-k1, k2, k3 = st.columns(3)
+k1, k2, k3, k4 = st.columns(4)
 
 with k1:
     st.metric("TQ Not Responded", len(tq_over), f"{pct(tq_over)}%")
@@ -90,55 +92,73 @@ with k2:
     st.metric("RFI Not Responded", len(rfi_over), f"{pct(rfi_over)}%")
 
 with k3:
-    st.metric("Total Outstanding >7 Days", total_overdue)
+    st.metric("Both (Derived)", min(len(tq_over), len(rfi_over)), "-")
+
+with k4:
+    st.metric("Total >7 Days", total_overdue)
 
 # =========================
-# TOTAL BADGE
+# MAIN COMPARISON VISUAL (PROFESSIONAL)
 # =========================
-st.markdown(f"""
-<div style="
-    text-align:center;
-    margin-top:10px;
-    margin-bottom:10px;
-    color:white;
-    font-size:16px;
-">
-    Total Overdue Items (>7 Days): <b>{total_overdue}</b>
-</div>
-""", unsafe_allow_html=True)
 
-# =========================
-# HEATMAP STYLE DONUT CHART
-# =========================
-tq_val = len(tq_over)
-rfi_val = len(rfi_over)
+st.markdown("### TQ vs RFI Ageing Overview")
 
-labels = ["TQ Not Responded", "RFI Not Responded"]
-values = [tq_val, rfi_val]
+fig = go.Figure()
 
-# heatmap-style colors (blue → red severity scale)
-colors = ["#2F80ED", "#EB5757"]
+fig.add_trace(go.Bar(
+    name="TQ Not Responded",
+    x=["TQ"],
+    y=[len(tq_over)],
+    text=[f"{len(tq_over)} ({pct(tq_over)}%)"],
+    textposition="auto",
+    marker_color="#2F80ED"
+))
 
-fig = go.Figure(
-    data=[
-        go.Pie(
-            labels=labels,
-            values=values,
-            hole=0.72,
-            marker=dict(colors=colors),
-            textinfo="label+value+percent",
-            hoverinfo="label+value"
-        )
-    ]
-)
+fig.add_trace(go.Bar(
+    name="RFI Not Responded",
+    x=["RFI"],
+    y=[len(rfi_over)],
+    text=[f"{len(rfi_over)} ({pct(rfi_over)}%)"],
+    textposition="auto",
+    marker_color="#EB5757"
+))
 
 fig.update_layout(
-    title="TQ vs RFI Not Responded (>7 Days)",
+    barmode="group",
     paper_bgcolor="#0b1a2f",
     plot_bgcolor="#0b1a2f",
     font=dict(color="white"),
-    margin=dict(t=40, b=10, l=10, r=10),
-    showlegend=True
+    height=400,
+    legend=dict(font=dict(color="white"))
 )
 
 st.plotly_chart(fig, use_container_width=True)
+
+# =========================
+# FINAL SUMMARY PANEL (SMALL BOX STYLE)
+# =========================
+
+st.markdown("### Summary Snapshot")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.info(f"""
+    **TQ Not Responded**  
+    {len(tq_over)} items  
+    {pct(tq_over)}%
+    """)
+
+with c2:
+    st.info(f"""
+    **RFI Not Responded**  
+    {len(rfi_over)} items  
+    {pct(rfi_over)}%
+    """)
+
+with c3:
+    st.warning(f"""
+    **Total Outstanding >7 Days**  
+    {total_overdue} items  
+    100%
+    """)

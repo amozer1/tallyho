@@ -1,114 +1,177 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 from datetime import datetime
 from utils.data_loader import load_data
-from utils.metrics import get_metrics
+
+# =========================
+# PAGE CONFIG
+# =========================
+st.set_page_config(layout="wide", page_title="TQ & RFI Dashboard")
 
 # =========================
 # LOAD DATA (YOUR EXCEL ONLY)
 # =========================
 df = load_data()
-m = get_metrics(df)
-
-st.set_page_config(layout="wide")
 
 # =========================
-# HEADER ROW
+# SAFETY CLEANING (NO ERRORS)
+# =========================
+df.columns = df.columns.str.strip()
+
+df["Date Sent"] = pd.to_datetime(df["Date Sent"], errors="coerce", dayfirst=True)
+
+today = pd.Timestamp.today().normalize()
+df["AgeDays"] = (today - df["Date Sent"]).dt.days
+
+# =========================
+# FILTERS
+# =========================
+tq = df[df["Doc Type"] == "TQ"]
+rfi = df[df["Doc Type"] == "RFI"]
+
+tq_over = tq[tq["AgeDays"] > 7]
+rfi_over = rfi[rfi["AgeDays"] > 7]
+
+both_over = df[(df["AgeDays"] > 7)]
+
+total_overdue = len(both_over)
+
+# =========================
+# HEADER (TOP ROW)
 # =========================
 left, right = st.columns([3, 1])
 
 with left:
     st.markdown("""
-    <div style="background:#0b1a2f;padding:15px;border-radius:12px;">
-        <h2 style="color:white;">📊 TQ & RFI ML Dashboard</h2>
-        <p style="color:#9fb3c8;">Project Overview and Response Analytics</p>
+    <div style="
+        background:#0b1a2f;
+        padding:18px;
+        border-radius:14px;
+        border:1px solid rgba(0,191,255,0.25);
+    ">
+        <h2 style="color:white;margin:0;">
+            📊 TQ & RFI ML Dashboard
+        </h2>
+        <p style="color:#9fb3c8;margin:5px 0 0 0;">
+            Project Overview and Response Analytics
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
 with right:
     st.markdown(f"""
-    <div style="background:#0b1a2f;padding:15px;border-radius:12px;text-align:center;">
-        <h4 style="color:white;">📅 {datetime.today().strftime("%d %b %Y")}</h4>
-        <p style="color:#9fb3c8;">Download Report ⬇</p>
+    <div style="
+        background:#0b1a2f;
+        padding:18px;
+        border-radius:14px;
+        text-align:center;
+        border:1px solid rgba(0,191,255,0.25);
+    ">
+        <h4 style="color:white;margin:0;">
+            📅 {datetime.today().strftime('%d %b %Y')}
+        </h4>
+        <p style="color:#9fb3c8;margin-top:5px;">
+            Download Report ⬇
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("---")
 
 # =========================
-# SECTION A TITLE
+# SECTION A TITLE BOX
 # =========================
-st.markdown("## A - Project Overview Analytics")
-
-# =========================
-# DERIVED METRICS (FROM YOUR DATA)
-# =========================
-today = pd.Timestamp.today().normalize()
-
-df["AgeDays"] = (today - df["Date Sent"]).dt.days
-df["IsClosed"] = df["Reply Date"].notna()
-
-# Overdue > 7 days
-overdue = df[df["AgeDays"] > 7]
-
-tq = df[df["Doc Type"] == "TQ"]
-rfi = df[df["Doc Type"] == "RFI"]
-
-tq_over = len(tq[tq["AgeDays"] > 7])
-rfi_over = len(rfi[rfi["AgeDays"] > 7])
-both_over = min(tq_over, rfi_over)
-
-total_overdue = len(overdue)
+st.markdown("""
+<div style="
+    background:#0b1a2f;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid rgba(0,191,255,0.2);
+    margin-bottom:10px;
+">
+<h3 style="color:white;margin:0;">
+A - Project Overview Analytics
+</h3>
+</div>
+""", unsafe_allow_html=True)
 
 # =========================
-# VENN-STYLE VISUAL (SIMPLIFIED BUT PROFESSIONAL)
+# CALCULATIONS (SAFE)
 # =========================
-fig = go.Figure()
+def pct(part, total):
+    return round((len(part) / total) * 100, 1) if total > 0 else 0
 
-fig.add_shape(type="circle",
-              x0=0, y0=0, x1=2, y1=2,
-              fillcolor="rgba(0, 150, 255, 0.25)",
-              line_color="blue")
+overdue_total = df[df["AgeDays"] > 7]
 
-fig.add_shape(type="circle",
-              x0=1.2, y0=0, x1=3.2, y1=2,
-              fillcolor="rgba(0, 255, 200, 0.25)",
-              line_color="cyan")
-
-fig.add_shape(type="circle",
-              x0=0.6, y0=1, x1=2.6, y1=3,
-              fillcolor="rgba(255, 100, 255, 0.25)",
-              line_color="purple")
-
-# Labels (YOUR REAL DATA ONLY)
-fig.add_annotation(x=0.8, y=1.2, text=f"TQ Only<br>{tq_over}")
-fig.add_annotation(x=2.2, y=1.2, text=f"RFI Only<br>{rfi_over}")
-fig.add_annotation(x=1.7, y=2.2, text=f"Both<br>{both_over}")
-
-fig.update_layout(
-    height=350,
-    template="plotly_dark",
-    margin=dict(l=0, r=0, t=0, b=0),
-    xaxis=dict(visible=False),
-    yaxis=dict(visible=False)
-)
-
-st.plotly_chart(fig, use_container_width=True)
+tq_pct = pct(tq_over, len(overdue_total))
+rfi_pct = pct(rfi_over, len(overdue_total))
+both_pct = pct(both_over, len(overdue_total))
 
 # =========================
-# KPI SUMMARY BOX (SMALL SQUARE PANEL)
+# CLEAN ANALYTICS PANEL
 # =========================
-col1, col2, col3, col4 = st.columns(4)
+c1, c2, c3 = st.columns(3)
 
-with col1:
-    st.metric("TQ Overdue", tq_over)
+with c1:
+    st.markdown(f"""
+    <div style="
+        background:#08172a;
+        padding:22px;
+        border-radius:12px;
+        border:1px solid rgba(0,150,255,0.4);
+        text-align:center;
+    ">
+        <h4 style="color:#00bfff;">TQ Only</h4>
+        <h1 style="color:white;margin:0;">{tq_pct}%</h1>
+        <p style="color:#9fb3c8;">({len(tq_over)} items)</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-with col2:
-    st.metric("RFI Overdue", rfi_over)
+with c2:
+    st.markdown(f"""
+    <div style="
+        background:#08172a;
+        padding:22px;
+        border-radius:12px;
+        border:1px solid rgba(0,255,200,0.4);
+        text-align:center;
+    ">
+        <h4 style="color:#00ffd5;">Both TQ & RFI</h4>
+        <h1 style="color:white;margin:0;">{both_pct}%</h1>
+        <p style="color:#9fb3c8;">({len(both_over)} items)</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-with col3:
-    st.metric("Both Overdue", both_over)
+with c3:
+    st.markdown(f"""
+    <div style="
+        background:#08172a;
+        padding:22px;
+        border-radius:12px;
+        border:1px solid rgba(255,100,255,0.4);
+        text-align:center;
+    ">
+        <h4 style="color:#ff6bd6;">RFI Only</h4>
+        <h1 style="color:white;margin:0;">{rfi_pct}%</h1>
+        <p style="color:#9fb3c8;">({len(rfi_over)} items)</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-with col4:
-    st.metric("Total > 7 Days", total_overdue)
+# =========================
+# SMALL SUMMARY STRIP (BOTTOM OF SECTION A)
+# =========================
+st.markdown("---")
+
+s1, s2, s3, s4 = st.columns(4)
+
+with s1:
+    st.metric("TQ Overdue", len(tq_over))
+
+with s2:
+    st.metric("RFI Overdue", len(rfi_over))
+
+with s3:
+    st.metric("Both Overdue", len(both_over))
+
+with s4:
+    st.metric("Total > 7 Days", len(overdue_total))

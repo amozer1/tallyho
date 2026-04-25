@@ -15,7 +15,7 @@ today = pd.Timestamp.today().normalize()
 df["AgeDays"] = (today - df["Date Sent"]).dt.days
 
 # =========================
-# SPLIT
+# SPLIT DATA
 # =========================
 tq = df[df["Doc Type"] == "TQ"]
 rfi = df[df["Doc Type"] == "RFI"]
@@ -36,18 +36,54 @@ tq_total = len(tq)
 rfi_total = len(rfi)
 
 # =========================
-# HEADER
+# HEADER (IMPROVED + PROFESSIONAL)
 # =========================
 st.markdown(f"""
-<h2 style="color:white;">TQ & RFI Dashboard</h2>
-<p style="color:#9fb3c8;">Project Overview & SLA Performance</p>
-<h4 style="color:white;text-align:right;">{datetime.today().strftime('%d %b %Y')}</h4>
+<div style="
+    background: linear-gradient(90deg, #0b1a2f, #0f2747);
+    padding: 18px 22px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,191,255,0.35);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+
+        <!-- LEFT -->
+        <div>
+            <div style="color:white;font-size:22px;font-weight:800;">
+                TQ and RFI Dashboard
+            </div>
+            <div style="color:#9fb3c8;font-size:13px;margin-top:4px;">
+                Project Overview and Service Level Agreement Performance
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div style="text-align:right;">
+            <div style="color:white;font-size:15px;font-weight:600;">
+                {datetime.today().strftime('%d %b %Y')}
+            </div>
+            <div style="color:#9fb3c8;font-size:12px;margin-top:4px;">
+                Last Updated
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<hr style="
+    margin-top:14px;
+    margin-bottom:20px;
+    border:none;
+    height:1px;
+    background:linear-gradient(to right, transparent, #00bfff55, transparent);
+">
 """, unsafe_allow_html=True)
 
-st.markdown("---")
-
 # =========================
-# SAFE SVG RENDER FUNCTION
+# SAFE SVG RING FUNCTION (UNCHANGED)
 # =========================
 def render_ring(title, open_v, closed_v, out_v, total, color):
 
@@ -100,7 +136,7 @@ def render_ring(title, open_v, closed_v, out_v, total, color):
     """
 
 # =========================
-# DISPLAY USING PROPER RENDERER
+# CIRCLES DISPLAY (UNCHANGED)
 # =========================
 c1, c2 = st.columns(2)
 

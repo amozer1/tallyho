@@ -9,7 +9,7 @@ def render_overdue_alert(overdue, total, tq_not, rfi_not, tq_not_pct, rfi_not_pc
     overdue_pct = round((overdue / total) * 100, 1)
 
     # =========================
-    # COLOR STATE
+    # SEVERITY
     # =========================
     if overdue_pct < 20:
         color = "#22c55e"
@@ -22,44 +22,39 @@ def render_overdue_alert(overdue, total, tq_not, rfi_not, tq_not_pct, rfi_not_pc
         label = "HIGH RISK"
 
     # =========================
-    # BUILD HTML
+    # ALERT UI
     # =========================
-    html = f"""
-    <div style="
-        padding:14px 16px;
-        border-radius:12px;
-        background:rgba(0,0,0,0.35);
-        border:2px solid {color};
-        max-width:600px;
-        margin-bottom:12px;
-    ">
-
+    st.markdown(
+        f"""
         <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            font-weight:900;
-            font-size:16px;
-            color:{color};
+            padding:14px 16px;
+            border-radius:12px;
+            background:rgba(0,0,0,0.35);
+            border:2px solid {color};
+            max-width:600px;
+            margin-bottom:12px;
         ">
-            <span>⚠ Outstanding > 7 Days: {overdue} ({overdue_pct}%)</span>
-            <span>{label}</span>
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                font-weight:900;
+                font-size:16px;
+                color:{color};
+            ">
+                <span>⚠ Outstanding > 7 Days: {overdue} ({overdue_pct}%)</span>
+                <span>{label}</span>
+            </div>
+
+            <div style="
+                margin-top:10px;
+                color:white;
+                font-size:13px;
+                line-height:1.7;
+            ">
+                🔵 TQ: {tq_not} ({tq_not_pct}%)<br>
+                🟢 RFI: {rfi_not} ({rfi_not_pct}%)
+            </div>
         </div>
-
-        <div style="
-            margin-top:10px;
-            color:white;
-            font-size:13px;
-            line-height:1.7;
-        ">
-            🔵 TQ: {tq_not} ({tq_not_pct}%)<br>
-            🟢 RFI: {rfi_not} ({rfi_not_pct}%)
-        </div>
-
-    </div>
-    """
-
-    # =========================
-    # FORCE CLEAN RENDER
-    # =========================
-    st.markdown(html, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )

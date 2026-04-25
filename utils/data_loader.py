@@ -1,17 +1,25 @@
 import pandas as pd
 import os
-from datetime import datetime
+import glob
+
+DATA_FOLDER = "data/"
 
 def load_data():
-    file_path = "data/TQ_TH.xlsx"
+    files = glob.glob(os.path.join(DATA_FOLDER, "*.xlsx"))
 
-    if not os.path.exists(file_path):
+    if not files:
         return pd.DataFrame()
+
+    # always pick latest file
+    file_path = max(files, key=os.path.getctime)
 
     df = pd.read_excel(file_path)
 
-    # Standardise column names
-    df.columns = [c.strip() for c in df.columns]
+    if df.empty:
+        return df
+
+    # clean column names
+    df.columns = df.columns.str.strip()
 
     rename_map = {
         "Doc Type": "Type",
@@ -22,32 +30,35 @@ def load_data():
 
     df.rename(columns=rename_map, inplace=True)
 
-    # Parse dates
+    # ensure required columns exist
+    for col in ["Type", "DateSent", "ReplyDate", "RequiredDate"]:
+        if col not in df.columns:
+            df[col] = pd.NA
+
+    # date parsing
     for c in ["DateSent", "RequiredDate", "ReplyDate"]:
-        if c in df.columns:
-            df[c] = pd.to_datetime(df[c], dayfirst=True, errors="coerce")
+        df[c] = pd.to_datetime(df[c], dayfirst=True, errors="coerce")
 
     today = pd.Timestamp.today().normalize()
 
-    # Age Days
-    if "DateSent" in df.columns:
-        df["AgeDays"] = (today - df["DateSent"]).dt.days
-    else:
-        df["AgeDays"] = 0
+    # ---------------- FEATURES (ML READY) ----------------
 
-    # Response Days
-    if "ReplyDate" in df.columns:
-        df["ResponseDays"] = (df["ReplyDate"] - df["DateSent"]).dt.days
-    else:
-        df["ResponseDays"] = 0
+    df["AgeDays"] = (today - df["DateSent"]).dt.days
+    df["AgeDays"] = df["AgeDays"].fillna(0)
 
-    # Outstanding
+    df["ResponseDays"] = (df["ReplyDate"] - df["DateSent"]).dt.days
+    df["ResponseDays"] = df["ResponseDays"].fillna(0)
+
     df["Outstanding"] = df["ReplyDate"].isna()
 
-    # Overdue
-    if "RequiredDate" in df.columns:
-        df["Overdue"] = (today > df["RequiredDate"]) & (df["Outstanding"])
-    else:
-        df["Overdue"] = False
+    df["Overdue"] = (
+        (df["RequiredDate"].notna()) &
+        (today > df["RequiredDate"]) &
+        (df["Outstanding"])
+    )
+
+    # ML safety cleanup
+    df["AgeDays"] = pd.to_numeric(df["AgeDays"], errors="coerce").fillna(0)
+    df["ResponseDays"] = pd.to_numeric(df["ResponseDays"], errors="coerce").fillna(0)
 
     return df

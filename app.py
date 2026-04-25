@@ -60,6 +60,18 @@ rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
 
 overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
+# =========================
+# 🔴 PLACE IT HERE (OUTSTANDING ALERT)
+# =========================
+render_outstanding(
+    overdue=overdue,
+    total=total,
+    tq_not=tq_not,
+    rfi_not=rfi_not,
+    tq_total=tq_total,
+    rfi_total=rfi_total
+)
+
 
 # =========================
 # MAIN TRACKER DASHBOARD

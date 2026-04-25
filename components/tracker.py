@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 
-def tq_rfi_overview(df):  # ✅ RENAMED
+def render_tracker(df):
 
     if df is None or df.empty:
         st.warning("No data available.")
@@ -16,7 +16,7 @@ def tq_rfi_overview(df):  # ✅ RENAMED
     required = ["doc type", "date sent", "reply date", "status"]
 
     if not all(col in df.columns for col in required):
-        st.error("Missing required columns.")
+        st.error("Missing required columns in dataset.")
         return
 
     # =========================
@@ -38,28 +38,31 @@ def tq_rfi_overview(df):  # ✅ RENAMED
     combined_total = tq_total + rfi_total
 
     # =========================
-    # NOT RESPONDED
+    # RESPONSE METRICS
     # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
 
     # =========================
-    # OUTSTANDING
+    # OUTSTANDING (>7 DAYS)
     # =========================
     overdue = df[df["age"] > 7]
     overdue_count = len(overdue)
 
-    # =========================================================
-    # 🟦 LEFT: KPI CIRCLES
-    # =========================================================
+    # =========================
+    # LAYOUT
+    # =========================
     left, right = st.columns([1.6, 1])
 
+    # =========================
+    # LEFT: KPI CIRCLES
+    # =========================
     with left:
 
         c1, c2, c3 = st.columns(3)
 
-        def kpi_circle(value, total, color, title):
+        def circle(value, total, color, label):
             fig = go.Figure(go.Pie(
                 values=[value, max(total - value, 0)],
                 hole=0.72,
@@ -72,7 +75,7 @@ def tq_rfi_overview(df):  # ✅ RENAMED
             st.markdown(
                 f"""
                 <div style="text-align:center">
-                    <b>{title}</b><br>
+                    <b>{label}</b><br>
                     <h3>{value}</h3>
                 </div>
                 """,
@@ -80,17 +83,17 @@ def tq_rfi_overview(df):  # ✅ RENAMED
             )
 
         with c1:
-            kpi_circle(tq_total, total, "#4da3ff", "TQ Volume")
+            circle(tq_total, total, "#4da3ff", "TQ Volume")
 
         with c2:
-            kpi_circle(rfi_total, total, "#fbbf24", "RFI Volume")
+            circle(rfi_total, total, "#fbbf24", "RFI Volume")
 
         with c3:
-            kpi_circle(combined_total, total, "#22c55e", "Total Workload")
+            circle(combined_total, total, "#22c55e", "Total Workload")
 
-    # =========================================================
-    # 🟪 RIGHT: CONTROL PANEL
-    # =========================================================
+    # =========================
+    # RIGHT: CONTROL PANEL
+    # =========================
     with right:
 
         st.markdown(f"""
@@ -100,7 +103,7 @@ def tq_rfi_overview(df):  # ✅ RENAMED
             border:1px solid #e5e5e5;
             background:#fafafa;
         ">
-        <h4>TQ & RFI Overview</h4>
+        <h4>TQ & RFI Tracker</h4>
 
         🔵 <b>TQ not responded:</b> {tq_not} ({round(tq_not/tq_total*100,1) if tq_total else 0}%)<br><br>
 
@@ -111,9 +114,9 @@ def tq_rfi_overview(df):  # ✅ RENAMED
         </div>
         """, unsafe_allow_html=True)
 
-    # =========================================================
-    # 🟥 FOOTER
-    # =========================================================
+    # =========================
+    # FOOTER: RISK STRIP
+    # =========================
     st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown(f"""

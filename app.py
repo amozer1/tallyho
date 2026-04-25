@@ -3,7 +3,7 @@ import pandas as pd
 
 from components.sidebar import render_sidebar
 from components.header import render_header
-from components.stage3 import tq_rfi_overview  # ✅ UPDATED IMPORT
+from components.tracker import render_tracker  # ✅ UPDATED IMPORT
 
 
 st.set_page_config(
@@ -18,15 +18,15 @@ render_sidebar()
 render_header()
 
 # =========================
-# DATA LOADING
+# DATA LOADING (GITHUB SAFE)
 # =========================
 @st.cache_data
 def load_data():
-    return pd.read_excel("data/TQ_TH.xlsx")
+    return pd.read_excel("data/TQ_TH.xlsx")  # must exist in repo
 
 df = load_data()
 
 # =========================
-# STAGE 3 MODULE (KPI ENGINE)
+# TRACKER MODULE (STAGE 3 ANALYTICS)
 # =========================
-tq_rfi_overview(df)  # ✅ UPDATED CALL
+render_tracker(df)

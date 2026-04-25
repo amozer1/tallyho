@@ -4,6 +4,8 @@ import pandas as pd
 from components.sidebar import render_sidebar
 from components.header import render_header
 from components.tracker import render_tracker
+from components.overdue_alert import render_overdue_alert
+
 
 st.set_page_config(
     page_title="TQ / RFI Intelligence Hub",
@@ -11,7 +13,7 @@ st.set_page_config(
 )
 
 # =========================
-# UI FRAMEWORK
+# UI
 # =========================
 render_sidebar()
 render_header()
@@ -54,9 +56,15 @@ rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
 overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
 # =========================
-# ALERT (FIXED)
+# ALERT (TOP)
 # =========================
-
+render_overdue_alert(
+    overdue=overdue,
+    total=total,
+    tq_not=tq_not,
+    rfi_not=rfi_not,
+    tq_not_pct=tq_not_pct,
+    rfi_not_pct=rfi_not_pct
 )
 
 # =========================

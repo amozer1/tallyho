@@ -1,8 +1,7 @@
 import streamlit as st
 
 
-def render_overdue_alert(overdue, total, tq_not, rfi_not,
-                         tq_not_pct, rfi_not_pct):
+def render_overdue_alert(overdue, total, tq_not, rfi_not, tq_not_pct, rfi_not_pct):
 
     # =========================
     # SAFETY CHECK
@@ -23,30 +22,31 @@ def render_overdue_alert(overdue, total, tq_not, rfi_not,
     # SEVERITY LOGIC
     # =========================
     if overdue_pct < 20:
-        severity_color = "#22c55e"  # green
-        severity_label = "LOW"
+        color = "#22c55e"
+        label = "LOW"
     elif overdue_pct < 40:
-        severity_color = "#f59e0b"  # amber
-        severity_label = "MEDIUM"
+        color = "#f59e0b"
+        label = "MEDIUM"
     else:
-        severity_color = "#ef4444"  # red
-        severity_label = "HIGH"
+        color = "#ef4444"
+        label = "HIGH RISK"
 
     # =========================
-    # ALERT UI (STREAMLIT SAFE HTML)
+    # ALERT BOX (STREAMLIT SAFE)
     # =========================
     st.markdown(
         f"""
         <div style="
-            padding: 14px 16px;
+            padding: 12px 14px;
             border-radius: 10px;
-            background: rgba(0,0,0,0.30);
-            border: 1px solid {severity_color};
-            margin-bottom: 14px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid {color};
+            margin-bottom: 12px;
+            max-width: 540px;
         ">
-            <div style="color:{severity_color}; font-weight:900; font-size:15px;">
-                ⚠ Outstanding > 7 Days: {overdue} ({overdue_pct}%)
-                <span style="float:right;">{severity_label} RISK</span>
+            <div style="color:{color}; font-weight:900; font-size:15px;">
+                ⚠ Outstanding > 7 Days: {overdue} ({overdue_pct}%) 
+                <span style="float:right;">{label}</span>
             </div>
 
             <div style="margin-top:8px; color:white; font-size:13px; line-height:1.6;">

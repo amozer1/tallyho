@@ -59,7 +59,12 @@ def render_tracker(df):
     # =========================
     overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
-      # =========================
+    # =========================
+    # LAYOUT (FIXED - IMPORTANT)
+    # =========================
+    left, right = st.columns([1, 1])
+
+    # =========================
     # LEFT SIDE KPI CIRCLES
     # =========================
     with left:

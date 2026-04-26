@@ -12,17 +12,17 @@ def render_outstanding_line(df, total):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # SAFE COLUMN DETECTION
+    # SAFE COLUMNS
     # =========================
-    def find_col(name):
+    def col(name):
         for c in df.columns:
             if c.strip().lower() == name.lower():
                 return c
         return None
 
-    status_col = find_col("status")
-    doc_col = find_col("doc type")
-    date_col = find_col("date sent")
+    status_col = col("status")
+    doc_col = col("doc type")
+    date_col = col("date sent")
 
     if not status_col or not doc_col or not date_col:
         st.error("Missing required columns")
@@ -31,8 +31,8 @@ def render_outstanding_line(df, total):
     # =========================
     # CLEAN DATA
     # =========================
-    df[status_col] = df[status_col].astype(str).str.strip().str.upper()
-    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
+    df[status_col] = df[status_col].astype(str).str.upper().str.strip()
+    df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     today = pd.Timestamp.today()
@@ -42,9 +42,7 @@ def render_outstanding_line(df, total):
     # =========================
     open_df = df[df[status_col] == "OPEN"]
 
-    overdue_df = open_df[
-        (today - open_df[date_col]).dt.days > 7
-    ]
+    overdue_df = open_df[(today - open_df[date_col]).dt.days > 7]
 
     overdue_total = len(overdue_df)
     overdue_pct = round((overdue_total / total) * 100, 1)
@@ -53,52 +51,57 @@ def render_outstanding_line(df, total):
     overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
     # =========================
-    # SEVERITY
+    # STATUS
     # =========================
     if overdue_total >= 15:
         status = "CRITICAL"
-        color = "#ef4444"
+        color = "red"
     elif overdue_total >= 5:
         status = "HIGH"
-        color = "#f97316"
+        color = "orange"
     else:
         status = "MEDIUM"
-        color = "#facc15"
+        color = "green"
 
     # =========================
-    # CENTERED CARD (LIKE AGE MODULE)
+    # CENTER CARD LAYOUT (CLEAN STRUCTURE)
     # =========================
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
 
-        # =========================
-        # HEADER (COMPACT)
-        # =========================
-        st.markdown(
-            f"## 🚨 Outstanding (>7 Days) — {status}\n"
-            f"**Overdue:** {overdue_total} ({overdue_pct}%) "
-            f"· **TQ:** {overdue_tq} "
-            f"· **RFI:** {overdue_rfi}"
-        )
+        # ===== HEADER =====
+        st.markdown(f"### 🚨 Outstanding (>7 Days) — {status}")
 
-        # =========================
-        # DONUT CHART (NO DUPLICATION)
-        # =========================
+        # ===== KPI ROW (STRUCTURED, NOT LITTERED) =====
+        k1, k2, k3 = st.columns(3)
+
+        with k1:
+            st.metric("Overdue", f"{overdue_total}", f"{overdue_pct}%")
+
+        with k2:
+            st.metric("TQ", overdue_tq)
+
+        with k3:
+            st.metric("RFI", overdue_rfi)
+
+        # ===== SUBTITLE CONTEXT (CLEAN) =====
+        st.caption("OPEN items older than 7 days since Date Sent")
+
+        # ===== CHART (OPTIONAL VISUAL SUPPORT) =====
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
-            labels=["TQ Overdue", "RFI Overdue"],
+            labels=["TQ", "RFI"],
             values=[overdue_tq, overdue_rfi],
             hole=0.55,
             marker=dict(colors=["#f97316", "#38bdf8"]),
-            textinfo="label+value",
-            hovertemplate="%{label}: %{value}<extra></extra>"
+            textinfo="label+value"
         ))
 
         fig.update_layout(
-            height=240,
-            margin=dict(l=20, r=20, t=10, b=10),
+            height=220,
+            margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="#0f172a",
             font=dict(color="white"),
             showlegend=False

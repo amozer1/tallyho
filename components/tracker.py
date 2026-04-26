@@ -60,7 +60,25 @@ def render_tracker(df):
     overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
     # =========================
-    # LAYOUT (FIXED - IMPORTANT)
+    # CARD STYLE (SAFE STREAMLIT WAY)
+    # =========================
+    st.markdown("""
+    <style>
+    .tracker-card {
+        background: linear-gradient(145deg, #0b1220, #0f172a);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        margin-bottom: 18px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="tracker-card">', unsafe_allow_html=True)
+
+    # =========================
+    # LAYOUT
     # =========================
     left, right = st.columns([1, 1])
 
@@ -81,7 +99,7 @@ def render_tracker(df):
             layer="above"
         )
 
-        # HEADER INSIDE BOUNDARY
+        # HEADER
         fig.add_annotation(
             x=1.6, y=1.72,
             text="""
@@ -118,7 +136,7 @@ def render_tracker(df):
             layer="above"
         )
 
-        # MAIN LABELS
+        # LABELS
         fig.add_annotation(
             x=0.6, y=0.8,
             text=f"<b>Total TQ</b><br>{tq_total}<br>{tq_pct}%",
@@ -143,7 +161,7 @@ def render_tracker(df):
             align="center"
         )
 
-        # NOT RESPONDED INSIDE BOUNDARY
+        # NOT RESPONDED
         fig.add_annotation(
             x=0.6, y=-0.05,
             text=f"<b>TQ Not Responded</b><br>{tq_not} ({tq_not_pct}%)",
@@ -168,7 +186,6 @@ def render_tracker(df):
             align="center"
         )
 
-        # LAYOUT
         fig.update_layout(
             height=380,
             paper_bgcolor="#0b1220",
@@ -179,3 +196,8 @@ def render_tracker(df):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # CLOSE CARD
+    # =========================
+    st.markdown('</div>', unsafe_allow_html=True)

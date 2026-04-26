@@ -27,55 +27,51 @@ def render_age_outstanding(df):
     pct = (summary / total * 100).round(1) if total else 0
 
     # =========================
-    # OUTER CARD (THIS FIXES WIDTH)
+    # FORCE SMALL EMBED CONTAINER
     # =========================
-    st.markdown("""
-    <div style="
-        width:50%;
-        min-width:300px;
-        background:#0f172a;
-        border:1px solid #1f2937;
-        border-radius:12px;
-        padding:8px;
-        margin-bottom:10px;
-    ">
-        <div style="
-            font-size:12px;
-            font-weight:700;
-            color:white;
-            margin-bottom:6px;
-        ">
-            📊 Outstanding by Age
-        </div>
-    """, unsafe_allow_html=True)
+    container = st.container()
 
-    # =========================
-    # CHART (NO FULL WIDTH)
-    # =========================
-    fig = go.Figure()
+    with container:
 
-    fig.add_trace(go.Bar(
-        x=summary.values,
-        y=labels,
-        orientation="h",
-        text=[f"{v} ({p}%)" for v, p in zip(summary.values, pct)],
-        textposition="outside",
-        marker=dict(color="#ef4444")
-    ))
+        col1, col2, col3 = st.columns([1, 2, 1])  # 👈 THIS IS THE KEY
 
-    fig.update_layout(
-        height=170,
-        margin=dict(l=5, r=5, t=5, b=5),
-        paper_bgcolor="#0f172a",
-        plot_bgcolor="#0f172a",
-        xaxis=dict(title=None, showgrid=False),
-        yaxis=dict(title=None),
-        font=dict(size=10)
-    )
+        with col2:  # 👈 CENTER SMALL TILE ONLY
 
-    st.plotly_chart(fig, use_container_width=False)
+            st.markdown("""
+            <div style="
+                background:#0f172a;
+                border:1px solid #1f2937;
+                border-radius:12px;
+                padding:6px 10px;
+                margin-bottom:6px;
+                text-align:center;
+                font-size:12px;
+                font-weight:700;
+                color:white;
+            ">
+                📊 Outstanding by Age
+            </div>
+            """, unsafe_allow_html=True)
 
-    # =========================
-    # CLOSE CARD
-    # =========================
-    st.markdown("</div>", unsafe_allow_html=True)
+            fig = go.Figure()
+
+            fig.add_trace(go.Bar(
+                x=summary.values,
+                y=labels,
+                orientation="h",
+                text=[f"{v} ({p}%)" for v, p in zip(summary.values, pct)],
+                textposition="outside",
+                marker=dict(color="#ef4444")
+            ))
+
+            fig.update_layout(
+                height=170,
+                margin=dict(l=5, r=5, t=5, b=5),
+                paper_bgcolor="#0f172a",
+                plot_bgcolor="#0f172a",
+                xaxis=dict(title=None, showgrid=False),
+                yaxis=dict(title=None),
+                font=dict(size=10)
+            )
+
+            st.plotly_chart(fig, use_container_width=True)

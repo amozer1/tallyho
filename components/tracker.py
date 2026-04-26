@@ -81,7 +81,7 @@ def render_tracker(df):
             x=1.6, y=1.72,
             text="""
             <b>TQ & RFI Status Overview</b><br>
-            <span style='font-size:13px; opacity:0.8;'>Response Status</span>
+            <span style='font-size:13px; opacity:0.8;'>Response and Timeliness Overview</span>
             """,
             showarrow=False,
             font=dict(color="white", size=18),

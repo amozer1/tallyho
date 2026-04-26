@@ -106,7 +106,7 @@ def render_tracker(df):
                        font=dict(color="rgba(255,255,255,0.65)", size=11))
 
     fig.add_annotation(x=tq_x, y=tq_y - 0.33,
-                       text=f"{tq_not} not responded",
+                       text=f"{tq_not} Not Responded",
                        showarrow=False,
                        font=dict(color="#60A5FA", size=10))
 
@@ -124,12 +124,12 @@ def render_tracker(df):
                        font=dict(color="white", size=30))
 
     fig.add_annotation(x=total_x, y=total_y - 0.18,
-                       text="All Documents",
+                       text="Total TQ & RFI",
                        showarrow=False,
                        font=dict(color="rgba(255,255,255,0.65)", size=11))
 
     fig.add_annotation(x=total_x, y=total_y - 0.33,
-                       text=f"{total_not} not responded",
+                       text=f"{total_not} Not Responded",
                        showarrow=False,
                        font=dict(color="#F87171", size=10))
 
@@ -152,7 +152,7 @@ def render_tracker(df):
                        font=dict(color="rgba(255,255,255,0.65)", size=11))
 
     fig.add_annotation(x=rfi_x, y=rfi_y - 0.33,
-                       text=f"{rfi_not} not responded",
+                       text=f"{rfi_not} Not Responded",
                        showarrow=False,
                        font=dict(color="#4ADE80", size=10))
 

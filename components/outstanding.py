@@ -35,70 +35,64 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # SEVERITY LOGIC
+    # SEVERITY
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
         status = "CRITICAL"
-        impact = "High impact"
-        note = "May block approvals"
+        impact = "High impact on delivery"
     elif overdue_total >= 5:
         color = "#f97316"
         status = "HIGH"
-        impact = "Moderate impact"
-        note = "Action required"
+        impact = "Moderate risk"
     else:
         color = "#facc15"
         status = "MEDIUM"
-        impact = "Low risk"
-        note = "Monitor"
+        impact = "Monitor"
 
     # =========================
-    # TITLE (COMPACTED)
+    # OUTER CARD (ALL CONTENT INSIDE)
     # =========================
-    st.markdown("""
+    st.markdown(f"""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
-        border-radius:10px;
-        padding:6px 8px;
-        margin-bottom:4px;
+        border-radius:12px;
+        padding:10px;
+    ">
+    """, unsafe_allow_html=True)
+
+    # TITLE (INSIDE CARD)
+    st.markdown(f"""
+    <div style="
         text-align:center;
         font-size:12px;
         font-weight:700;
-        color:white;
+        color:{color};
+        margin-bottom:6px;
     ">
-        🚨 Outstanding (>7 days)
+        🚨 Outstanding (>7 days) — {status}
     </div>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # KPI ROW (COMPACT)
-    # =========================
-    col1, col2 = st.columns([1.1, 1])
+    # KPI
+    col1, col2 = st.columns(2)
 
     with col1:
-        st.metric(
-            label="Overdue",
-            value=f"{overdue_total}",
-            delta=f"{overdue_pct}%"
-        )
+        st.metric("Overdue", f"{overdue_total}", f"{overdue_pct}%")
 
     with col2:
         st.markdown(f"""
-        <div style="padding-top:2px;">
-            <div style="color:{color}; font-weight:700; font-size:12px;">
-                {status}
-            </div>
-            <div style="color:#cbd5e1; font-size:11px;">
-                {impact}
-            </div>
+        <div style="
+            font-size:12px;
+            color:#cbd5e1;
+            padding-top:6px;
+        ">
+            {impact}
         </div>
         """, unsafe_allow_html=True)
 
-    # =========================
-    # CHART (REDUCED HEIGHT)
-    # =========================
+    # CHART (STATIC)
     fig = go.Figure()
 
     fig.add_trace(go.Bar(
@@ -111,34 +105,34 @@ def render_outstanding_line(df, total):
     ))
 
     fig.update_layout(
-        height=140,   # ↓ reduced (key change)
-        margin=dict(l=15, r=15, t=5, b=5),
+        height=140,
+        margin=dict(l=10, r=10, t=5, b=5),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
         font=dict(color="white", size=10),
-        xaxis=dict(
-            title="Overdue",
-            gridcolor="rgba(255,255,255,0.08)"
-        ),
+        xaxis=dict(showgrid=False),
         yaxis=dict(showgrid=False)
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False, "staticPlot": True}
+    )
 
-    # =========================
-    # FOOTER (COMPRESSED)
-    # =========================
+    # FOOTER INSIDE CARD
     st.markdown(f"""
     <div style="
         font-size:11px;
         color:#cbd5e1;
-        margin-top:2px;
-        padding-top:4px;
+        margin-top:4px;
         border-top:1px solid #1f2937;
+        padding-top:4px;
     ">
-        <span style="color:{color}; font-weight:600;">
-            {impact}
-        </span>
-        — {note}
+        TQ: {overdue_tq} ({tq_pct}%) |
+        RFI: {overdue_rfi} ({rfi_pct}%)
     </div>
     """, unsafe_allow_html=True)
+
+    # CLOSE CARD
+    st.markdown("</div>", unsafe_allow_html=True)

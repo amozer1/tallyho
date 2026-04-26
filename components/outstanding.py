@@ -34,7 +34,7 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # CARD (MATCH age_outstanding STYLE)
+    # CARD (SAME STYLE + SAME HEIGHT AS AGE CARD)
     # =========================
     st.markdown("""
     <div style="
@@ -42,59 +42,52 @@ def render_outstanding_line(df, total):
         border:1px solid #1f2937;
         border-radius:12px;
         padding:10px;
-        margin-bottom:6px;
+        height:200px;
+        display:flex;
+        flex-direction:column;
+        justify-content:space-between;
     ">
-        <div style="
-            text-align:center;
-            font-size:13px;
-            font-weight:800;
-            color:#ef4444;
-            margin-bottom:10px;
-        ">
-            🚨 Overdue (>7 days)
-        </div>
+    """, unsafe_allow_html=True)
+
+    # TITLE
+    st.markdown("""
+    <div style="
+        text-align:center;
+        font-size:13px;
+        font-weight:800;
+        color:#ef4444;
+        margin-bottom:8px;
+    ">
+        🚨 Overdue (>7 days)
+    </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # KPI ROWS (TEXT STYLE LIKE AGE CARD)
+    # BULLET STYLE KPI LAYOUT
     # =========================
-    col1, col2, col3 = st.columns(3)
+    st.markdown(
+        f"""
+        <div style="color:white; font-size:13px; line-height:1.6;">
 
-    with col1:
-        st.markdown(
-            f"""
-            <div style="text-align:center;">
-                <div style="font-size:13px; color:#ffffff;">Total Overdue</div>
-                <div style="font-size:20px; font-weight:700; color:#ef4444;">{overdue_total}</div>
-                <div style="font-size:12px; color:#9ca3af;">{overdue_pct}%</div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>• Total Overdue</span>
+                <b>{overdue_total} ({overdue_pct}%)</b>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-    with col2:
-        st.markdown(
-            f"""
-            <div style="text-align:center;">
-                <div style="font-size:13px; color:#ffffff;">TQ Overdue</div>
-                <div style="font-size:20px; font-weight:700; color:#f97316;">{overdue_tq}</div>
-                <div style="font-size:12px; color:#9ca3af;">{tq_pct}%</div>
+            <div style="display:flex; justify-content:space-between; color:#f97316;">
+                <span>• TQ Overdue</span>
+                <b>{overdue_tq} ({tq_pct}%)</b>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-    with col3:
-        st.markdown(
-            f"""
-            <div style="text-align:center;">
-                <div style="font-size:13px; color:#ffffff;">RFI Overdue</div>
-                <div style="font-size:20px; font-weight:700; color:#38bdf8;">{overdue_rfi}</div>
-                <div style="font-size:12px; color:#9ca3af;">{rfi_pct}%</div>
+            <div style="display:flex; justify-content:space-between; color:#38bdf8;">
+                <span>• RFI Overdue</span>
+                <b>{overdue_rfi} ({rfi_pct}%)</b>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # CLOSE CARD
     st.markdown("</div>", unsafe_allow_html=True)

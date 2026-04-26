@@ -67,28 +67,10 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # USER NOTE (CLEAR & SIMPLE)
-    # =========================
-    st.markdown("""
-    <div style="
-        font-size:11px;
-        color:#94a3b8;
-        margin-top:2px;
-        margin-bottom:6px;
-        line-height:1.4;
-    ">
-        📌 Items are marked as <b>Overdue</b> when they are <b>OPEN</b> and have been outstanding for more than <b>7 days since Date Sent</b>.
-    </div>
-    """, unsafe_allow_html=True)
-
-    # =========================
     # CORE LOGIC
     # =========================
-
-    # 🔴 OPEN ITEMS
     open_df = df[df[status_col] == "OPEN"]
 
-    # 🚨 OVERDUE = OPEN + > 7 days since Date Sent
     overdue_df = open_df[
         (today - open_df[date_col]).dt.days > 7
     ]
@@ -96,9 +78,6 @@ def render_outstanding_line(df, total):
     overdue_total = len(overdue_df)
     overdue_pct = round((overdue_total / total) * 100, 1)
 
-    # =========================
-    # BREAKDOWN
-    # =========================
     overdue_tq = len(overdue_df[overdue_df[doc_col] == "TQ"])
     overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
@@ -109,7 +88,7 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # SEVERITY LOGIC
+    # SEVERITY
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
@@ -125,21 +104,30 @@ def render_outstanding_line(df, total):
         impact = "Monitor"
 
     # =========================
-    # HEADER
+    # HEADER CARD (NOTE INSIDE)
     # =========================
     st.markdown(f"""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
         border-radius:10px;
-        padding:6px 10px;
+        padding:10px 12px;
         margin-bottom:6px;
         text-align:center;
         font-size:12px;
         font-weight:700;
         color:{color};
+        line-height:1.4;
     ">
         🚨 Outstanding (>7 Days) — {status}
+        <div style="
+            font-size:11px;
+            font-weight:400;
+            color:#94a3b8;
+            margin-top:4px;
+        ">
+            Items are considered <b>Overdue</b> when they are <b>OPEN</b> and have been outstanding for more than <b>7 days since Date Sent</b>.
+        </div>
     </div>
     """, unsafe_allow_html=True)
 

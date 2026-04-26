@@ -38,7 +38,21 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # SINGLE RECTANGLE BOX
+    # RED BACKGROUND STYLE (SAFE + SCOPED)
+    # =========================
+    st.markdown("""
+    <style>
+    div[data-testid="stContainer"] {
+        background-color: #7f1d1d;
+        border: 1px solid #ef4444;
+        padding: 16px;
+        border-radius: 12px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # =========================
+    # RECTANGLE BOX
     # =========================
     with st.container(border=True):
 

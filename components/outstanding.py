@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
 
 
 def render_outstanding_line(df, total):
@@ -38,54 +39,106 @@ def render_outstanding_line(df, total):
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
-        label = "CRITICAL"
-        impact = "High risk to project progress"
+        status = "CRITICAL"
+        impact = "High impact"
+        note = "May block approvals"
     elif overdue_total >= 5:
         color = "#f97316"
-        label = "HIGH"
-        impact = "Moderate impact on workflow"
+        status = "HIGH"
+        impact = "Moderate impact"
+        note = "Action required"
     else:
         color = "#facc15"
-        label = "MEDIUM"
-        impact = "Monitor backlog"
+        status = "MEDIUM"
+        impact = "Low risk"
+        note = "Monitor"
 
     # =========================
-    # TITLE
+    # TITLE (COMPACTED)
     # =========================
-    st.markdown("### 🚨 Outstanding (>7 days)")
+    st.markdown("""
+    <div style="
+        background:#0f172a;
+        border:1px solid #1f2937;
+        border-radius:10px;
+        padding:6px 8px;
+        margin-bottom:4px;
+        text-align:center;
+        font-size:12px;
+        font-weight:700;
+        color:white;
+    ">
+        🚨 Outstanding (>7 days)
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.caption(f"Status: {label} | {impact}")
-
     # =========================
-    # MAIN KPI ROW
+    # KPI ROW (COMPACT)
     # =========================
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns([1.1, 1])
 
     with col1:
         st.metric(
-            "Total Overdue",
-            overdue_total,
-            f"{overdue_pct}%"
+            label="Overdue",
+            value=f"{overdue_total}",
+            delta=f"{overdue_pct}%"
         )
 
     with col2:
-        st.metric(
-            "TQ Overdue",
-            overdue_tq,
-            f"{tq_pct}%"
-        )
-
-    with col3:
-        st.metric(
-            "RFI Overdue",
-            overdue_rfi,
-            f"{rfi_pct}%"
-        )
+        st.markdown(f"""
+        <div style="padding-top:2px;">
+            <div style="color:{color}; font-weight:700; font-size:12px;">
+                {status}
+            </div>
+            <div style="color:#cbd5e1; font-size:11px;">
+                {impact}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # =========================
-    # IMPACT FOOTNOTE
+    # CHART (REDUCED HEIGHT)
     # =========================
-    st.markdown(
-        f"**Impact:** {impact}",
-        help="This indicates the operational risk level of overdue items."
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        x=[overdue_tq, overdue_rfi],
+        y=["TQ", "RFI"],
+        orientation="h",
+        marker=dict(color=["#f97316", "#38bdf8"]),
+        text=[overdue_tq, overdue_rfi],
+        textposition="outside"
+    ))
+
+    fig.update_layout(
+        height=140,   # ↓ reduced (key change)
+        margin=dict(l=15, r=15, t=5, b=5),
+        paper_bgcolor="#0f172a",
+        plot_bgcolor="#0f172a",
+        font=dict(color="white", size=10),
+        xaxis=dict(
+            title="Overdue",
+            gridcolor="rgba(255,255,255,0.08)"
+        ),
+        yaxis=dict(showgrid=False)
     )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # FOOTER (COMPRESSED)
+    # =========================
+    st.markdown(f"""
+    <div style="
+        font-size:11px;
+        color:#cbd5e1;
+        margin-top:2px;
+        padding-top:4px;
+        border-top:1px solid #1f2937;
+    ">
+        <span style="color:{color}; font-weight:600;">
+            {impact}
+        </span>
+        — {note}
+    </div>
+    """, unsafe_allow_html=True)

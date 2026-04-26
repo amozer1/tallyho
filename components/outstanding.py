@@ -27,22 +27,31 @@ def render_outstanding_line(df, total):
     tq_pct = round((overdue_tq / total_tq) * 100, 1) if total_tq else 0
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
-    # OPEN CARD
+    # =========================
+    # MATCH AGE CARD STYLE
+    # =========================
     st.markdown("""
-    <div style="
-        background:#0f172a;
-        border:1px solid #1f2937;
-        border-radius:12px;
-        padding:8px 10px;
-        margin-bottom:6px;
-    ">
-        <div style="
-            text-align:center;
-            font-size:13px;
-            font-weight:800;
-            color:#ef4444;
-            margin-bottom:10px;
-        ">
+        <style>
+        .out-card {
+            background: #0f172a;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 10px;
+        }
+        .out-title {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 800;
+            color: #ef4444;
+            margin-bottom: 10px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="out-card">', unsafe_allow_html=True)
+
+    st.markdown("""
+        <div class="out-title">
             🚨 Critical Alert: Overdue Items (>7 days)
         </div>
     """, unsafe_allow_html=True)
@@ -58,5 +67,4 @@ def render_outstanding_line(df, total):
     with c3:
         st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
 
-    # CLOSE CARD
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)

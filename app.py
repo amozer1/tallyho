@@ -8,7 +8,7 @@ from components.outstanding import render_outstanding_line
 from components.age_outstanding import render_age_outstanding
 
 # =========================
-# PAGE CONFIG (MUST BE FIRST)
+# PAGE CONFIG
 # =========================
 st.set_page_config(
     page_title="TQ / RFI Intelligence Hub",
@@ -21,19 +21,17 @@ st.set_page_config(
 render_sidebar()
 render_header()
 
-
 # =========================
-# DATA LOADING (GITHUB SAFE)
+# DATA LOADING
 # =========================
 @st.cache_data
 def load_data():
     return pd.read_excel("data/TQ_TH.xlsx")
 
-
 df = load_data()
 
 # =========================
-# CLEAN DATA
+# CLEAN DATA (GLOBAL)
 # =========================
 df = df.copy()
 df.columns = [c.strip().lower() for c in df.columns]
@@ -46,6 +44,9 @@ df["age"] = (today - df["date sent"]).dt.days
 
 total = len(df)
 
+# =========================
+# KPI CALCULATIONS
+# =========================
 tq = df[df["doc type"].str.lower() == "tq"]
 rfi = df[df["doc type"].str.lower() == "rfi"]
 
@@ -62,10 +63,14 @@ rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
 overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
 # =========================
+# DASHBOARD LAYOUT (ORDER MATTERS)
+# =========================
+
+# 1. ALERT / OVERDUE BLOCK
 render_outstanding_line(df, total)
 
-
-# =========================
-# MAIN TRACKER DASHBOARD
-# =========================
+# 2. MAIN TRACKER (KPIs + circles)
 render_tracker(df)
+
+# 3. NEW LEVEL 2 MODULE (AGE DISTRIBUTION)
+render_age_outstanding(df)

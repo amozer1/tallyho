@@ -38,41 +38,23 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # TRUE RED RECTANGLE (NO CSS HACKS)
+    # REAL RECTANGLE (STREAMLIT ONLY)
     # =========================
-    col = st.columns([1])[0]
+    box = st.container()
 
-    with col:
-        st.markdown(
-            f"""
-            <div style="
-                background-color:#7f1d1d;
-                border:2px solid #ef4444;
-                border-radius:14px;
-                padding:16px;
-                color:white;
-            ">
-                <div style="font-size:18px; font-weight:800;">
-                    🚨 Overdue (&gt;7 days)
-                </div>
+    with box:
+        st.markdown("### 🚨 Overdue (>7 days)")
 
-                <div style="margin-top:10px; font-size:28px; font-weight:900;">
-                    {overdue_total}
-                </div>
-                <div style="font-size:13px; color:#fecaca;">
-                    {overdue_pct}% of total
-                </div>
+        col1, col2, col3 = st.columns(3)
 
-                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:10px 0;">
+        with col1:
+            st.metric("Total Overdue", overdue_total, f"{overdue_pct}%")
 
-                <div style="font-size:14px;">
-                    📌 TQ Overdue: <b>{overdue_tq}</b> ({tq_pct}%)
-                </div>
+        with col2:
+            st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
 
-                <div style="font-size:14px; margin-top:6px;">
-                    📌 RFI Overdue: <b>{overdue_rfi}</b> ({rfi_pct}%)
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        with col3:
+            st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
+
+        # 👇 THIS IS WHAT CREATES THE "RECTANGLE FEEL"
+        st.divider()

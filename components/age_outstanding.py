@@ -14,11 +14,12 @@ def render_age_outstanding(df):
     # CLEAN DATA
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
+
     df["age"] = (pd.Timestamp.today().normalize() - df["date sent"]).dt.days
     df["age"] = df["age"].fillna(0)
 
     # =========================
-    # AGE BANDS (ENGINEERING STANDARD)
+    # AGE BANDS
     # =========================
     bins = [-1, 2, 7, 14, 30, 10_000]
     labels = ["0–2 days", "3–7 days", "8–14 days", "15–30 days", ">30 days"]
@@ -48,75 +49,71 @@ def render_age_outstanding(df):
     colors = [get_color(l) for l in labels]
 
     # =========================
-    # EMBEDDED COMPACT CONTAINER (MULTIPAGE SAFE)
+    # COMPACT CONTAINER (MULTIPAGE SAFE)
     # =========================
-    container = st.container()
+    col1, col2, col3 = st.columns([1, 2, 1])
 
-    with container:
+    with col2:
 
-        col1, col2, col3 = st.columns([1, 2, 1])  # centre compact widget
+        st.markdown("""
+        <div style="
+            background:#0f172a;
+            border:1px solid #1f2937;
+            border-radius:10px;
+            padding:6px 10px;
+            margin-bottom:6px;
+            text-align:center;
+            font-size:12px;
+            font-weight:700;
+            color:white;
+        ">
+            📊 Outstanding by Age
+        </div>
+        """, unsafe_allow_html=True)
 
-        with col2:
+        # =========================
+        # CHART
+        # =========================
+        fig = go.Figure()
 
-            st.markdown("""
-            <div style="
-                background:#0f172a;
-                border:1px solid #1f2937;
-                border-radius:10px;
-                padding:6px 10px;
-                margin-bottom:6px;
-                text-align:center;
-                font-size:12px;
-                font-weight:700;
-                color:white;
-            ">
-                📊 Outstanding by Age
-            </div>
-            """, unsafe_allow_html=True)
+        fig.add_trace(go.Bar(
+            x=summary.values,
+            y=labels,
+            orientation="h",
+            marker=dict(color=colors),
+            text=[f"{v} ({p}%)" for v, p in zip(summary.values, pct)],
+            textposition="outside",
+            hovertemplate="Items: %{x}<extra></extra>"
+        ))
+
+        fig.update_layout(
+            height=200,
+            margin=dict(l=20, r=20, t=10, b=10),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
 
             # =========================
-            # CHART
+            # AXES (FIXED FOR MODERN PLOTLY)
             # =========================
-            fig = go.Figure()
+            xaxis=dict(
+                title="Number of Items",
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)",
+                zeroline=True,
+                zerolinecolor="rgba(255,255,255,0.2)",
+                tickfont=dict(color="white"),
+                title_font=dict(color="white")
+            ),
 
-            fig.add_trace(go.Bar(
-                x=summary.values,
-                y=labels,
-                orientation="h",
-                marker=dict(color=colors),
-                text=[f"{v} ({p}%)" for v, p in zip(summary.values, pct)],
-                textposition="outside",
-                hovertemplate="Items: %{x}<extra></extra>"
-            ))
+            yaxis=dict(
+                title=None,
+                showgrid=False,
+                tickfont=dict(color="white")
+            ),
 
-            fig.update_layout(
-                height=200,
-                margin=dict(l=20, r=20, t=10, b=10),
-                paper_bgcolor="#0f172a",
-                plot_bgcolor="#0f172a",
+            font=dict(color="white", size=11),
 
-                # =========================
-                # AXES (ENGINEERING STYLE)
-                # =========================
-                xaxis=dict(
-                    title="Number of Items",
-                    showgrid=True,
-                    gridcolor="rgba(255,255,255,0.08)",
-                    zeroline=True,
-                    zerolinecolor="rgba(255,255,255,0.2)",
-                    tickfont=dict(color="white"),
-                    titlefont=dict(color="white"),
-                ),
+            bargap=0.35
+        )
 
-                yaxis=dict(
-                    title=None,
-                    showgrid=False,
-                    tickfont=dict(color="white"),
-                ),
-
-                font=dict(color="white", size=11),
-
-                bargap=0.35
-            )
-
-            st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)

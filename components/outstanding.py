@@ -17,11 +17,14 @@ def render_outstanding_line(df, total):
     df["age"] = pd.to_numeric(df["age"], errors="coerce").fillna(0)
 
     # =========================
-    # CALCULATIONS
+    # TOTALS
     # =========================
     total_tq = len(df[df["doc type"] == "TQ"])
     total_rfi = len(df[df["doc type"] == "RFI"])
 
+    # =========================
+    # OVERDUE
+    # =========================
     overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
 
     overdue_total = len(overdue_df)
@@ -34,27 +37,27 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # CARD HEADER
+    # CARD
     # =========================
     st.markdown("""
     <div style="
-        background:#0f172a;
-        border:1px solid #1f2937;
+        background:#7f1d1d;
+        border:1px solid #991b1b;
         border-radius:12px;
-        padding:8px 10px;
+        padding:10px;
         margin-bottom:6px;
-        text-align:center;
-        font-size:13px;
-        font-weight:800;
-        color:white;
     ">
-        🚨 Critical Alert: Overdue Items (>7 days)
-    </div>
+        <div style="
+            font-size:13px;
+            font-weight:800;
+            color:white;
+            text-align:center;
+            margin-bottom:8px;
+        ">
+            🚨 Critical Alert: Overdue Items (>7 days)
+        </div>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # CONTENT
-    # =========================
     c1, c2, c3 = st.columns(3)
 
     with c1:
@@ -65,3 +68,5 @@ def render_outstanding_line(df, total):
 
     with c3:
         st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
+
+    st.markdown("</div>", unsafe_allow_html=True)

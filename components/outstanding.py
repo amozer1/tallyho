@@ -38,23 +38,19 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # REAL RECTANGLE (STREAMLIT ONLY)
+    # REAL VISUAL RECTANGLE
     # =========================
-    box = st.container()
+    with st.container(border=True):
 
-    with box:
-        st.markdown("### 🚨 Overdue (>7 days)")
+        st.error("🚨 SAFETY ALERT: Overdue Items (>7 days)")
 
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric("Total Overdue", overdue_total, f"{overdue_pct}%")
+            st.metric("Overdue Total", overdue_total, f"{overdue_pct}%")
 
         with col2:
             st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
 
         with col3:
             st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
-
-        # 👇 THIS IS WHAT CREATES THE "RECTANGLE FEEL"
-        st.divider()

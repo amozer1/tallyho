@@ -11,7 +11,7 @@ def render_age_outstanding(df):
     df = df.copy()
 
     # =========================
-    # CLEAN DATA (USING YOUR FIELDS)
+    # CLEAN + TRUE DATA LOGIC
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
@@ -19,26 +19,38 @@ def render_age_outstanding(df):
     df["age"] = (pd.Timestamp.today().normalize() - df["date sent"]).dt.days
     df["age"] = df["age"].fillna(0)
 
-    total = len(df)
-
     # =========================
-    # AGE BANDS (YOUR REQUESTED STRUCTURE)
+    # AGE BANDS (USING YOUR REAL DATA LOGIC)
     # =========================
     bins = [-1, 2, 7, 14, 30, 10_000]
-    labels = ["0–2", "3–7", "8–14", "15–30", ">30"]
+    labels = ["0–2 days", "3–7 days", "8–14 days", "15–30 days", ">30 days"]
 
     df["band"] = pd.cut(df["age"], bins=bins, labels=labels)
 
     summary = df["band"].value_counts().reindex(labels, fill_value=0)
+    total = len(df)
+
     pct = (summary / total * 100).round(1) if total else 0
 
     # =========================
-    # HEATMAP MATRIX (1D → 2D)
+    # COLOURS (RISK-BASED)
     # =========================
-    z = [[v for v in summary.values]]
+    def color_map(label):
+        if "0–2" in label:
+            return "#22c55e"
+        elif "3–7" in label:
+            return "#facc15"
+        elif "8–14" in label:
+            return "#fb923c"
+        elif "15–30" in label:
+            return "#f97316"
+        else:
+            return "#ef4444"
+
+    colors = [color_map(l) for l in labels]
 
     # =========================
-    # CARD LAYOUT (ALL INSIDE BORDER)
+    # CARD LAYOUT (TITLE INSIDE CARD)
     # =========================
     col1, col2, col3 = st.columns([1, 2, 1])
 
@@ -49,45 +61,58 @@ def render_age_outstanding(df):
             background:#0f172a;
             border:1px solid #1f2937;
             border-radius:12px;
-            padding:10px;
+            padding:8px 10px;
+            margin-bottom:6px;
+            text-align:center;
+            font-size:13px;
+            font-weight:800;
+            color:white;
         ">
-            <div style="
-                font-size:13px;
-                font-weight:700;
-                color:white;
-                margin-bottom:8px;
-            ">
-                📊 Outstanding by Age
-            </div>
+            📊 Outstanding by Age
+        </div>
         """, unsafe_allow_html=True)
 
         # =========================
-        # HEATMAP
+        # CHART
         # =========================
-        fig = go.Figure(data=go.Heatmap(
-            z=z,
-            x=labels,
-            y=["Items"],
-            colorscale=[
-                [0.0, "#22c55e"],   # green
-                [0.25, "#facc15"],  # yellow
-                [0.5, "#fb923c"],   # orange
-                [0.75, "#f97316"],  # dark orange
-                [1.0, "#ef4444"]    # red
-            ],
-            text=[[f"{v} ({p}%)" for v, p in zip(summary.values, pct)]],
-            texttemplate="%{text}",
-            showscale=False
+        fig = go.Figure()
+
+        fig.add_trace(go.Bar(
+            x=summary.values,
+            y=labels,
+            orientation="h",
+            marker=dict(color=colors),
+            text=[f"{v} ({p}%)" for v, p in zip(summary.values, pct)],
+            textposition="outside",
+            hovertemplate="Items: %{x}<extra></extra>"
         ))
 
+        # =========================
+        # FINAL FIX: AXIS + BASELINE
+        # =========================
         fig.update_layout(
-            height=140,
-            margin=dict(l=10, r=10, t=10, b=10),
+            height=200,
+            margin=dict(l=25, r=25, t=10, b=10),
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
-            font=dict(color="white", size=11)
+            bargap=0.35,
+            font=dict(color="white", size=11),
+
+            xaxis=dict(
+                title="Number of Items",
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)",
+                zeroline=True,  # 🔥 baseline line (your request)
+                zerolinecolor="rgba(255,255,255,0.35)",
+                linecolor="rgba(255,255,255,0.25)",  # axis line visible
+                tickfont=dict(color="white"),
+                title_font=dict(color="white")
+            ),
+
+            yaxis=dict(
+                showgrid=False,
+                tickfont=dict(color="white")
+            )
         )
 
         st.plotly_chart(fig, use_container_width=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)

@@ -59,14 +59,7 @@ def render_tracker(df):
     # =========================
     overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
-    # =========================
-    # TITLE
-    # =========================
-    st.markdown("### 📊 TQ & RFI Tracker")
-
-    left, right = st.columns([2.5, 1])
-
-    # =========================
+      # =========================
     # LEFT SIDE KPI CIRCLES
     # =========================
     with left:
@@ -87,8 +80,8 @@ def render_tracker(df):
         fig.add_annotation(
             x=1.6, y=1.72,
             text="""
-            <b>Not Responded Within 7 Days</b><br>
-            <span style='font-size:13px; opacity:0.8;'>TQ & RFI AGING OVERVIEW</span>
+            <b>TQ & RFI Status Overview</b><br>
+            <span style='font-size:13px; opacity:0.8;'>Response Status</span>
             """,
             showarrow=False,
             font=dict(color="white", size=18),

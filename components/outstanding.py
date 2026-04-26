@@ -38,19 +38,23 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # REAL VISUAL RECTANGLE
+    # MATCH TRACKER WIDTH (IMPORTANT FIX)
     # =========================
-    with st.container(border=True):
+    col = st.columns([1, 1])[0]
 
-        st.error("🚨 CRITICAL ALERT: Overdue Items (>7 days)")
+    with col:
 
-        col1, col2, col3 = st.columns(3)
+        with st.container(border=True):
 
-        with col1:
-            st.metric("Overdue Total", overdue_total, f"{overdue_pct}%")
+            st.error("🚨 CRITICAL ALERT: Overdue Items (>7 days)")
 
-        with col2:
-            st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
+            c1, c2, c3 = st.columns(3)
 
-        with col3:
-            st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
+            with c1:
+                st.metric("Overdue Total", overdue_total, f"{overdue_pct}%")
+
+            with c2:
+                st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
+
+            with c3:
+                st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")

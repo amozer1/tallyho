@@ -27,28 +27,25 @@ def render_age_outstanding(df):
     pct = (summary / total * 100).round(1) if total else 0
 
     # =========================
-    # CARD CONTAINER (REAL BOUNDARY)
+    # CARD HEADER
     # =========================
     st.markdown("""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
-        border-radius:14px;
-        padding:10px 10px 5px 10px;
-        box-shadow:0 2px 10px rgba(0,0,0,0.25);
+        border-radius:12px;
+        padding:6px 10px;
+        margin-bottom:6px;
+        width:320px;   /* 🔥 FORCE CARD WIDTH */
     ">
-        <div style="
-            font-size:12px;
-            font-weight:700;
-            color:#ffffff;
-            margin-bottom:6px;
-        ">
+        <div style="font-size:12px; font-weight:700; color:white;">
             📊 Outstanding by Age
         </div>
+    </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # MINI CHART
+    # CHART
     # =========================
     fig = go.Figure()
 
@@ -62,7 +59,8 @@ def render_age_outstanding(df):
     ))
 
     fig.update_layout(
-        height=170,   # compact
+        height=170,
+        width=320,  # 🔥 CRITICAL FIX
         margin=dict(l=5, r=5, t=5, b=5),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
@@ -71,9 +69,4 @@ def render_age_outstanding(df):
         font=dict(size=10)
     )
 
-    st.plotly_chart(fig, use_container_width=True)
-
-    # =========================
-    # CLOSE CARD
-    # =========================
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.plotly_chart(fig)

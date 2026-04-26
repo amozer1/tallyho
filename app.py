@@ -5,6 +5,7 @@ from components.sidebar import render_sidebar
 from components.header import render_header
 from components.tracker import render_tracker
 from components.outstanding import render_outstanding_line
+from components.age_outstanding import render_age_outstanding
 
 # =========================
 # PAGE CONFIG (MUST BE FIRST)

@@ -1,24 +1,22 @@
 import streamlit as st
 import pandas as pd
 
+
 def render_outstanding_line(df, total):
 
-    if df is None or len(df) == 0:
+    # =========================
+    # SAFETY CHECK
+    # =========================
+    if df is None or len(df) == 0 or total == 0:
         st.warning("No data available")
         return
 
     df = df.copy()
 
     # =========================
-    # CLEAN DATA PROPERLY (CRITICAL FIX)
+    # CLEAN DATA
     # =========================
-    df["doc type"] = (
-        df["doc type"]
-        .astype(str)
-        .str.strip()
-        .str.upper()
-    )
-
+    df["doc type"] = df["doc type"].astype(str).str.strip().str.upper()
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
     # =========================
@@ -30,31 +28,66 @@ def render_outstanding_line(df, total):
     overdue_pct = round((overdue / total) * 100, 1) if total else 0
 
     # =========================
-    # SPLIT BY TYPE (NOW RELIABLE)
+    # BREAKDOWN
     # =========================
-    tq_df = df[df["doc type"] == "TQ"]
-    rfi_df = df[df["doc type"] == "RFI"]
-
     overdue_tq = len(overdue_df[overdue_df["doc type"] == "TQ"])
     overdue_rfi = len(overdue_df[overdue_df["doc type"] == "RFI"])
 
-    tq_pct = round((overdue_tq / len(tq_df)) * 100, 1) if len(tq_df) else 0
-    rfi_pct = round((overdue_rfi / len(rfi_df)) * 100, 1) if len(rfi_df) else 0
-
     # =========================
-    # DEBUG (TEMP - REMOVE LATER)
-    # =========================
-    st.write("DEBUG - Total rows:", len(df))
-    st.write("DEBUG - Overdue rows:", len(overdue_df))
-
-    # =========================
-    # OUTPUT
+    # ALERT CARD UI
     # =========================
     st.markdown(f"""
-### ⚠ Overdue (> 7 Days)
+    <div style="
+        background: #2b0b0b;
+        border-left: 6px solid #ff0000;
+        padding: 16px 18px;
+        border-radius: 10px;
+        box-shadow: 0 0 12px rgba(255,0,0,0.25);
+    ">
 
-🔴 **Overdue = {overdue} ({overdue_pct}%)**
+        <div style="
+            font-size: 18px;
+            font-weight: 700;
+            color: #ff4d4d;
+            margin-bottom: 8px;
+        ">
+            🚨 CRITICAL: Overdue Items (>7 days)
+        </div>
 
-➡ TQ overdue: **{overdue_tq} ({tq_pct}%)**  
-➡ RFI overdue: **{overdue_rfi} ({rfi_pct}%)**
-""")
+        <div style="
+            font-size: 16px;
+            color: #ffffff;
+            margin-bottom: 12px;
+        ">
+            <b>{overdue}</b> ({overdue_pct}%) total overdue
+        </div>
+
+        <div style="
+            display: flex;
+            gap: 10px;
+        ">
+
+            <div style="
+                background: #1a1a1a;
+                padding: 6px 12px;
+                border-radius: 6px;
+                color: #4da3ff;
+                font-weight: 600;
+            ">
+                TQ: {overdue_tq}
+            </div>
+
+            <div style="
+                background: #1a1a1a;
+                padding: 6px 12px;
+                border-radius: 6px;
+                color: #00c853;
+                font-weight: 600;
+            ">
+                RFI: {overdue_rfi}
+            </div>
+
+        </div>
+
+    </div>
+    """, unsafe_allow_html=True)

@@ -25,7 +25,7 @@ def render_outstanding_line(df, total):
     date_col = find_col("date sent")
 
     if not status_col or not doc_col or not date_col:
-        st.error("Missing required columns: Status / Doc Type / Date Sent")
+        st.error("Missing required columns")
         return
 
     # =========================
@@ -38,7 +38,7 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # CORE LOGIC
+    # LOGIC
     # =========================
     open_df = df[df[status_col] == "OPEN"]
 
@@ -66,14 +66,14 @@ def render_outstanding_line(df, total):
         color = "#facc15"
 
     # =========================
-    # CENTER LAYOUT (MATCH AGE STYLE)
+    # CENTERED CARD (LIKE AGE MODULE)
     # =========================
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
 
         # =========================
-        # HEADER (COMPACT LINE — YOUR REQUEST)
+        # HEADER (COMPACT)
         # =========================
         st.markdown(
             f"## 🚨 Outstanding (>7 Days) — {status}\n"
@@ -83,43 +83,25 @@ def render_outstanding_line(df, total):
         )
 
         # =========================
-        # CHART (MAIN VISUAL)
+        # DONUT CHART (NO DUPLICATION)
         # =========================
         fig = go.Figure()
 
-        fig.add_trace(go.Bar(
-            x=[overdue_tq, overdue_rfi],
-            y=["TQ Overdue", "RFI Overdue"],
-            orientation="h",
-            marker=dict(color=["#f97316", "#38bdf8"]),
-            text=[overdue_tq, overdue_rfi],
-            textposition="outside",
-            hovertemplate="Items: %{x}<extra></extra>"
+        fig.add_trace(go.Pie(
+            labels=["TQ Overdue", "RFI Overdue"],
+            values=[overdue_tq, overdue_rfi],
+            hole=0.55,
+            marker=dict(colors=["#f97316", "#38bdf8"]),
+            textinfo="label+value",
+            hovertemplate="%{label}: %{value}<extra></extra>"
         ))
 
         fig.update_layout(
-            height=200,
-            margin=dict(l=25, r=25, t=10, b=10),
+            height=240,
+            margin=dict(l=20, r=20, t=10, b=10),
             paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
-            bargap=0.35,
-            font=dict(color="white", size=11),
-
-            xaxis=dict(
-                title="Overdue Items",
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)",
-                zeroline=True,
-                zerolinecolor="rgba(255,255,255,0.35)",
-                linecolor="rgba(255,255,255,0.25)",
-                tickfont=dict(color="white"),
-                title_font=dict(color="white")
-            ),
-
-            yaxis=dict(
-                showgrid=False,
-                tickfont=dict(color="white")
-            )
+            font=dict(color="white"),
+            showlegend=False
         )
 
         st.plotly_chart(fig, use_container_width=True)

@@ -12,7 +12,7 @@ def render_outstanding_line(df, total):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # SAFE COLUMNS
+    # SAFE COLUMN FIND
     # =========================
     def col(name):
         for c in df.columns:
@@ -55,29 +55,40 @@ def render_outstanding_line(df, total):
     # =========================
     if overdue_total >= 15:
         status = "CRITICAL"
-        color = "red"
+        color = "#ef4444"
     elif overdue_total >= 5:
         status = "HIGH"
-        color = "orange"
+        color = "#f97316"
     else:
         status = "MEDIUM"
-        color = "green"
+        color = "#facc15"
 
     # =========================
-    # CENTER CARD LAYOUT (CLEAN STRUCTURE)
+    # CENTERED CARD
     # =========================
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
 
-        # ===== HEADER =====
+        # =========================
+        # HEADER (NO DUPLICATION HERE)
+        # =========================
         st.markdown(f"### 🚨 Outstanding (>7 Days) — {status}")
 
-        # ===== KPI ROW (STRUCTURED, NOT LITTERED) =====
+        # =========================
+        # NOTE (INSIDE CARD, CLEAN)
+        # =========================
+        st.caption(
+            "Overdue = OPEN items where (Today - Date Sent) > 7 days"
+        )
+
+        # =========================
+        # KPI ROW (SINGLE SOURCE OF TRUTH)
+        # =========================
         k1, k2, k3 = st.columns(3)
 
         with k1:
-            st.metric("Overdue", f"{overdue_total}", f"{overdue_pct}%")
+            st.metric("Overdue", overdue_total, f"{overdue_pct}%")
 
         with k2:
             st.metric("TQ", overdue_tq)
@@ -85,10 +96,9 @@ def render_outstanding_line(df, total):
         with k3:
             st.metric("RFI", overdue_rfi)
 
-        # ===== SUBTITLE CONTEXT (CLEAN) =====
-        st.caption("OPEN items older than 7 days since Date Sent")
-
-        # ===== CHART (OPTIONAL VISUAL SUPPORT) =====
+        # =========================
+        # VISUAL (SIMPLE + NON-REDUNDANT)
+        # =========================
         fig = go.Figure()
 
         fig.add_trace(go.Pie(

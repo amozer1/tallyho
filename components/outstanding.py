@@ -52,27 +52,25 @@ def render_outstanding_line(df, total):
     overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
     # =========================
-    # SEVERITY
+    # STATUS
     # =========================
     if overdue_total >= 15:
-        color = "red"
         status = "CRITICAL"
-        impact = "High backlog risk"
+        color = "error"
     elif overdue_total >= 5:
-        color = "orange"
         status = "HIGH"
-        impact = "Needs attention"
+        color = "warning"
     else:
-        color = "gold"
         status = "MEDIUM"
-        impact = "Monitor"
+        color = "info"
 
     # =========================
-    # STREAMLIT CARD (NO HTML)
+    # GROUPED CARD (NO HTML)
     # =========================
-    with st.container():
+    with st.container(border=True):
 
-        st.markdown(f"### 🚨 Outstanding Items (>7 Days) — {status}")
+        # HEADER
+        st.subheader(f"🚨 Outstanding Items (>7 Days) — {status}")
 
         st.caption(
             "Items are flagged when they are OPEN and exceed 7 days since Date Sent"
@@ -80,13 +78,11 @@ def render_outstanding_line(df, total):
 
         st.divider()
 
-        # =========================
-        # MAIN KPI
-        # =========================
-        col1, col2, col3 = st.columns([2, 1, 1])
+        # MAIN KPI ROW
+        col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric("Total Overdue", overdue_total, f"{overdue_pct}% of total")
+            st.metric("Overdue Total", overdue_total, f"{overdue_pct}%")
 
         with col2:
             st.metric("TQ Overdue", overdue_tq)
@@ -94,9 +90,11 @@ def render_outstanding_line(df, total):
         with col3:
             st.metric("RFI Overdue", overdue_rfi)
 
-        # =========================
-        # IMPACT LABEL
-        # =========================
-        st.markdown(f"**Status:** :{color}[{impact}]")
-
         st.divider()
+
+        # IMPACT SUMMARY (GROUPED TEXT)
+        st.markdown("### Status Summary")
+
+        st.write(f"**Status Level:** :{color}[{status}]")
+        st.write(f"**TQ Overdue:** {overdue_tq}")
+        st.write(f"**RFI Overdue:** {overdue_rfi}")

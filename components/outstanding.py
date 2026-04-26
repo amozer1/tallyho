@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import plotly.graph_objects as go
 
 
 def render_outstanding_line(df, total):
@@ -12,7 +11,7 @@ def render_outstanding_line(df, total):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # SAFE COLUMN FINDING
+    # SAFE COLUMN DETECTION
     # =========================
     def find_col(name):
         for col in df.columns:
@@ -25,7 +24,7 @@ def render_outstanding_line(df, total):
     date_col = find_col("date sent")
 
     if not status_col or not doc_col or not date_col:
-        st.error("Missing required columns")
+        st.error("Missing required columns: Status / Doc Type / Date Sent")
         return
 
     # =========================
@@ -52,14 +51,8 @@ def render_outstanding_line(df, total):
     overdue_tq = len(overdue_df[overdue_df[doc_col] == "TQ"])
     overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
-    total_tq = len(df[df[doc_col] == "TQ"])
-    total_rfi = len(df[df[doc_col] == "RFI"])
-
-    tq_pct = round((overdue_tq / total_tq) * 100, 1) if total_tq else 0
-    rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
-
     # =========================
-    # STATUS
+    # SEVERITY
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
@@ -68,72 +61,88 @@ def render_outstanding_line(df, total):
     elif overdue_total >= 5:
         color = "#f97316"
         status = "HIGH"
+        impact = "Needs attention"
     else:
         color = "#facc15"
         status = "MEDIUM"
+        impact = "Monitor"
 
     # =========================
-    # HEADER (SAFE HTML ONLY)
+    # CARD UI
     # =========================
     st.markdown(f"""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
-        border-radius:10px;
-        padding:10px;
-        text-align:center;
-        color:{color};
-        font-weight:700;
-        font-size:13px;
+        border-radius:14px;
+        padding:16px;
+        margin-top:10px;
     ">
-        🚨 Outstanding (>7 Days) — {status}
+
+        <!-- HEADER -->
         <div style="
+            text-align:center;
+            font-size:14px;
+            font-weight:800;
+            color:{color};
+            margin-bottom:6px;
+        ">
+            🚨 Outstanding Items (>7 Days) — {status}
+        </div>
+
+        <!-- RULE -->
+        <div style="
+            text-align:center;
             font-size:11px;
             color:#94a3b8;
-            font-weight:400;
-            margin-top:4px;
+            margin-bottom:14px;
+            line-height:1.4;
         ">
-            OPEN items older than 7 days since Date Sent are flagged as overdue
+            Items are flagged when they are <b>OPEN</b> and exceed <b>7 days since Date Sent</b>
         </div>
+
+        <!-- MAIN KPI -->
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:14px;
+        ">
+            <div style="text-align:left;">
+                <div style="font-size:22px; font-weight:800; color:white;">
+                    {overdue_total}
+                </div>
+                <div style="font-size:11px; color:#94a3b8;">
+                    Total Overdue ({overdue_pct}%)
+                </div>
+            </div>
+
+            <div style="
+                text-align:right;
+                font-size:12px;
+                color:{color};
+                font-weight:700;
+            ">
+                {impact}
+            </div>
+        </div>
+
+        <!-- BREAKDOWN -->
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            border-top:1px solid #1f2937;
+            padding-top:10px;
+            font-size:12px;
+        ">
+            <div style="color:#38bdf8;">
+                TQ Overdue: <b>{overdue_tq}</b>
+            </div>
+
+            <div style="color:#f97316;">
+                RFI Overdue: <b>{overdue_rfi}</b>
+            </div>
+        </div>
+
     </div>
     """, unsafe_allow_html=True)
-
-    # =========================
-    # KPI SECTION (STREAMLIT SAFE)
-    # =========================
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric("Overdue", overdue_total, f"{overdue_pct}%")
-    col2.metric("TQ Overdue", overdue_tq)
-    col3.metric("RFI Overdue", overdue_rfi)
-
-    st.markdown(
-        f"<div style='color:#94a3b8;font-size:12px;margin-top:-5px;'>Status: <b style='color:{color}'>{impact}</b></div>",
-        unsafe_allow_html=True
-    )
-
-    # =========================
-    # CHART (STREAMLIT SAFE)
-    # =========================
-    fig = go.Figure()
-
-    fig.add_trace(go.Bar(
-        x=[overdue_tq, overdue_rfi],
-        y=["TQ", "RFI"],
-        orientation="h",
-        marker=dict(color=["#f97316", "#38bdf8"]),
-        text=[overdue_tq, overdue_rfi],
-        textposition="auto"
-    ))
-
-    fig.update_layout(
-        height=160,
-        margin=dict(l=10, r=10, t=10, b=10),
-        paper_bgcolor="#0f172a",
-        plot_bgcolor="#0f172a",
-        font=dict(color="white"),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=False)
-    )
-
-    st.plotly_chart(fig, use_container_width=True)

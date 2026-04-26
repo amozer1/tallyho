@@ -55,7 +55,7 @@ def render_tracker(df):
     total_not_pct = round((total_not / total) * 100, 1) if total else 0
 
     # =========================
-    # HEADER
+    # HEADER (same as your other pages)
     # =========================
     st.markdown("""
     <div style="
@@ -75,96 +75,93 @@ def render_tracker(df):
 
     left, right = st.columns([1, 1])
 
+    # =========================
+    # LEFT: CIRCLES ONLY (SAFE)
+    # =========================
     with left:
 
         fig = go.Figure()
 
-        # =========================
-        # CIRCLES (UNCHANGED)
-        # =========================
-
+        # TQ
         fig.add_shape(
             type="circle",
             x0=0.0, y0=0.2,
             x1=1.2, y1=1.4,
-            fillcolor="rgba(59,130,246,0.55)",
-            line=dict(color="#3b82f6", width=2)
+            fillcolor="rgba(96,165,250,0.35)",
+            line=dict(color="#60A5FA", width=2)
         )
 
-        fig.add_shape(
-            type="circle",
-            x0=2.0, y0=0.2,
-            x1=3.2, y1=1.4,
-            fillcolor="rgba(34,197,94,0.55)",
-            line=dict(color="#22c55e", width=2)
-        )
-
+        # TOTAL (center emphasis)
         fig.add_shape(
             type="circle",
             x0=0.85, y0=0.15,
             x1=2.35, y1=1.65,
-            fillcolor="rgba(168,85,247,0.80)",
-            line=dict(color="#a855f7", width=3)
+            fillcolor="rgba(168,85,247,0.45)",
+            line=dict(color="#A855F7", width=2)
         )
 
-        # =========================
-        # MAIN LABELS
-        # =========================
+        # RFI
+        fig.add_shape(
+            type="circle",
+            x0=2.0, y0=0.2,
+            x1=3.2, y1=1.4,
+            fillcolor="rgba(74,222,128,0.35)",
+            line=dict(color="#4ADE80", width=2)
+        )
 
-        fig.add_annotation(x=0.6, y=0.8,
-                           text=f"<b>Total TQ</b><br>{tq_total}<br>{tq_pct}%",
+        # TEXT INSIDE CIRCLES ONLY (SHORT = NO OVERLAP)
+        fig.add_annotation(x=0.6, y=0.85,
+                           text=f"<b>TQ</b><br>{tq_total}",
                            showarrow=False,
                            font=dict(color="white", size=16))
 
-        fig.add_annotation(x=1.6, y=0.82,
-                           text=f"<b>Total</b><br>{total}<br>100%",
+        fig.add_annotation(x=1.6, y=0.9,
+                           text=f"<b>TOTAL</b><br>{total}",
                            showarrow=False,
                            font=dict(color="white", size=18))
 
-        fig.add_annotation(x=2.6, y=0.8,
-                           text=f"<b>Total RFI</b><br>{rfi_total}<br>{rfi_pct}%",
+        fig.add_annotation(x=2.6, y=0.85,
+                           text=f"<b>RFI</b><br>{rfi_total}",
                            showarrow=False,
                            font=dict(color="white", size=16))
 
-        # =========================
-        # 🔥 FIXED NOT RESPONDED (NO OVERLAP)
-        # =========================
-
-        fig.add_annotation(
-            x=0.6, y=-0.08,
-            text=f"TQ Not Responded:<br><b>{tq_not}</b> ({tq_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#60A5FA", size=12),
-            align="center"
-        )
-
-        fig.add_annotation(
-            x=1.6, y=-0.08,
-            text=f"Total Not Responded:<br><b>{total_not}</b> ({total_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#F87171", size=12),
-            align="center"
-        )
-
-        fig.add_annotation(
-            x=2.6, y=-0.08,
-            text=f"RFI Not Responded:<br><b>{rfi_not}</b> ({rfi_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#4ADE80", size=12),
-            align="center"
-        )
-
-        # =========================
-        # LAYOUT FIX (IMPORTANT)
-        # =========================
         fig.update_layout(
             height=380,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             margin=dict(l=0, r=0, t=0, b=0),
-
             xaxis=dict(visible=False, range=[-0.3, 3.6]),
-            yaxis=dict(visible=False, range=[-0.5, 1.9])
+            yaxis=dict(visible=False, range=[-0.3, 1.9]),
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # RIGHT: RESPONSIVE KPIs (THIS FIXES YOUR OVERLAP ISSUE)
+    # =========================
+    with right:
+
+        st.markdown("### Not Responded Summary")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "TQ Not Responded",
+                tq_not,
+                f"{tq_not_pct}%"
+            )
+
+        with col2:
+            st.metric(
+                "Total Not Responded",
+                total_not,
+                f"{total_not_pct}%"
+            )
+
+        with col3:
+            st.metric(
+                "RFI Not Responded",
+                rfi_not,
+                f"{rfi_not_pct}%"
+            )

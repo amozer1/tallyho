@@ -43,9 +43,6 @@ def render_tracker(df):
     tq_pct = round((tq_total / total) * 100, 1) if total else 0
     rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
-    # =========================
-    # NOT RESPONDED
-    # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
@@ -70,12 +67,12 @@ def render_tracker(df):
     """, unsafe_allow_html=True)
 
     # =========================
-    # PLOTLY FIGURE
+    # FIGURE
     # =========================
     fig = go.Figure()
 
     # =========================
-    # CIRCLES (VISUAL ONLY)
+    # CIRCLES (UNCHANGED)
     # =========================
 
     fig.add_shape(
@@ -103,67 +100,111 @@ def render_tracker(df):
     )
 
     # =========================
-    # MAIN LABELS (SAFE)
+    # IMPROVED TEXT HIERARCHY (NO HTML, BUT VISUALLY STRONG)
     # =========================
 
+    # TQ
     fig.add_annotation(
-        x=0.6, y=0.85,
-        text=f"<b>TQ</b><br>{tq_total}",
+        x=0.6, y=0.95,
+        text="<b>TQ</b>",
         showarrow=False,
-        font=dict(color="white", size=16)
+        font=dict(color="#60A5FA", size=18)
     )
 
     fig.add_annotation(
-        x=1.6, y=0.9,
-        text=f"<b>TOTAL</b><br>{total}",
+        x=0.6, y=0.78,
+        text=f"<b>{tq_total}</b>",
         showarrow=False,
-        font=dict(color="white", size=18)
+        font=dict(color="white", size=28)
     )
 
     fig.add_annotation(
-        x=2.6, y=0.85,
-        text=f"<b>RFI</b><br>{rfi_total}",
+        x=0.6, y=0.60,
+        text=f"{tq_pct}% of total",
         showarrow=False,
-        font=dict(color="white", size=16)
+        font=dict(color="rgba(255,255,255,0.65)", size=12)
+    )
+
+    # TOTAL
+    fig.add_annotation(
+        x=1.6, y=1.0,
+        text="<b>TOTAL DOCUMENTS</b>",
+        showarrow=False,
+        font=dict(color="#A855F7", size=18)
+    )
+
+    fig.add_annotation(
+        x=1.6, y=0.78,
+        text=f"<b>{total}</b>",
+        showarrow=False,
+        font=dict(color="white", size=32)
+    )
+
+    fig.add_annotation(
+        x=1.6, y=0.60,
+        text="100% dataset coverage",
+        showarrow=False,
+        font=dict(color="rgba(255,255,255,0.6)", size=12)
+    )
+
+    # RFI
+    fig.add_annotation(
+        x=2.6, y=0.95,
+        text="<b>RFI</b>",
+        showarrow=False,
+        font=dict(color="#4ADE80", size=18)
+    )
+
+    fig.add_annotation(
+        x=2.6, y=0.78,
+        text=f"<b>{rfi_total}</b>",
+        showarrow=False,
+        font=dict(color="white", size=28)
+    )
+
+    fig.add_annotation(
+        x=2.6, y=0.60,
+        text=f"{rfi_pct}% of total",
+        showarrow=False,
+        font=dict(color="rgba(255,255,255,0.65)", size=12)
     )
 
     # =========================
-    # SAFE MINIMAL BOTTOM LABELS (NO OVERLAP RISK)
+    # NOT RESPONDED (CLEAN + BALANCED)
     # =========================
 
     fig.add_annotation(
         x=0.6, y=0.25,
-        text=f"{tq_not} not responded",
+        text=f"<b>{tq_not}</b><br>Not Responded",
         showarrow=False,
-        font=dict(color="#60A5FA", size=11)
+        font=dict(color="#60A5FA", size=12)
     )
 
     fig.add_annotation(
         x=1.6, y=0.25,
-        text=f"{total_not} not responded",
+        text=f"<b>{total_not}</b><br>Not Responded",
         showarrow=False,
-        font=dict(color="#F87171", size=11)
+        font=dict(color="#F87171", size=12)
     )
 
     fig.add_annotation(
         x=2.6, y=0.25,
-        text=f"{rfi_not} not responded",
+        text=f"<b>{rfi_not}</b><br>Not Responded",
         showarrow=False,
-        font=dict(color="#4ADE80", size=11)
+        font=dict(color="#4ADE80", size=12)
     )
 
     # =========================
-    # LAYOUT (STABLE RANGE FIX)
+    # LAYOUT FIX
     # =========================
 
     fig.update_layout(
-        height=380,
+        height=400,
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
         margin=dict(l=0, r=0, t=0, b=0),
-
         xaxis=dict(visible=False, range=[-0.3, 3.6]),
-        yaxis=dict(visible=False, range=[-0.3, 1.9])
+        yaxis=dict(visible=False, range=[-0.3, 2.0])
     )
 
     st.plotly_chart(fig, use_container_width=True)

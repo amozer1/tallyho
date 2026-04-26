@@ -14,17 +14,30 @@ def render_outstanding_line(df, total):
     # CLEAN DATA
     # =========================
     df["doc type"] = df["doc type"].astype(str).str.strip().str.upper()
-    df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
-    df["age"] = pd.to_numeric(df["age"], errors="coerce").fillna(0)
+    df["Status"] = df["Status"].astype(str).str.strip().str.upper()
+
+    df["Date Sent"] = pd.to_datetime(df["Date Sent"], errors="coerce")
+
+    today = pd.Timestamp.today()
 
     # =========================
-    # OVERDUE (>7 DAYS)
+    # CORE LOGIC (NEW SLA MODEL)
     # =========================
-    overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
+
+    # 🔴 OPEN ITEMS
+    open_df = df[df["Status"] == "OPEN"]
+
+    # 🚨 OVERDUE = OPEN + > 7 days since sent
+    overdue_df = open_df[
+        (today - open_df["Date Sent"]).dt.days > 7
+    ]
 
     overdue_total = len(overdue_df)
     overdue_pct = round((overdue_total / total) * 100, 1)
 
+    # =========================
+    # BREAKDOWN
+    # =========================
     overdue_tq = len(overdue_df[overdue_df["doc type"] == "TQ"])
     overdue_rfi = len(overdue_df[overdue_df["doc type"] == "RFI"])
 
@@ -35,12 +48,12 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # SEVERITY
+    # SEVERITY ENGINE
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
         status = "CRITICAL"
-        impact = "High project risk"
+        impact = "High backlog risk"
     elif overdue_total >= 5:
         color = "#f97316"
         status = "HIGH"
@@ -51,7 +64,7 @@ def render_outstanding_line(df, total):
         impact = "Monitor"
 
     # =========================
-    # TITLE (MATCH age_outstanding STYLE)
+    # HEADER
     # =========================
     st.markdown(f"""
     <div style="
@@ -65,18 +78,18 @@ def render_outstanding_line(df, total):
         font-weight:700;
         color:{color};
     ">
-        🚨 Outstanding (>7 days) — {status}
+        🚨 Outstanding (>7 Days SLA) — {status}
     </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # KPI ROW (CLEAN + BALANCED)
+    # KPI ROW
     # =========================
     col1, col2 = st.columns([1.2, 1])
 
     with col1:
         st.metric(
-            label="Total Overdue",
+            label="Total Overdue (SLA Breach)",
             value=f"{overdue_total}",
             delta=f"{overdue_pct}% of total"
         )
@@ -94,7 +107,7 @@ def render_outstanding_line(df, total):
         """, unsafe_allow_html=True)
 
     # =========================
-    # BAR CHART (CLEAR + NOT OVERPOWERING)
+    # BAR CHART
     # =========================
     fig = go.Figure()
 
@@ -111,7 +124,7 @@ def render_outstanding_line(df, total):
     ))
 
     fig.update_layout(
-        height=150,  # balanced (not too tall, not cramped)
+        height=150,
         margin=dict(l=15, r=15, t=5, b=5),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
@@ -123,7 +136,7 @@ def render_outstanding_line(df, total):
     st.plotly_chart(fig, use_container_width=True)
 
     # =========================
-    # FOOTER INSIGHT (MINIMAL)
+    # FOOTER
     # =========================
     st.markdown(f"""
     <div style="

@@ -11,25 +11,71 @@ def render_outstanding_line(df, total):
     df = df.copy()
 
     # =========================
+    # CLEAN COLUMN NAMES
+    # =========================
+    df.columns = df.columns.str.strip()
+
+    # =========================
+    # FIND STATUS COLUMN (ROBUST)
+    # =========================
+    status_col = None
+    for col in df.columns:
+        if col.strip().lower() == "status":
+            status_col = col
+            break
+
+    if status_col is None:
+        st.error("❌ 'Status' column not found")
+        st.write("Available columns:", df.columns.tolist())
+        return
+
+    # =========================
+    # FIND DOC TYPE COLUMN (ROBUST)
+    # =========================
+    doc_col = None
+    for col in df.columns:
+        if col.strip().lower() == "doc type":
+            doc_col = col
+            break
+
+    if doc_col is None:
+        st.error("❌ 'doc type' column not found")
+        st.write("Available columns:", df.columns.tolist())
+        return
+
+    # =========================
+    # FIND DATE SENT COLUMN (ROBUST)
+    # =========================
+    date_col = None
+    for col in df.columns:
+        if col.strip().lower() == "date sent":
+            date_col = col
+            break
+
+    if date_col is None:
+        st.error("❌ 'Date Sent' column not found")
+        st.write("Available columns:", df.columns.tolist())
+        return
+
+    # =========================
     # CLEAN DATA
     # =========================
-    df["doc type"] = df["doc type"].astype(str).str.strip().str.upper()
-    df["Status"] = df["Status"].astype(str).str.strip().str.upper()
-
-    df["Date Sent"] = pd.to_datetime(df["Date Sent"], errors="coerce")
+    df[status_col] = df[status_col].astype(str).str.strip().str.upper()
+    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     today = pd.Timestamp.today()
 
     # =========================
-    # CORE LOGIC (NEW SLA MODEL)
+    # CORE LOGIC (SLA MODEL)
     # =========================
 
     # 🔴 OPEN ITEMS
-    open_df = df[df["Status"] == "OPEN"]
+    open_df = df[df[status_col] == "OPEN"]
 
-    # 🚨 OVERDUE = OPEN + > 7 days since sent
+    # 🚨 OVERDUE = OPEN + > 7 days since Date Sent
     overdue_df = open_df[
-        (today - open_df["Date Sent"]).dt.days > 7
+        (today - open_df[date_col]).dt.days > 7
     ]
 
     overdue_total = len(overdue_df)
@@ -38,17 +84,17 @@ def render_outstanding_line(df, total):
     # =========================
     # BREAKDOWN
     # =========================
-    overdue_tq = len(overdue_df[overdue_df["doc type"] == "TQ"])
-    overdue_rfi = len(overdue_df[overdue_df["doc type"] == "RFI"])
+    overdue_tq = len(overdue_df[overdue_df[doc_col] == "TQ"])
+    overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
-    total_tq = len(df[df["doc type"] == "TQ"])
-    total_rfi = len(df[df["doc type"] == "RFI"])
+    total_tq = len(df[df[doc_col] == "TQ"])
+    total_rfi = len(df[df[doc_col] == "RFI"])
 
     tq_pct = round((overdue_tq / total_tq) * 100, 1) if total_tq else 0
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # SEVERITY ENGINE
+    # SEVERITY LOGIC
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"

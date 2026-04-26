@@ -38,15 +38,46 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # STREAMLIT KPI UI
+    # SINGLE ALERT RECTANGLE
     # =========================
-    col1, col2, col3 = st.columns(3)
+    st.markdown(f"""
+    <div style="
+        background: linear-gradient(135deg, #7f1d1d, #3b0a0a);
+        border: 1px solid #ef4444;
+        border-radius: 14px;
+        padding: 18px 22px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        color: white;
+        font-family: Arial;
+    ">
 
-    with col1:
-        st.metric("🚨 Overdue (>7 days)", overdue_total, f"{overdue_pct}%")
+        <!-- HEADER -->
+        <div style="font-size:16px; font-weight:800; margin-bottom:12px;">
+            🚨 Overdue (&gt;7 days)
+        </div>
 
-    with col2:
-        st.metric("📌 TQ Overdue", overdue_tq, f"{tq_pct}%")
+        <!-- OVERALL -->
+        <div style="margin-bottom:12px;">
+            <div style="font-size:28px; font-weight:900;">{overdue_total}</div>
+            <div style="font-size:14px; color:#fecaca;">{overdue_pct}% of total</div>
+        </div>
 
-    with col3:
-        st.metric("📌 RFI Overdue", overdue_rfi, f"{rfi_pct}%")
+        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.15); margin:10px 0;">
+
+        <!-- TQ -->
+        <div style="margin-bottom:10px;">
+            <div style="font-size:14px; font-weight:700;">📌 TQ Overdue</div>
+            <div style="font-size:20px; font-weight:800;">{overdue_tq}</div>
+            <div style="font-size:13px; color:#fecaca;">{tq_pct}% of TQ total</div>
+        </div>
+
+        <!-- RFI -->
+        <div>
+            <div style="font-size:14px; font-weight:700;">📌 RFI Overdue</div>
+            <div style="font-size:20px; font-weight:800;">{overdue_rfi}</div>
+            <div style="font-size:13px; color:#fecaca;">{rfi_pct}% of RFI total</div>
+        </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+    

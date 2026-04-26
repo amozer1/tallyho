@@ -5,6 +5,7 @@ import streamlit as st
 def render_outstanding_line(df, total):
 
     if df is None or df.empty or total == 0:
+        st.warning("No data available")
         return
 
     df = df.copy()
@@ -23,7 +24,7 @@ def render_outstanding_line(df, total):
     total_rfi = len(df[df["doc type"] == "RFI"])
 
     # =========================
-    # OVERDUE
+    # OVERDUE (>7 DAYS)
     # =========================
     overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
 
@@ -37,36 +38,31 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # CARD
+    # CARD CONTAINER
     # =========================
-    st.markdown("""
-    <div style="
-        background:#7f1d1d;
-        border:1px solid #991b1b;
-        border-radius:12px;
-        padding:10px;
-        margin-bottom:6px;
-    ">
+    with st.container(border=True):
+
+        # Header inside card
+        st.markdown("""
         <div style="
+            text-align:center;
             font-size:13px;
             font-weight:800;
-            color:white;
-            text-align:center;
-            margin-bottom:8px;
+            color:#ef4444;
+            margin-bottom:10px;
         ">
-            🚨 Critical Alert: Overdue Items (>7 days)
+            🚨 Critical Alert: Overdue Items (&gt;7 days)
         </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns(3)
+        # Metrics inside same card
+        c1, c2, c3 = st.columns(3)
 
-    with c1:
-        st.metric("Overdue Total", overdue_total, f"{overdue_pct}%")
+        with c1:
+            st.metric("Overdue Total", overdue_total, f"{overdue_pct}%")
 
-    with c2:
-        st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
+        with c2:
+            st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
 
-    with c3:
-        st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
-
-    st.markdown("</div>", unsafe_allow_html=True)
+        with c3:
+            st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")

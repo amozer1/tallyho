@@ -28,6 +28,7 @@ render_header()
 def load_data():
     return pd.read_excel("data/TQ_TH.xlsx")
 
+
 df = load_data()
 
 # =========================
@@ -63,14 +64,17 @@ rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
 overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
 # =========================
-# DASHBOARD LAYOUT (ORDER MATTERS)
+# TOP ROW (SIDE BY SIDE)
 # =========================
+col1, col2 = st.columns([1, 1], gap="small")
 
-# 1. ALERT / OVERDUE BLOCK
-render_outstanding_line(df, total)
+with col1:
+    render_outstanding_line(df, total)
 
-# 2. MAIN TRACKER (KPIs + circles)
+with col2:
+    render_age_outstanding(df)
+
+# =========================
+# MAIN TRACKER DASHBOARD
+# =========================
 render_tracker(df)
-
-# 3. NEW LEVEL 2 MODULE (AGE DISTRIBUTION)
-render_age_outstanding(df)

@@ -67,7 +67,22 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # CORE LOGIC (SLA MODEL)
+    # USER NOTE (CLEAR & SIMPLE)
+    # =========================
+    st.markdown("""
+    <div style="
+        font-size:11px;
+        color:#94a3b8;
+        margin-top:2px;
+        margin-bottom:6px;
+        line-height:1.4;
+    ">
+        📌 Items are marked as <b>Overdue</b> when they are <b>OPEN</b> and have been outstanding for more than <b>7 days since Date Sent</b>.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # =========================
+    # CORE LOGIC
     # =========================
 
     # 🔴 OPEN ITEMS
@@ -124,7 +139,7 @@ def render_outstanding_line(df, total):
         font-weight:700;
         color:{color};
     ">
-        🚨 Outstanding (>7 Days SLA) — {status}
+        🚨 Outstanding (>7 Days) — {status}
     </div>
     """, unsafe_allow_html=True)
 
@@ -135,7 +150,7 @@ def render_outstanding_line(df, total):
 
     with col1:
         st.metric(
-            label="Total Overdue (SLA Breach)",
+            label="Total Overdue",
             value=f"{overdue_total}",
             delta=f"{overdue_pct}% of total"
         )

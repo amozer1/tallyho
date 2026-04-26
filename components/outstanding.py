@@ -42,7 +42,7 @@ def render_outstanding_line(df, total):
     # =========================
     with st.container(border=True):
 
-        st.error("🚨 SAFETY ALERT: Overdue Items (>7 days)")
+        st.error("🚨 CRITICAL ALERT: Overdue Items (>7 days)")
 
         col1, col2, col3 = st.columns(3)
 

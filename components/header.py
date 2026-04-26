@@ -95,9 +95,9 @@ def render_header():
     with col1:
         st.markdown("""
         <div class="header-box left-box">
-            <div class="title">TQ / RFI Intelligence Hub</div>
+            <div class="title">Tally Ho Project Communications Tracker</div>
             <div class="subtitle">
-                Project Controls • SLA Monitoring • Response Analytics
+                TQs • RFIs • Outstanding Responses
             </div>
         </div>
         """, unsafe_allow_html=True)

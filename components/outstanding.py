@@ -38,33 +38,41 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # RED BACKGROUND STYLE (SAFE + SCOPED)
+    # TRUE RED RECTANGLE (NO CSS HACKS)
     # =========================
-    st.markdown("""
-    <style>
-    div[data-testid="stContainer"] {
-        background-color: #7f1d1d;
-        border: 1px solid #ef4444;
-        padding: 16px;
-        border-radius: 12px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    col = st.columns([1])[0]
 
-    # =========================
-    # RECTANGLE BOX
-    # =========================
-    with st.container(border=True):
+    with col:
+        st.markdown(
+            f"""
+            <div style="
+                background-color:#7f1d1d;
+                border:2px solid #ef4444;
+                border-radius:14px;
+                padding:16px;
+                color:white;
+            ">
+                <div style="font-size:18px; font-weight:800;">
+                    🚨 Overdue (&gt;7 days)
+                </div>
 
-        st.markdown("### 🚨 Overdue (>7 days)")
+                <div style="margin-top:10px; font-size:28px; font-weight:900;">
+                    {overdue_total}
+                </div>
+                <div style="font-size:13px; color:#fecaca;">
+                    {overdue_pct}% of total
+                </div>
 
-        col1, col2, col3 = st.columns(3, gap="large")
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:10px 0;">
 
-        with col1:
-            st.metric("Overdue Total", overdue_total, f"{overdue_pct}%")
+                <div style="font-size:14px;">
+                    📌 TQ Overdue: <b>{overdue_tq}</b> ({tq_pct}%)
+                </div>
 
-        with col2:
-            st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
-
-        with col3:
-            st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
+                <div style="font-size:14px; margin-top:6px;">
+                    📌 RFI Overdue: <b>{overdue_rfi}</b> ({rfi_pct}%)
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )

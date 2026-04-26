@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
 
 
 def render_outstanding_line(df, total):
@@ -34,60 +35,66 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # CARD (SAME STYLE + SAME HEIGHT AS AGE CARD)
+    # MATCH AGE_OUTSTANDING CARD EXACT STYLE
     # =========================
-    st.markdown("""
-    <div style="
-        background:#0f172a;
-        border:1px solid #1f2937;
-        border-radius:12px;
-        padding:10px;
-        height:200px;
-        display:flex;
-        flex-direction:column;
-        justify-content:space-between;
-    ">
-    """, unsafe_allow_html=True)
+    fig = go.Figure()
 
-    # TITLE
-    st.markdown("""
-    <div style="
-        text-align:center;
-        font-size:13px;
-        font-weight:800;
-        color:#ef4444;
-        margin-bottom:8px;
-    ">
-        🚨 Overdue (>7 days)
-    </div>
-    """, unsafe_allow_html=True)
-
-    # =========================
-    # BULLET STYLE KPI LAYOUT
-    # =========================
-    st.markdown(
-        f"""
-        <div style="color:white; font-size:13px; line-height:1.6;">
-
-            <div style="display:flex; justify-content:space-between;">
-                <span>• Total Overdue</span>
-                <b>{overdue_total} ({overdue_pct}%)</b>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; color:#f97316;">
-                <span>• TQ Overdue</span>
-                <b>{overdue_tq} ({tq_pct}%)</b>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; color:#38bdf8;">
-                <span>• RFI Overdue</span>
-                <b>{overdue_rfi} ({rfi_pct}%)</b>
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    # CARD BACKGROUND
+    fig.add_shape(
+        type="rect",
+        x0=0, y0=0,
+        x1=1, y1=1,
+        xref="paper", yref="paper",
+        fillcolor="#0f172a",
+        line=dict(color="#1f2937"),
+        layer="below"
     )
 
-    # CLOSE CARD
-    st.markdown("</div>", unsafe_allow_html=True)
+    # TITLE
+    fig.add_annotation(
+        x=0.5, y=0.9,
+        text="<b>🚨 Overdue (&gt;7 days)</b>",
+        showarrow=False,
+        font=dict(color="#ef4444", size=14),
+        xanchor="center"
+    )
+
+    # TEXT BLOCKS (structured KPI layout)
+    fig.add_annotation(
+        x=0.5, y=0.65,
+        text=f"Total Overdue: <b>{overdue_total}</b> ({overdue_pct}%)",
+        showarrow=False,
+        font=dict(color="white", size=12),
+        xanchor="center"
+    )
+
+    fig.add_annotation(
+        x=0.5, y=0.45,
+        text=f"TQ Overdue: <b>{overdue_tq}</b> ({tq_pct}%)",
+        showarrow=False,
+        font=dict(color="#f97316", size=12),
+        xanchor="center"
+    )
+
+    fig.add_annotation(
+        x=0.5, y=0.25,
+        text=f"RFI Overdue: <b>{overdue_rfi}</b> ({rfi_pct}%)",
+        showarrow=False,
+        font=dict(color="#38bdf8", size=12),
+        xanchor="center"
+    )
+
+    # =========================
+    # FIXED SIZE (MATCH AGE CARD)
+    # =========================
+    fig.update_layout(
+        height=200,
+        margin=dict(l=0, r=0, t=0, b=0),
+        paper_bgcolor="#0b1220",
+        plot_bgcolor="#0b1220",
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+    

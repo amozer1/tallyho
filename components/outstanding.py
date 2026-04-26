@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import plotly.graph_objects as go
 
 
 def render_outstanding_line(df, total):
@@ -31,61 +30,67 @@ def render_outstanding_line(df, total):
     tq_pct = round((overdue_tq / total_tq) * 100, 1) if total_tq else 0
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
-    labels = ["Total Overdue", "TQ Overdue", "RFI Overdue"]
-    values = [overdue_total, overdue_tq, overdue_rfi]
-    pct = [overdue_pct, tq_pct, rfi_pct]
-
-    colors = ["#ef4444", "#f97316", "#38bdf8"]
-
     # =========================
-    # CARD TITLE (MATCH AGE STYLE)
+    # CARD WRAPPER (MATCH OTHER COMPONENTS)
     # =========================
     st.markdown("""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
         border-radius:12px;
-        padding:8px 10px;
-        margin-bottom:6px;
-        text-align:center;
-        font-size:13px;
-        font-weight:800;
-        color:white;
+        padding:12px 14px;
     ">
-        🚨 Overdue Overview (>7 days)
-    </div>
+        <div style="
+            text-align:center;
+            font-size:13px;
+            font-weight:800;
+            color:#ef4444;
+            margin-bottom:10px;
+        ">
+            🚨 Overdue (>7 days)
+        </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # CHART (CONSISTENT STYLE)
+    # KPI ROW (YOUR REQUEST FORMAT)
     # =========================
-    fig = go.Figure()
+    c1, c2, c3 = st.columns(3)
 
-    fig.add_trace(go.Bar(
-        x=values,
-        y=labels,
-        orientation="h",
-        marker=dict(color=colors),
-        text=[f"{v} ({p}%)" for v, p in zip(values, pct)],
-        textposition="outside"
-    ))
+    with c1:
+        st.markdown(
+            f"""
+            <div style="text-align:center;">
+                <div style="font-size:13px; opacity:0.8;">Total Overdue</div>
+                <div style="font-size:20px; font-weight:700;">{overdue_total}</div>
+                <div style="font-size:12px; color:#ef4444;">({overdue_pct}%)</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    fig.update_layout(
-        height=200,
-        margin=dict(l=20, r=20, t=5, b=5),
-        paper_bgcolor="#0f172a",
-        plot_bgcolor="#0f172a",
-        font=dict(color="white", size=11),
+    with c2:
+        st.markdown(
+            f"""
+            <div style="text-align:center;">
+                <div style="font-size:13px; opacity:0.8;">TQ Overdue</div>
+                <div style="font-size:20px; font-weight:700;">{overdue_tq}</div>
+                <div style="font-size:12px; color:#f97316;">({tq_pct}%)</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        xaxis=dict(
-            title="Items",
-            showgrid=True,
-            gridcolor="rgba(255,255,255,0.08)",
-            zeroline=True,
-            zerolinecolor="rgba(255,255,255,0.2)"
-        ),
+    with c3:
+        st.markdown(
+            f"""
+            <div style="text-align:center;">
+                <div style="font-size:13px; opacity:0.8;">RFI Overdue</div>
+                <div style="font-size:20px; font-weight:700;">{overdue_rfi}</div>
+                <div style="font-size:12px; color:#38bdf8;">({rfi_pct}%)</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        yaxis=dict(showgrid=False)
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
+    # CLOSE CARD
+    st.markdown("</div>", unsafe_allow_html=True)

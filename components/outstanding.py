@@ -24,7 +24,7 @@ def render_outstanding_line(df, total):
     date_col = find_col("date sent")
 
     if not status_col or not doc_col or not date_col:
-        st.error("Missing required columns: Status / Doc Type / Date Sent")
+        st.error("Missing required columns")
         return
 
     # =========================
@@ -55,94 +55,48 @@ def render_outstanding_line(df, total):
     # SEVERITY
     # =========================
     if overdue_total >= 15:
-        color = "#ef4444"
+        color = "red"
         status = "CRITICAL"
         impact = "High backlog risk"
     elif overdue_total >= 5:
-        color = "#f97316"
+        color = "orange"
         status = "HIGH"
         impact = "Needs attention"
     else:
-        color = "#facc15"
+        color = "gold"
         status = "MEDIUM"
         impact = "Monitor"
 
     # =========================
-    # CARD UI
+    # STREAMLIT CARD (NO HTML)
     # =========================
-    st.markdown(f"""
-    <div style="
-        background:#0f172a;
-        border:1px solid #1f2937;
-        border-radius:14px;
-        padding:16px;
-        margin-top:10px;
-    ">
+    with st.container():
 
-        <!-- HEADER -->
-        <div style="
-            text-align:center;
-            font-size:14px;
-            font-weight:800;
-            color:{color};
-            margin-bottom:6px;
-        ">
-            🚨 Outstanding Items (>7 Days) — {status}
-        </div>
+        st.markdown(f"### 🚨 Outstanding Items (>7 Days) — {status}")
 
-        <!-- RULE -->
-        <div style="
-            text-align:center;
-            font-size:11px;
-            color:#94a3b8;
-            margin-bottom:14px;
-            line-height:1.4;
-        ">
-            Items are flagged when they are <b>OPEN</b> and exceed <b>7 days since Date Sent</b>
-        </div>
+        st.caption(
+            "Items are flagged when they are OPEN and exceed 7 days since Date Sent"
+        )
 
-        <!-- MAIN KPI -->
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:14px;
-        ">
-            <div style="text-align:left;">
-                <div style="font-size:22px; font-weight:800; color:white;">
-                    {overdue_total}
-                </div>
-                <div style="font-size:11px; color:#94a3b8;">
-                    Total Overdue ({overdue_pct}%)
-                </div>
-            </div>
+        st.divider()
 
-            <div style="
-                text-align:right;
-                font-size:12px;
-                color:{color};
-                font-weight:700;
-            ">
-                {impact}
-            </div>
-        </div>
+        # =========================
+        # MAIN KPI
+        # =========================
+        col1, col2, col3 = st.columns([2, 1, 1])
 
-        <!-- BREAKDOWN -->
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            border-top:1px solid #1f2937;
-            padding-top:10px;
-            font-size:12px;
-        ">
-            <div style="color:#38bdf8;">
-                TQ Overdue: <b>{overdue_tq}</b>
-            </div>
+        with col1:
+            st.metric("Total Overdue", overdue_total, f"{overdue_pct}% of total")
 
-            <div style="color:#f97316;">
-                RFI Overdue: <b>{overdue_rfi}</b>
-            </div>
-        </div>
+        with col2:
+            st.metric("TQ Overdue", overdue_tq)
 
-    </div>
-    """, unsafe_allow_html=True)
+        with col3:
+            st.metric("RFI Overdue", overdue_rfi)
+
+        # =========================
+        # IMPACT LABEL
+        # =========================
+        st.markdown(f"**Status:** :{color}[{impact}]")
+
+        st.divider()

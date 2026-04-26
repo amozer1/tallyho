@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.graph_objects as go
 
 
-def render_outstanding_by_age(df):
+def render_age_outstanding(df):
 
     if df is None or df.empty:
         st.warning("No data available")
@@ -14,7 +14,6 @@ def render_outstanding_by_age(df):
     # =========================
     # CLEAN DATA
     # =========================
-    df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 
     df["age"] = (pd.Timestamp.today().normalize() - df["date sent"]).dt.days
@@ -28,18 +27,16 @@ def render_outstanding_by_age(df):
 
     df["age_band"] = pd.cut(df["age"], bins=bins, labels=labels)
 
-    summary = df.groupby("age_band").size().reindex(labels, fill_value=0)
+    summary = df["age_band"].value_counts().reindex(labels, fill_value=0)
 
     total = len(df)
-
-    # percentages
-    pct = (summary / total * 100).round(1)
+    pct = (summary / total * 100).round(1) if total else 0
 
     # =========================
     # HEADER
     # =========================
     st.markdown("### 📊 Outstanding by Age")
-    st.caption("Distribution of open TQs and RFIs by time outstanding")
+    st.caption("Distribution of TQs and RFIs by time outstanding")
 
     # =========================
     # CHART
@@ -56,7 +53,7 @@ def render_outstanding_by_age(df):
     ))
 
     fig.update_layout(
-        height=400,
+        height=420,
         paper_bgcolor="#0b1220",
         plot_bgcolor="#0b1220",
         margin=dict(l=20, r=20, t=20, b=20),

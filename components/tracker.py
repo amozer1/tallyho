@@ -6,9 +6,6 @@ from datetime import datetime
 
 def render_tracker(df):
 
-    # =========================
-    # VALIDATION
-    # =========================
     if df is None or df.empty:
         st.warning("No data available.")
         return
@@ -43,9 +40,6 @@ def render_tracker(df):
     tq_pct = round((tq_total / total) * 100, 1) if total else 0
     rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
-    # =========================
-    # NOT RESPONDED
-    # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
@@ -55,7 +49,7 @@ def render_tracker(df):
     total_not_pct = round((total_not / total) * 100, 1) if total else 0
 
     # =========================
-    # HEADER (SAME STYLE AS YOUR OTHER CARDS)
+    # HEADER (LIGHTER, CLEAN)
     # =========================
     st.markdown("""
     <div style="
@@ -63,7 +57,7 @@ def render_tracker(df):
         border:1px solid #1f2937;
         border-radius:12px;
         padding:8px 10px;
-        margin-bottom:6px;
+        margin-bottom:8px;
         text-align:center;
         font-size:13px;
         font-weight:800;
@@ -73,9 +67,6 @@ def render_tracker(df):
     </div>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # LAYOUT
-    # =========================
     left, right = st.columns([1, 1])
 
     with left:
@@ -83,97 +74,113 @@ def render_tracker(df):
         fig = go.Figure()
 
         # =========================
-        # CIRCLES (FIXED)
+        # 🔵 TQ (SOFT BLUE)
         # =========================
-
-        # TQ (LEFT)
         fig.add_shape(
             type="circle",
-            x0=0.0, y0=0.2,
-            x1=1.2, y1=1.4,
-            fillcolor="rgba(59,130,246,0.55)",
-            line=dict(color="#3b82f6", width=2)
+            x0=0.05, y0=0.30,
+            x1=1.15, y1=1.40,
+            fillcolor="rgba(96,165,250,0.25)",
+            line=dict(color="#60A5FA", width=2)
         )
 
-        # RFI (RIGHT)
+        fig.add_annotation(x=0.6, y=1.05,
+                           text="<b>TQ</b>",
+                           showarrow=False,
+                           font=dict(color="white"))
+
+        fig.add_annotation(x=0.6, y=0.8,
+                           text=f"<b>{tq_total}</b>",
+                           showarrow=False,
+                           font=dict(color="#BFDBFE", size=22))
+
+        fig.add_annotation(x=0.6, y=0.55,
+                           text=f"{tq_pct}% of total",
+                           showarrow=False,
+                           font=dict(color="rgba(255,255,255,0.65)"))
+
+        # =========================
+        # 🟢 RFI (SOFT GREEN)
+        # =========================
         fig.add_shape(
             type="circle",
-            x0=2.0, y0=0.2,
-            x1=3.2, y1=1.4,
-            fillcolor="rgba(34,197,94,0.55)",
-            line=dict(color="#22c55e", width=2)
+            x0=2.05, y0=0.30,
+            x1=3.15, y1=1.40,
+            fillcolor="rgba(74,222,128,0.20)",
+            line=dict(color="#4ADE80", width=2)
         )
 
-        # 🔥 MIDDLE (TOTAL) — FIXED VISIBILITY
+        fig.add_annotation(x=2.6, y=1.05,
+                           text="<b>RFI</b>",
+                           showarrow=False,
+                           font=dict(color="white"))
+
+        fig.add_annotation(x=2.6, y=0.8,
+                           text=f"<b>{rfi_total}</b>",
+                           showarrow=False,
+                           font=dict(color="#BBF7D0", size=22))
+
+        fig.add_annotation(x=2.6, y=0.55,
+                           text=f"{rfi_pct}% of total",
+                           showarrow=False,
+                           font=dict(color="rgba(255,255,255,0.65)"))
+
+        # =========================
+        # 🔴 TOTAL (LIGHT RED / ALERT STYLE)
+        # =========================
         fig.add_shape(
             type="circle",
-            x0=0.85, y0=0.15,
-            x1=2.35, y1=1.65,
-            fillcolor="rgba(168,85,247,0.85)",
-            line=dict(color="#a855f7", width=3),
-            layer="above"
+            x0=1.05, y0=0.20,
+            x1=2.10, y1=1.50,
+            fillcolor="rgba(248,113,113,0.18)",
+            line=dict(color="#F87171", width=2)
         )
+
+        fig.add_annotation(x=1.6, y=1.10,
+                           text="<b>TOTAL</b>",
+                           showarrow=False,
+                           font=dict(color="white"))
+
+        fig.add_annotation(x=1.6, y=0.80,
+                           text=f"<b>{total}</b>",
+                           showarrow=False,
+                           font=dict(color="#FECACA", size=26))
+
+        fig.add_annotation(x=1.6, y=0.55,
+                           text="100%",
+                           showarrow=False,
+                           font=dict(color="rgba(255,255,255,0.65)"))
 
         # =========================
-        # ANNOTATIONS
+        # NOT RESPONDED (SIMPLIFIED TO AVOID OVERLAP)
         # =========================
+        fig.add_annotation(x=0.6, y=-0.10,
+                           text=f"TQ Not Responded: <b>{tq_not}</b> ({tq_not_pct}%)",
+                           showarrow=False,
+                           font=dict(color="#60A5FA", size=12))
 
-        fig.add_annotation(
-            x=0.6, y=0.8,
-            text=f"<b>Total TQ</b><br>{tq_total}<br>{tq_pct}%",
-            showarrow=False,
-            font=dict(color="white", size=16),
-            align="center"
-        )
+        fig.add_annotation(x=1.6, y=-0.10,
+                           text=f"Total Not Responded: <b>{total_not}</b> ({total_not_pct}%)",
+                           showarrow=False,
+                           font=dict(color="#F87171", size=12))
 
-        fig.add_annotation(
-            x=1.6, y=0.82,
-            text=f"<b>Total</b><br>{total}<br>100%",
-            showarrow=False,
-            font=dict(color="white", size=18),
-            align="center"
-        )
-
-        fig.add_annotation(
-            x=2.6, y=0.8,
-            text=f"<b>Total RFI</b><br>{rfi_total}<br>{rfi_pct}%",
-            showarrow=False,
-            font=dict(color="white", size=16),
-            align="center"
-        )
-
-        # NOT RESPONDED ROW
-        fig.add_annotation(
-            x=0.6, y=-0.05,
-            text=f"<b>TQ Not Responded</b><br>{tq_not} ({tq_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#60a5fa", size=14)
-        )
-
-        fig.add_annotation(
-            x=1.6, y=-0.05,
-            text=f"<b>Total Not Responded</b><br>{total_not} ({total_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#c084fc", size=14)
-        )
-
-        fig.add_annotation(
-            x=2.6, y=-0.05,
-            text=f"<b>RFI Not Responded</b><br>{rfi_not} ({rfi_not_pct}%)",
-            showarrow=False,
-            font=dict(color="#4ade80", size=14)
-        )
+        fig.add_annotation(x=2.6, y=-0.10,
+                           text=f"RFI Not Responded: <b>{rfi_not}</b> ({rfi_not_pct}%)",
+                           showarrow=False,
+                           font=dict(color="#4ADE80", size=12))
 
         # =========================
-        # LAYOUT
+        # RESPONSIVE FIX
         # =========================
         fig.update_layout(
             height=380,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
-            margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[-0.3, 3.5]),
-            yaxis=dict(visible=False, range=[-0.3, 1.9]),
+            margin=dict(l=10, r=10, t=10, b=20),
+
+            # 🔥 IMPORTANT: gives breathing space to avoid overlap on small screens
+            xaxis=dict(visible=False, range=[-0.3, 3.6]),
+            yaxis=dict(visible=False, range=[-0.4, 1.9]),
         )
 
         st.plotly_chart(fig, use_container_width=True)

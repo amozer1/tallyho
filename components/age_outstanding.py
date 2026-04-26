@@ -11,7 +11,7 @@ def render_age_outstanding(df):
     df = df.copy()
 
     # =========================
-    # DATA PREP
+    # DATA
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["age"] = (pd.Timestamp.today().normalize() - df["date sent"]).dt.days
@@ -27,25 +27,30 @@ def render_age_outstanding(df):
     pct = (summary / total * 100).round(1) if total else 0
 
     # =========================
-    # CARD HEADER
+    # OUTER CARD (THIS FIXES WIDTH)
     # =========================
     st.markdown("""
     <div style="
+        width:50%;
+        min-width:300px;
         background:#0f172a;
         border:1px solid #1f2937;
         border-radius:12px;
-        padding:6px 10px;
-        margin-bottom:6px;
-        width:320px;   /* 🔥 FORCE CARD WIDTH */
+        padding:8px;
+        margin-bottom:10px;
     ">
-        <div style="font-size:12px; font-weight:700; color:white;">
+        <div style="
+            font-size:12px;
+            font-weight:700;
+            color:white;
+            margin-bottom:6px;
+        ">
             📊 Outstanding by Age
         </div>
-    </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # CHART
+    # CHART (NO FULL WIDTH)
     # =========================
     fig = go.Figure()
 
@@ -60,7 +65,6 @@ def render_age_outstanding(df):
 
     fig.update_layout(
         height=170,
-        width=320,  # 🔥 CRITICAL FIX
         margin=dict(l=5, r=5, t=5, b=5),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
@@ -69,4 +73,9 @@ def render_age_outstanding(df):
         font=dict(size=10)
     )
 
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=False)
+
+    # =========================
+    # CLOSE CARD
+    # =========================
+    st.markdown("</div>", unsafe_allow_html=True)

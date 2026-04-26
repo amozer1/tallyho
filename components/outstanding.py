@@ -8,7 +8,6 @@ def render_outstanding_line(df, total):
     # SAFETY CHECK
     # =========================
     if df is None or len(df) == 0 or total == 0:
-        st.warning("No data available")
         return
 
     df = df.copy()
@@ -20,71 +19,72 @@ def render_outstanding_line(df, total):
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
     # =========================
-    # OVERDUE FILTER (>7 DAYS + NOT REPLIED)
+    # OVERDUE LOGIC
     # =========================
     overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
 
     overdue = len(overdue_df)
-    overdue_pct = round((overdue / total) * 100, 1) if total else 0
+    overdue_pct = round((overdue / total) * 100, 1)
 
-    # =========================
-    # BREAKDOWN
-    # =========================
     overdue_tq = len(overdue_df[overdue_df["doc type"] == "TQ"])
     overdue_rfi = len(overdue_df[overdue_df["doc type"] == "RFI"])
 
     # =========================
-    # ALERT CARD UI
+    # UI
     # =========================
     st.markdown(f"""
     <div style="
-        background: #2b0b0b;
-        border-left: 6px solid #ff0000;
-        padding: 16px 18px;
-        border-radius: 10px;
-        box-shadow: 0 0 12px rgba(255,0,0,0.25);
+        background: linear-gradient(135deg, #2b0b0b, #140404);
+        border-left: 8px solid red;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(255,0,0,0.25);
+        margin-bottom: 15px;
     ">
 
         <div style="
-            font-size: 18px;
-            font-weight: 700;
-            color: #ff4d4d;
-            margin-bottom: 8px;
+            font-size: 26px;
+            font-weight: 800;
+            color: white;
+            line-height: 1;
         ">
-            🚨 CRITICAL: Overdue Items (>7 days)
+            🚨 {overdue}
         </div>
 
         <div style="
-            font-size: 16px;
-            color: #ffffff;
+            font-size: 14px;
+            color: #d1d5db;
+            margin-top: 4px;
             margin-bottom: 12px;
         ">
-            <b>{overdue}</b> ({overdue_pct}%) total overdue
+            {overdue_pct}% overdue
         </div>
 
         <div style="
-            display: flex;
-            gap: 10px;
+            display:flex;
+            gap:10px;
         ">
 
             <div style="
-                background: #1a1a1a;
-                padding: 6px 12px;
-                border-radius: 6px;
-                color: #4da3ff;
-                font-weight: 600;
+                background:#111827;
+                color:#4da3ff;
+                padding:6px 12px;
+                border-radius:20px;
+                font-weight:700;
+                font-size:13px;
             ">
-                TQ: {overdue_tq}
+                TQ {overdue_tq}
             </div>
 
             <div style="
-                background: #1a1a1a;
-                padding: 6px 12px;
-                border-radius: 6px;
-                color: #00c853;
-                font-weight: 600;
+                background:#111827;
+                color:#00c853;
+                padding:6px 12px;
+                border-radius:20px;
+                font-weight:700;
+                font-size:13px;
             ">
-                RFI: {overdue_rfi}
+                RFI {overdue_rfi}
             </div>
 
         </div>

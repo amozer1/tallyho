@@ -43,9 +43,6 @@ def render_tracker(df):
     tq_pct = round((tq_total / total) * 100, 1) if total else 0
     rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
-    # =========================
-    # NOT RESPONDED
-    # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
@@ -55,113 +52,117 @@ def render_tracker(df):
     total_not_pct = round((total_not / total) * 100, 1) if total else 0
 
     # =========================
-    # HEADER (same as your other pages)
+    # CARD WRAPPER (THIS IS KEY)
     # =========================
     st.markdown("""
     <div style="
-        background:#0f172a;
-        border:1px solid #1f2937;
-        border-radius:12px;
-        padding:8px 10px;
-        margin-bottom:8px;
+        background: linear-gradient(145deg, #0b1220, #0f172a);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    ">
+    """, unsafe_allow_html=True)
+
+    # =========================
+    # CARD HEADER
+    # =========================
+    st.markdown("""
+    <div style="
         text-align:center;
-        font-size:13px;
+        font-size:14px;
         font-weight:800;
         color:white;
+        margin-bottom:10px;
     ">
         📊 TQ & RFI Status Overview
     </div>
     """, unsafe_allow_html=True)
 
-    left, right = st.columns([1, 1])
+    # =========================
+    # PLOTLY VISUAL (LEFT SIDE STYLE INSIDE CARD)
+    # =========================
+    fig = go.Figure()
+
+    fig.add_shape(
+        type="circle",
+        x0=0.0, y0=0.2,
+        x1=1.2, y1=1.4,
+        fillcolor="rgba(96,165,250,0.35)",
+        line=dict(color="#60A5FA", width=2)
+    )
+
+    fig.add_shape(
+        type="circle",
+        x0=0.85, y0=0.15,
+        x1=2.35, y1=1.65,
+        fillcolor="rgba(168,85,247,0.45)",
+        line=dict(color="#A855F7", width=2)
+    )
+
+    fig.add_shape(
+        type="circle",
+        x0=2.0, y0=0.2,
+        x1=3.2, y1=1.4,
+        fillcolor="rgba(74,222,128,0.35)",
+        line=dict(color="#4ADE80", width=2)
+    )
+
+    fig.add_annotation(x=0.6, y=0.85,
+                       text=f"<b>TQ</b><br>{tq_total}",
+                       showarrow=False,
+                       font=dict(color="white", size=16))
+
+    fig.add_annotation(x=1.6, y=0.9,
+                       text=f"<b>TOTAL</b><br>{total}",
+                       showarrow=False,
+                       font=dict(color="white", size=18))
+
+    fig.add_annotation(x=2.6, y=0.85,
+                       text=f"<b>RFI</b><br>{rfi_total}",
+                       showarrow=False,
+                       font=dict(color="white", size=16))
+
+    fig.update_layout(
+        height=350,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=0, b=0),
+        xaxis=dict(visible=False, range=[-0.3, 3.6]),
+        yaxis=dict(visible=False, range=[-0.3, 1.9]),
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
     # =========================
-    # LEFT: CIRCLES ONLY (SAFE)
+    # KPI STRIP (INSIDE SAME CARD)
     # =========================
-    with left:
+    st.markdown("""
+    <div style="display:flex; justify-content:space-between; gap:10px; margin-top:10px;">
 
-        fig = go.Figure()
+        <div style="flex:1; background:#0b1220; padding:10px; border-radius:10px; text-align:center;">
+            <div style="color:#60A5FA; font-size:12px;">TQ Not Responded</div>
+            <div style="color:white; font-size:16px; font-weight:700;">""" + str(tq_not) + """</div>
+            <div style="color:#9ca3af; font-size:11px;">""" + str(tq_not_pct) + """%</div>
+        </div>
 
-        # TQ
-        fig.add_shape(
-            type="circle",
-            x0=0.0, y0=0.2,
-            x1=1.2, y1=1.4,
-            fillcolor="rgba(96,165,250,0.35)",
-            line=dict(color="#60A5FA", width=2)
-        )
+        <div style="flex:1; background:#0b1220; padding:10px; border-radius:10px; text-align:center;">
+            <div style="color:#F87171; font-size:12px;">Total Not Responded</div>
+            <div style="color:white; font-size:16px; font-weight:700;">""" + str(total_not) + """</div>
+            <div style="color:#9ca3af; font-size:11px;">""" + str(total_not_pct) + """%</div>
+        </div>
 
-        # TOTAL (center emphasis)
-        fig.add_shape(
-            type="circle",
-            x0=0.85, y0=0.15,
-            x1=2.35, y1=1.65,
-            fillcolor="rgba(168,85,247,0.45)",
-            line=dict(color="#A855F7", width=2)
-        )
+        <div style="flex:1; background:#0b1220; padding:10px; border-radius:10px; text-align:center;">
+            <div style="color:#4ADE80; font-size:12px;">RFI Not Responded</div>
+            <div style="color:white; font-size:16px; font-weight:700;">""" + str(rfi_not) + """</div>
+            <div style="color:#9ca3af; font-size:11px;">""" + str(rfi_not_pct) + """%</div>
+        </div>
 
-        # RFI
-        fig.add_shape(
-            type="circle",
-            x0=2.0, y0=0.2,
-            x1=3.2, y1=1.4,
-            fillcolor="rgba(74,222,128,0.35)",
-            line=dict(color="#4ADE80", width=2)
-        )
-
-        # TEXT INSIDE CIRCLES ONLY (SHORT = NO OVERLAP)
-        fig.add_annotation(x=0.6, y=0.85,
-                           text=f"<b>TQ</b><br>{tq_total}",
-                           showarrow=False,
-                           font=dict(color="white", size=16))
-
-        fig.add_annotation(x=1.6, y=0.9,
-                           text=f"<b>TOTAL</b><br>{total}",
-                           showarrow=False,
-                           font=dict(color="white", size=18))
-
-        fig.add_annotation(x=2.6, y=0.85,
-                           text=f"<b>RFI</b><br>{rfi_total}",
-                           showarrow=False,
-                           font=dict(color="white", size=16))
-
-        fig.update_layout(
-            height=380,
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
-            margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False, range=[-0.3, 3.6]),
-            yaxis=dict(visible=False, range=[-0.3, 1.9]),
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
+    </div>
+    """, unsafe_allow_html=True)
 
     # =========================
-    # RIGHT: RESPONSIVE KPIs (THIS FIXES YOUR OVERLAP ISSUE)
+    # CLOSE CARD
     # =========================
-    with right:
-
-        st.markdown("### Not Responded Summary")
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.metric(
-                "TQ Not Responded",
-                tq_not,
-                f"{tq_not_pct}%"
-            )
-
-        with col2:
-            st.metric(
-                "Total Not Responded",
-                total_not,
-                f"{total_not_pct}%"
-            )
-
-        with col3:
-            st.metric(
-                "RFI Not Responded",
-                rfi_not,
-                f"{rfi_not_pct}%"
-            )
+    st.markdown("</div>", unsafe_allow_html=True)

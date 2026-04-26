@@ -11,26 +11,50 @@ def render_outstanding_line(df, total):
     df = df.copy()
 
     # =========================
-    # CLEAN COLUMNS
+    # CLEAN COLUMN NAMES
     # =========================
     df.columns = df.columns.str.strip()
 
     # =========================
-    # FIND COLUMNS SAFELY
+    # FIND STATUS COLUMN (ROBUST)
     # =========================
-    def find_col(name):
-        for col in df.columns:
-            if col.strip().lower() == name.lower():
-                return col
-        return None
+    status_col = None
+    for col in df.columns:
+        if col.strip().lower() == "status":
+            status_col = col
+            break
 
-    status_col = find_col("Status")
-    doc_col = find_col("doc type")
-    date_col = find_col("date sent")
+    if status_col is None:
+        st.error("❌ 'Status' column not found")
+        st.write("Available columns:", df.columns.tolist())
+        return
 
-    if not status_col or not doc_col or not date_col:
-        st.error("❌ Missing required columns (Status / Doc Type / Date Sent)")
-        st.write(df.columns.tolist())
+    # =========================
+    # FIND DOC TYPE COLUMN (ROBUST)
+    # =========================
+    doc_col = None
+    for col in df.columns:
+        if col.strip().lower() == "doc type":
+            doc_col = col
+            break
+
+    if doc_col is None:
+        st.error("❌ 'doc type' column not found")
+        st.write("Available columns:", df.columns.tolist())
+        return
+
+    # =========================
+    # FIND DATE SENT COLUMN (ROBUST)
+    # =========================
+    date_col = None
+    for col in df.columns:
+        if col.strip().lower() == "date sent":
+            date_col = col
+            break
+
+    if date_col is None:
+        st.error("❌ 'Date Sent' column not found")
+        st.write("Available columns:", df.columns.tolist())
         return
 
     # =========================
@@ -43,7 +67,7 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # LOGIC
+    # CORE LOGIC
     # =========================
     open_df = df[df[status_col] == "OPEN"]
 
@@ -64,7 +88,7 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # STATUS LEVEL
+    # SEVERITY
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
@@ -80,71 +104,59 @@ def render_outstanding_line(df, total):
         impact = "Monitor"
 
     # =========================
-    # FULL CARD
+    # HEADER CARD (NOTE INSIDE)
     # =========================
     st.markdown(f"""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
-        border-radius:12px;
-        padding:12px 14px;
-        margin-top:8px;
-        margin-bottom:8px;
+        border-radius:10px;
+        padding:10px 12px;
+        margin-bottom:6px;
+        text-align:center;
+        font-size:12px;
+        font-weight:700;
+        color:{color};
+        line-height:1.4;
     ">
-
-        <!-- HEADER -->
+        🚨 Outstanding (>7 Days) — {status}
         <div style="
-            text-align:center;
-            font-size:13px;
-            font-weight:800;
-            color:{color};
-            margin-bottom:6px;
-        ">
-            🚨 Outstanding (>7 Days) — {status}
-        </div>
-
-        <!-- NOTE -->
-        <div style="
-            text-align:center;
             font-size:11px;
+            font-weight:400;
             color:#94a3b8;
-            margin-bottom:10px;
-            line-height:1.4;
+            margin-top:4px;
         ">
-            Items are <b>Overdue</b> when they are <b>OPEN</b> and have been outstanding for more than <b>7 days since Date Sent</b>.
+            Items are considered <b>Overdue</b> when they are <b>OPEN</b> and have been outstanding for more than <b>7 days since Date Sent</b>.
         </div>
-
     </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # KPI + TEXT INSIDE CARD (STREAMLIT SECTION)
+    # KPI ROW
     # =========================
-    with st.container():
+    col1, col2 = st.columns([1.2, 1])
 
-        col1, col2 = st.columns([1.2, 1])
+    with col1:
+        st.metric(
+            label="Total Overdue",
+            value=f"{overdue_total}",
+            delta=f"{overdue_pct}% of total"
+        )
 
-        with col1:
-            st.metric(
-                label="Total Overdue",
-                value=f"{overdue_total}",
-                delta=f"{overdue_pct}% of total"
-            )
-
-        with col2:
-            st.markdown(f"""
-            <div style="padding-top:6px;">
-                <div style="font-size:12px; font-weight:700; color:{color};">
-                    {impact}
-                </div>
-                <div style="font-size:11px; color:#cbd5e1;">
-                    TQ: {overdue_tq} | RFI: {overdue_rfi}
-                </div>
+    with col2:
+        st.markdown(f"""
+        <div style="padding-top:6px;">
+            <div style="font-size:12px; font-weight:700; color:{color};">
+                {impact}
             </div>
-            """, unsafe_allow_html=True)
+            <div style="font-size:11px; color:#cbd5e1;">
+                TQ: {overdue_tq} | RFI: {overdue_rfi}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # =========================
-    # CHART (STILL VISUALLY LINKED TO CARD)
+    # BAR CHART
     # =========================
     fig = go.Figure()
 
@@ -171,3 +183,16 @@ def render_outstanding_line(df, total):
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # FOOTER
+    # =========================
+    st.markdown(f"""
+    <div style="
+        font-size:11px;
+        color:#cbd5e1;
+        margin-top:2px;
+    ">
+        Status: <span style="color:{color}; font-weight:600;">{impact}</span>
+    </div>
+    """, unsafe_allow_html=True)

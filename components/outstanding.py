@@ -38,33 +38,34 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # RED BACKGROUND WRAPPER (SMALL CARD)
+    # RED RECTANGLE CONTAINER
     # =========================
-    st.markdown("""
-    <style>
-    .alert-box {
-        background: #7f1d1d;
-        padding: 12px 14px;
-        border-radius: 10px;
-        border: 1px solid #ef4444;
-        max-width: 600px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    with st.container():
 
-    st.markdown('<div class="alert-box">', unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div style="
+                background-color:#7f1d1d;
+                padding:16px;
+                border-radius:12px;
+                border:1px solid #ef4444;
+            ">
+            """,
+            unsafe_allow_html=True
+        )
 
-    st.markdown("### 🚨 Outstanding (>7 days)")
+        st.markdown("### 🚨 Overdue (>7 days)", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns(3)
+        # TOP KPI
+        col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.metric("Total", overdue_total, f"{overdue_pct}%")
+        with col1:
+            st.metric("Total Overdue", overdue_total, f"{overdue_pct}%")
 
-    with col2:
-        st.metric("TQ", overdue_tq, f"{tq_pct}%")
+        with col2:
+            st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
 
-    with col3:
-        st.metric("RFI", overdue_rfi, f"{rfi_pct}%")
+        with col3:
+            st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)

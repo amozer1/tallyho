@@ -43,6 +43,9 @@ def render_tracker(df):
     tq_pct = round((tq_total / total) * 100, 1) if total else 0
     rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
+    # =========================
+    # NOT RESPONDED
+    # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
@@ -72,7 +75,7 @@ def render_tracker(df):
     fig = go.Figure()
 
     # =========================
-    # CIRCLES (UNCHANGED)
+    # CIRCLES
     # =========================
 
     fig.add_shape(
@@ -100,98 +103,103 @@ def render_tracker(df):
     )
 
     # =========================
-    # IMPROVED TEXT HIERARCHY (NO HTML, BUT VISUALLY STRONG)
+    # TQ CIRCLE TEXT
     # =========================
 
-    # TQ
     fig.add_annotation(
-        x=0.6, y=0.95,
+        x=0.6, y=0.85,
         text="<b>TQ</b>",
         showarrow=False,
-        font=dict(color="#60A5FA", size=18)
+        font=dict(color="#60A5FA", size=16)
     )
 
     fig.add_annotation(
-        x=0.6, y=0.78,
+        x=0.6, y=0.70,
         text=f"<b>{tq_total}</b>",
         showarrow=False,
-        font=dict(color="white", size=28)
+        font=dict(color="white", size=26)
     )
 
     fig.add_annotation(
-        x=0.6, y=0.60,
+        x=0.6, y=0.56,
         text=f"{tq_pct}% of total",
         showarrow=False,
-        font=dict(color="rgba(255,255,255,0.65)", size=12)
+        font=dict(color="rgba(255,255,255,0.65)", size=11)
     )
 
-    # TOTAL
+    # =========================
+    # TOTAL CIRCLE TEXT
+    # =========================
+
     fig.add_annotation(
-        x=1.6, y=1.0,
-        text="<b>TOTAL DOCUMENTS</b>",
+        x=1.6, y=0.88,
+        text="<b>TOTAL</b>",
         showarrow=False,
-        font=dict(color="#A855F7", size=18)
+        font=dict(color="#A855F7", size=16)
     )
 
     fig.add_annotation(
-        x=1.6, y=0.78,
+        x=1.6, y=0.70,
         text=f"<b>{total}</b>",
         showarrow=False,
-        font=dict(color="white", size=32)
+        font=dict(color="white", size=30)
     )
 
     fig.add_annotation(
-        x=1.6, y=0.60,
-        text="100% dataset coverage",
+        x=1.6, y=0.56,
+        text="All Documents",
         showarrow=False,
-        font=dict(color="rgba(255,255,255,0.6)", size=12)
+        font=dict(color="rgba(255,255,255,0.6)", size=11)
     )
 
-    # RFI
+    # =========================
+    # RFI CIRCLE TEXT
+    # =========================
+
     fig.add_annotation(
-        x=2.6, y=0.95,
+        x=2.6, y=0.85,
         text="<b>RFI</b>",
         showarrow=False,
-        font=dict(color="#4ADE80", size=18)
+        font=dict(color="#4ADE80", size=16)
     )
 
     fig.add_annotation(
-        x=2.6, y=0.78,
+        x=2.6, y=0.70,
         text=f"<b>{rfi_total}</b>",
         showarrow=False,
-        font=dict(color="white", size=28)
+        font=dict(color="white", size=26)
     )
 
     fig.add_annotation(
-        x=2.6, y=0.60,
+        x=2.6, y=0.56,
         text=f"{rfi_pct}% of total",
         showarrow=False,
-        font=dict(color="rgba(255,255,255,0.65)", size=12)
+        font=dict(color="rgba(255,255,255,0.65)", size=11)
     )
 
     # =========================
-    # NOT RESPONDED (CLEAN + BALANCED)
+    # NOT RESPONDED (SAFE SMALL TEXT INSIDE BOTTOM AREA)
     # =========================
 
     fig.add_annotation(
-        x=0.6, y=0.25,
+        x=0.6, y=0.28,
         text=f"<b>{tq_not}</b><br>Not Responded",
         showarrow=False,
-        font=dict(color="#60A5FA", size=12)
+        font=dict(color="#60A5FA", size=11)
     )
 
     fig.add_annotation(
-        x=1.6, y=0.25,
+        x=1.6, y=0.28,
         text=f"<b>{total_not}</b><br>Not Responded",
         showarrow=False,
-        font=dict(color="#F87171", size=12)
+        font=dict(color="#F87171", size=11)
     )
 
     fig.add_annotation(
-        x=2.6, y=0.25,
+        x=2.6, y=0.28,
         text=f"<b>{rfi_not}</b><br>Not Responded",
         showarrow=False,
-        font=dict(color="#4ADE80", size=12)
+        font=dict(color="#4ADE80", size=11)
     )
 
     # =========================

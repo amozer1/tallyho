@@ -16,6 +16,9 @@ def render_outstanding_line(df, total):
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
     df["age"] = pd.to_numeric(df["age"], errors="coerce").fillna(0)
 
+    # =========================
+    # CALCULATIONS
+    # =========================
     total_tq = len(df[df["doc type"] == "TQ"])
     total_rfi = len(df[df["doc type"] == "RFI"])
 
@@ -31,14 +34,15 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # CARD WRAPPER (MATCH OTHER COMPONENTS)
+    # CARD (MATCH age_outstanding STYLE)
     # =========================
     st.markdown("""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
         border-radius:12px;
-        padding:12px 14px;
+        padding:10px;
+        margin-bottom:6px;
     ">
         <div style="
             text-align:center;
@@ -52,41 +56,41 @@ def render_outstanding_line(df, total):
     """, unsafe_allow_html=True)
 
     # =========================
-    # KPI ROW (YOUR REQUEST FORMAT)
+    # KPI ROWS (TEXT STYLE LIKE AGE CARD)
     # =========================
-    c1, c2, c3 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
 
-    with c1:
+    with col1:
         st.markdown(
             f"""
             <div style="text-align:center;">
-                <div style="font-size:13px; opacity:0.8;">Total Overdue</div>
-                <div style="font-size:20px; font-weight:700;">{overdue_total}</div>
-                <div style="font-size:12px; color:#ef4444;">({overdue_pct}%)</div>
+                <div style="font-size:13px; color:#ffffff;">Total Overdue</div>
+                <div style="font-size:20px; font-weight:700; color:#ef4444;">{overdue_total}</div>
+                <div style="font-size:12px; color:#9ca3af;">{overdue_pct}%</div>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-    with c2:
+    with col2:
         st.markdown(
             f"""
             <div style="text-align:center;">
-                <div style="font-size:13px; opacity:0.8;">TQ Overdue</div>
-                <div style="font-size:20px; font-weight:700;">{overdue_tq}</div>
-                <div style="font-size:12px; color:#f97316;">({tq_pct}%)</div>
+                <div style="font-size:13px; color:#ffffff;">TQ Overdue</div>
+                <div style="font-size:20px; font-weight:700; color:#f97316;">{overdue_tq}</div>
+                <div style="font-size:12px; color:#9ca3af;">{tq_pct}%</div>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-    with c3:
+    with col3:
         st.markdown(
             f"""
             <div style="text-align:center;">
-                <div style="font-size:13px; opacity:0.8;">RFI Overdue</div>
-                <div style="font-size:20px; font-weight:700;">{overdue_rfi}</div>
-                <div style="font-size:12px; color:#38bdf8;">({rfi_pct}%)</div>
+                <div style="font-size:13px; color:#ffffff;">RFI Overdue</div>
+                <div style="font-size:20px; font-weight:700; color:#38bdf8;">{overdue_rfi}</div>
+                <div style="font-size:12px; color:#9ca3af;">{rfi_pct}%</div>
             </div>
             """,
             unsafe_allow_html=True

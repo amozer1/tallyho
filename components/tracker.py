@@ -6,6 +6,9 @@ from datetime import datetime
 
 def render_tracker(df):
 
+    # =========================
+    # VALIDATION
+    # =========================
     if df is None or df.empty:
         st.warning("No data available.")
         return
@@ -20,6 +23,9 @@ def render_tracker(df):
             st.error(f"Missing column: {c}")
             return
 
+    # =========================
+    # CLEAN DATA
+    # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
@@ -60,6 +66,9 @@ def render_tracker(df):
     </div>
     """, unsafe_allow_html=True)
 
+    # =========================
+    # FIGURE
+    # =========================
     fig = go.Figure()
 
     # =========================
@@ -88,7 +97,7 @@ def render_tracker(df):
     rfi_x, rfi_y = 2.6, 0.8
 
     # =========================
-    # TQ (SPACED CLEANLY)
+    # TQ
     # =========================
     fig.add_annotation(x=tq_x, y=tq_y + 0.18,
                        text="<b>TQ</b>",
@@ -106,7 +115,7 @@ def render_tracker(df):
                        font=dict(color="rgba(255,255,255,0.65)", size=11))
 
     fig.add_annotation(x=tq_x, y=tq_y - 0.33,
-                       text=f"{tq_not} Not Responded",
+                       text=f"{tq_not} not responded",
                        showarrow=False,
                        font=dict(color="#60A5FA", size=10))
 
@@ -124,12 +133,12 @@ def render_tracker(df):
                        font=dict(color="white", size=30))
 
     fig.add_annotation(x=total_x, y=total_y - 0.18,
-                       text="Total TQ & RFI",
+                       text="All Documents",
                        showarrow=False,
                        font=dict(color="rgba(255,255,255,0.65)", size=11))
 
     fig.add_annotation(x=total_x, y=total_y - 0.33,
-                       text=f"{total_not} Not Responded",
+                       text=f"{total_not} not responded",
                        showarrow=False,
                        font=dict(color="#F87171", size=10))
 
@@ -152,7 +161,7 @@ def render_tracker(df):
                        font=dict(color="rgba(255,255,255,0.65)", size=11))
 
     fig.add_annotation(x=rfi_x, y=rfi_y - 0.33,
-                       text=f"{rfi_not} Not Responded",
+                       text=f"{rfi_not} not responded",
                        showarrow=False,
                        font=dict(color="#4ADE80", size=10))
 
@@ -168,4 +177,10 @@ def render_tracker(df):
         yaxis=dict(visible=False, range=[-0.3, 2.0])
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    # =========================
+    # WIDTH CONTROL (IMPORTANT FIX)
+    # =========================
+    col1, col2, col3 = st.columns([1, 3, 1])
+
+    with col2:
+        st.plotly_chart(fig, use_container_width=True)

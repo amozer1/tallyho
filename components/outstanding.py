@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
 
 
 def render_outstanding_line(df, total):
@@ -11,7 +12,7 @@ def render_outstanding_line(df, total):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # SAFE COLUMN FIND
+    # SAFE COLUMN DETECTION
     # =========================
     def find_col(name):
         for c in df.columns:
@@ -37,11 +38,13 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # LOGIC
+    # OUTSTANDING LOGIC
     # =========================
     open_df = df[df[status_col] == "OPEN"]
 
-    overdue_df = open_df[(today - open_df[date_col]).dt.days > 7]
+    overdue_df = open_df[
+        (today - open_df[date_col]).dt.days > 7
+    ]
 
     overdue_total = len(overdue_df)
     overdue_pct = round((overdue_total / total) * 100, 1)
@@ -50,48 +53,90 @@ def render_outstanding_line(df, total):
     overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
     # =========================
-    # STATUS
+    # SEVERITY (SAME STYLE LOGIC)
     # =========================
     if overdue_total >= 15:
+        color = "#ef4444"
         status = "CRITICAL"
-        color = "red"
     elif overdue_total >= 5:
+        color = "#f97316"
         status = "HIGH"
-        color = "orange"
     else:
+        color = "#facc15"
         status = "MEDIUM"
-        color = "green"
 
     # =========================
-    # CARD
+    # CENTERED CARD LAYOUT (LIKE AGE OUTSTANDING)
     # =========================
-    with st.container(border=True):
+    col1, col2, col3 = st.columns([1, 2, 1])
 
-        # HEADER (CARD TITLE)
-        st.markdown(f"### 🚨 Outstanding Items (>7 Days)")
+    with col2:
 
-        st.caption("OPEN items older than 7 days since Date Sent are flagged as overdue")
+        # =========================
+        # TITLE CARD
+        # =========================
+        st.markdown(f"""
+        <div style="
+            background:#0f172a;
+            border:1px solid #1f2937;
+            border-radius:12px;
+            padding:8px 10px;
+            margin-bottom:6px;
+            text-align:center;
+            font-size:13px;
+            font-weight:800;
+            color:{color};
+        ">
+            🚨 Outstanding (>7 Days) — {status}
+        </div>
+        """, unsafe_allow_html=True)
 
-        # BIG KPI (CENTRE PIECE)
-        st.metric(
-            label="Total Overdue Items",
-            value=overdue_total,
-            delta=f"{overdue_pct}% of total workload"
+        # =========================
+        # MAIN CHART (PRIMARY VISUAL)
+        # =========================
+        fig = go.Figure()
+
+        fig.add_trace(go.Bar(
+            x=[overdue_tq, overdue_rfi],
+            y=["TQ Overdue", "RFI Overdue"],
+            orientation="h",
+            marker=dict(color=["#f97316", "#38bdf8"]),
+            text=[overdue_tq, overdue_rfi],
+            textposition="outside",
+            hovertemplate="Items: %{x}<extra></extra>"
+        ))
+
+        fig.update_layout(
+            height=200,
+            margin=dict(l=25, r=25, t=10, b=10),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            bargap=0.35,
+            font=dict(color="white", size=11),
+
+            xaxis=dict(
+                title="Overdue Items",
+                showgrid=True,
+                gridcolor="rgba(255,255,255,0.08)",
+                zeroline=True,
+                zerolinecolor="rgba(255,255,255,0.35)",
+                linecolor="rgba(255,255,255,0.25)",
+                tickfont=dict(color="white"),
+                title_font=dict(color="white")
+            ),
+
+            yaxis=dict(
+                showgrid=False,
+                tickfont=dict(color="white")
+            )
         )
 
-        st.divider()
+        st.plotly_chart(fig, use_container_width=True)
 
-        # 2-COLUMN BREAKDOWN (CLEAN CARD STYLE)
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.metric("TQ Overdue", overdue_tq)
-
-        with col2:
-            st.metric("RFI Overdue", overdue_rfi)
-
-        # SPACING FOR CARD FEEL
-        st.write("")
-
-        # STATUS BOTTOM BLOCK (FINAL SUMMARY INSIDE CARD)
-        st.metric("Status Level", status)
+        # =========================
+        # FOOTER SUMMARY (LIKE AGE OUTSTANDING STYLE)
+        # =========================
+        st.markdown(
+            f"**Total Overdue:** {overdue_total} ({overdue_pct}%)  |  "
+            f"**TQ:** {overdue_tq}  |  **RFI:** {overdue_rfi}"
+        )

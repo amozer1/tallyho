@@ -57,28 +57,33 @@ def render_outstanding_line(df, total):
     # =========================
     if overdue_total >= 15:
         status = "CRITICAL"
+        color = "#ef4444"
     elif overdue_total >= 5:
         status = "HIGH"
+        color = "#f97316"
     else:
         status = "MEDIUM"
+        color = "#facc15"
 
     # =========================
-    # CENTER LAYOUT
+    # CENTER LAYOUT (MATCH AGE STYLE)
     # =========================
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
 
         # =========================
-        # HEADER (CLEANER)
+        # HEADER (COMPACT LINE — YOUR REQUEST)
         # =========================
         st.markdown(
             f"## 🚨 Outstanding (>7 Days) — {status}\n"
-            f"**{overdue_total} overdue items ({overdue_pct}%)**"
+            f"**Overdue:** {overdue_total} ({overdue_pct}%) "
+            f"· **TQ:** {overdue_tq} "
+            f"· **RFI:** {overdue_rfi}"
         )
 
         # =========================
-        # CHART
+        # CHART (MAIN VISUAL)
         # =========================
         fig = go.Figure()
 

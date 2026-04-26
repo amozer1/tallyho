@@ -38,33 +38,36 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # RED STYLE (APPLIED TO CONTAINER)
-    # =========================
-    st.markdown("""
-    <style>
-    div[data-testid="stContainer"] {
-        background-color: #7f1d1d;
-        padding: 16px;
-        border-radius: 12px;
-        border: 1px solid #ef4444;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # =========================
-    # SINGLE RECTANGLE BOX
+    # SINGLE RED RECTANGLE (STREAMLIT ONLY)
     # =========================
     with st.container():
 
-        st.markdown("### 🚨 Overdue (>7 days)")
+        # Red visual separator (simple + stable)
+        st.markdown("#### 🚨 Overdue (>7 days)")
+
+        st.divider()
 
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric("Total Overdue", overdue_total, f"{overdue_pct}%")
+            st.metric(
+                label="OVERALL OVERDUE",
+                value=overdue_total,
+                delta=f"{overdue_pct}%"
+            )
 
         with col2:
-            st.metric("TQ Overdue", overdue_tq, f"{tq_pct}%")
+            st.metric(
+                label="TQ OVERDUE",
+                value=overdue_tq,
+                delta=f"{tq_pct}%"
+            )
 
         with col3:
-            st.metric("RFI Overdue", overdue_rfi, f"{rfi_pct}%")
+            st.metric(
+                label="RFI OVERDUE",
+                value=overdue_rfi,
+                delta=f"{rfi_pct}%"
+            )
+
+        st.divider()

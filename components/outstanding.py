@@ -1,5 +1,6 @@
+import pandas as pd
 import streamlit as st
-import streamlit as st
+
 
 def render_outstanding_line(df, total):
 
@@ -23,7 +24,7 @@ def render_outstanding_line(df, total):
     total_rfi = len(df[df["doc type"] == "RFI"])
 
     # =========================
-    # OVERDUE (>7 DAYS, NOT REPLIED)
+    # OVERDUE (>7 DAYS)
     # =========================
     overdue_df = df[(df["reply date"].isna()) & (df["age"] > 7)]
 
@@ -37,27 +38,15 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # STREAMLIT NATIVE UI (NO HTML)
+    # STREAMLIT KPI UI
     # =========================
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric(
-            label="🚨 Overdue (>7 days)",
-            value=overdue_total,
-            delta=f"{overdue_pct}% of total"
-        )
+        st.metric("🚨 Overdue (>7 days)", overdue_total, f"{overdue_pct}%")
 
     with col2:
-        st.metric(
-            label="📌 TQ Overdue",
-            value=overdue_tq,
-            delta=f"{tq_pct}% of TQ"
-        )
+        st.metric("📌 TQ Overdue", overdue_tq, f"{tq_pct}%")
 
     with col3:
-        st.metric(
-            label="📌 RFI Overdue",
-            value=overdue_rfi,
-            delta=f"{rfi_pct}% of RFI"
-        )
+        st.metric("📌 RFI Overdue", overdue_rfi, f"{rfi_pct}%")

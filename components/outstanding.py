@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import plotly.graph_objects as go
 
 
 def render_outstanding_line(df, total):
@@ -35,115 +34,68 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # SEVERITY LOGIC (for attention)
+    # SEVERITY (COMPACT)
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
-        status = "CRITICAL"
-        impact = "High impact on project progress"
-        note = "May block approvals and coordination"
+        label = "CRITICAL"
     elif overdue_total >= 5:
         color = "#f97316"
-        status = "HIGH"
-        impact = "Moderate impact on workflow"
-        note = "Action required"
+        label = "HIGH"
     else:
         color = "#facc15"
-        status = "MEDIUM"
-        impact = "Low risk backlog"
-        note = "Monitor"
+        label = "MEDIUM"
 
     # =========================
-    # TITLE CARD (MATCH YOUR STYLE)
+    # HEADER (SMALL)
     # =========================
-    st.markdown("""
+    st.markdown(f"""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
-        border-radius:12px;
-        padding:8px 10px;
+        border-radius:10px;
+        padding:6px 10px;
         margin-bottom:6px;
         text-align:center;
-        font-size:13px;
+        font-size:12px;
         font-weight:800;
-        color:white;
+        color:{color};
     ">
-        🚨 Outstanding (>7 days)
+        🚨 OVERDUE ({label})
     </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # MAIN KPI ROW (NO HTML CARDS)
+    # KPI ROW (COMPACT)
     # =========================
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric(
-            label="Total Overdue",
-            value=f"{overdue_total}",
-            delta=f"{overdue_pct}% of total"
-        )
+        st.metric("Total", overdue_total, f"{overdue_pct}%")
 
     with col2:
-        st.markdown(f"""
-        <div style="padding-top:6px;">
-            <div style="color:{color}; font-weight:800; font-size:13px;">
-                {status} RISK
-            </div>
-            <div style="color:#cbd5e1; font-size:12px;">
-                {impact}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("TQ", overdue_tq, f"{tq_pct}%")
+
+    with col3:
+        st.metric("RFI", overdue_rfi, f"{rfi_pct}%")
 
     # =========================
-    # BREAKDOWN CHART (IMPORTANT VISUAL)
+    # FOOTER (MINIMAL IMPACT)
     # =========================
-    fig = go.Figure()
-
-    fig.add_trace(go.Bar(
-        x=[overdue_tq, overdue_rfi],
-        y=["TQ Overdue", "RFI Overdue"],
-        orientation="h",
-        marker=dict(color=["#f97316", "#38bdf8"]),
-        text=[
-            f"{overdue_tq} ({tq_pct}%)",
-            f"{overdue_rfi} ({rfi_pct}%)"
-        ],
-        textposition="outside"
-    ))
-
-    fig.update_layout(
-        height=180,
-        margin=dict(l=20, r=20, t=10, b=10),
-        paper_bgcolor="#0f172a",
-        plot_bgcolor="#0f172a",
-        font=dict(color="white", size=11),
-        xaxis=dict(
-            title="Overdue Items",
-            gridcolor="rgba(255,255,255,0.08)"
-        ),
-        yaxis=dict(
-            showgrid=False
-        )
+    impact = (
+        "High impact on progress" if overdue_total >= 15
+        else "Monitor backlog"
     )
 
-    st.plotly_chart(fig, use_container_width=True)
-
-    # =========================
-    # IMPACT FOOTER (CONSEQUENCE LAYER)
-    # =========================
     st.markdown(f"""
     <div style="
-        font-size:12px;
+        font-size:11.5px;
         color:#cbd5e1;
-        margin-top:6px;
-        padding-top:6px;
-        border-top:1px solid #1f2937;
+        margin-top:4px;
+        text-align:center;
     ">
         <span style="color:{color}; font-weight:700;">
             {impact}
         </span>
-        — {note}
     </div>
     """, unsafe_allow_html=True)

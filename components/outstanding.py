@@ -11,12 +11,12 @@ def render_outstanding_line(df, total):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # SAFE COLUMN DETECTION
+    # SAFE COLUMN FIND
     # =========================
     def find_col(name):
-        for col in df.columns:
-            if col.strip().lower() == name.lower():
-                return col
+        for c in df.columns:
+            if c.strip().lower() == name.lower():
+                return c
         return None
 
     status_col = find_col("status")
@@ -30,8 +30,8 @@ def render_outstanding_line(df, total):
     # =========================
     # CLEAN DATA
     # =========================
-    df[status_col] = df[status_col].astype(str).str.strip().str.upper()
-    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
+    df[status_col] = df[status_col].astype(str).str.upper().str.strip()
+    df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     today = pd.Timestamp.today()
@@ -41,9 +41,7 @@ def render_outstanding_line(df, total):
     # =========================
     open_df = df[df[status_col] == "OPEN"]
 
-    overdue_df = open_df[
-        (today - open_df[date_col]).dt.days > 7
-    ]
+    overdue_df = open_df[(today - open_df[date_col]).dt.days > 7]
 
     overdue_total = len(overdue_df)
     overdue_pct = round((overdue_total / total) * 100, 1)
@@ -56,45 +54,44 @@ def render_outstanding_line(df, total):
     # =========================
     if overdue_total >= 15:
         status = "CRITICAL"
-        color = "error"
+        color = "red"
     elif overdue_total >= 5:
         status = "HIGH"
-        color = "warning"
+        color = "orange"
     else:
         status = "MEDIUM"
-        color = "info"
+        color = "green"
 
     # =========================
-    # GROUPED CARD (NO HTML)
+    # CARD
     # =========================
     with st.container(border=True):
 
-        # HEADER
-        st.subheader(f"🚨 Outstanding Items (>7 Days) — {status}")
+        # HEADER (CARD TITLE)
+        st.markdown(f"### 🚨 Outstanding Items (>7 Days)")
 
-        st.caption(
-            "Items are flagged when they are OPEN and exceed 7 days since Date Sent"
+        st.caption("OPEN items older than 7 days since Date Sent are flagged as overdue")
+
+        # BIG KPI (CENTRE PIECE)
+        st.metric(
+            label="Total Overdue Items",
+            value=overdue_total,
+            delta=f"{overdue_pct}% of total workload"
         )
 
         st.divider()
 
-        # MAIN KPI ROW
-        col1, col2, col3 = st.columns(3)
+        # 2-COLUMN BREAKDOWN (CLEAN CARD STYLE)
+        col1, col2 = st.columns(2)
 
         with col1:
-            st.metric("Overdue Total", overdue_total, f"{overdue_pct}%")
-
-        with col2:
             st.metric("TQ Overdue", overdue_tq)
 
-        with col3:
+        with col2:
             st.metric("RFI Overdue", overdue_rfi)
 
-        st.divider()
+        # SPACING FOR CARD FEEL
+        st.write("")
 
-        # IMPACT SUMMARY (GROUPED TEXT)
-        st.markdown("### Status Summary")
-
-        st.write(f"**Status Level:** :{color}[{status}]")
-        st.write(f"**TQ Overdue:** {overdue_tq}")
-        st.write(f"**RFI Overdue:** {overdue_rfi}")
+        # STATUS BOTTOM BLOCK (FINAL SUMMARY INSIDE CARD)
+        st.metric("Status Level", status)

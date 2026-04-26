@@ -9,23 +9,52 @@ def render_outstanding_line(df, total):
         return
 
     df = df.copy()
+
+    # =========================
+    # CLEAN COLUMN NAMES
+    # =========================
     df.columns = df.columns.str.strip()
 
     # =========================
-    # SAFE COLUMN DETECTION
+    # FIND STATUS COLUMN (ROBUST)
     # =========================
-    def find_col(name):
-        for c in df.columns:
-            if c.strip().lower() == name.lower():
-                return c
-        return None
+    status_col = None
+    for col in df.columns:
+        if col.strip().lower() == "status":
+            status_col = col
+            break
 
-    status_col = find_col("status")
-    doc_col = find_col("doc type")
-    date_col = find_col("date sent")
+    if status_col is None:
+        st.error("❌ 'Status' column not found")
+        st.write("Available columns:", df.columns.tolist())
+        return
 
-    if not status_col or not doc_col or not date_col:
-        st.error("Missing required columns: Status / Doc Type / Date Sent")
+    # =========================
+    # FIND DOC TYPE COLUMN (ROBUST)
+    # =========================
+    doc_col = None
+    for col in df.columns:
+        if col.strip().lower() == "doc type":
+            doc_col = col
+            break
+
+    if doc_col is None:
+        st.error("❌ 'doc type' column not found")
+        st.write("Available columns:", df.columns.tolist())
+        return
+
+    # =========================
+    # FIND DATE SENT COLUMN (ROBUST)
+    # =========================
+    date_col = None
+    for col in df.columns:
+        if col.strip().lower() == "date sent":
+            date_col = col
+            break
+
+    if date_col is None:
+        st.error("❌ 'Date Sent' column not found")
+        st.write("Available columns:", df.columns.tolist())
         return
 
     # =========================
@@ -38,10 +67,13 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # CORE LOGIC
+    # CORE LOGIC (SLA MODEL)
     # =========================
+
+    # 🔴 OPEN ITEMS
     open_df = df[df[status_col] == "OPEN"]
 
+    # 🚨 OVERDUE = OPEN + > 7 days since Date Sent
     overdue_df = open_df[
         (today - open_df[date_col]).dt.days > 7
     ]
@@ -49,77 +81,115 @@ def render_outstanding_line(df, total):
     overdue_total = len(overdue_df)
     overdue_pct = round((overdue_total / total) * 100, 1)
 
+    # =========================
+    # BREAKDOWN
+    # =========================
     overdue_tq = len(overdue_df[overdue_df[doc_col] == "TQ"])
     overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
+    total_tq = len(df[df[doc_col] == "TQ"])
+    total_rfi = len(df[df[doc_col] == "RFI"])
+
+    tq_pct = round((overdue_tq / total_tq) * 100, 1) if total_tq else 0
+    rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
+
     # =========================
-    # SEVERITY
+    # SEVERITY LOGIC
     # =========================
     if overdue_total >= 15:
-        status = "CRITICAL"
         color = "#ef4444"
+        status = "CRITICAL"
+        impact = "High backlog risk"
     elif overdue_total >= 5:
-        status = "HIGH"
         color = "#f97316"
+        status = "HIGH"
+        impact = "Needs attention"
     else:
-        status = "MEDIUM"
         color = "#facc15"
+        status = "MEDIUM"
+        impact = "Monitor"
 
     # =========================
-    # CENTER LAYOUT (MATCH AGE STYLE)
+    # HEADER
     # =========================
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.markdown(f"""
+    <div style="
+        background:#0f172a;
+        border:1px solid #1f2937;
+        border-radius:10px;
+        padding:6px 10px;
+        margin-bottom:6px;
+        text-align:center;
+        font-size:12px;
+        font-weight:700;
+        color:{color};
+    ">
+        🚨 Outstanding (>7 Days SLA) — {status}
+    </div>
+    """, unsafe_allow_html=True)
+
+    # =========================
+    # KPI ROW
+    # =========================
+    col1, col2 = st.columns([1.2, 1])
+
+    with col1:
+        st.metric(
+            label="Total Overdue (SLA Breach)",
+            value=f"{overdue_total}",
+            delta=f"{overdue_pct}% of total"
+        )
 
     with col2:
+        st.markdown(f"""
+        <div style="padding-top:6px;">
+            <div style="font-size:12px; font-weight:700; color:{color};">
+                {impact}
+            </div>
+            <div style="font-size:11px; color:#cbd5e1;">
+                TQ: {overdue_tq} | RFI: {overdue_rfi}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        # =========================
-        # HEADER (COMPACT LINE — YOUR REQUEST)
-        # =========================
-        st.markdown(
-            f"## 🚨 Outstanding (>7 Days) — {status}\n"
-            f"**Overdue:** {overdue_total} ({overdue_pct}%) "
-            f"· **TQ:** {overdue_tq} "
-            f"· **RFI:** {overdue_rfi}"
-        )
+    # =========================
+    # BAR CHART
+    # =========================
+    fig = go.Figure()
 
-        # =========================
-        # CHART (MAIN VISUAL)
-        # =========================
-        fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=[overdue_tq, overdue_rfi],
+        y=["TQ Overdue", "RFI Overdue"],
+        orientation="h",
+        marker=dict(color=["#f97316", "#38bdf8"]),
+        text=[
+            f"{overdue_tq} ({tq_pct}%)",
+            f"{overdue_rfi} ({rfi_pct}%)"
+        ],
+        textposition="outside"
+    ))
 
-        fig.add_trace(go.Bar(
-            x=[overdue_tq, overdue_rfi],
-            y=["TQ Overdue", "RFI Overdue"],
-            orientation="h",
-            marker=dict(color=["#f97316", "#38bdf8"]),
-            text=[overdue_tq, overdue_rfi],
-            textposition="outside",
-            hovertemplate="Items: %{x}<extra></extra>"
-        ))
+    fig.update_layout(
+        height=150,
+        margin=dict(l=15, r=15, t=5, b=5),
+        paper_bgcolor="#0f172a",
+        plot_bgcolor="#0f172a",
+        font=dict(color="white", size=11),
+        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.08)"),
+        yaxis=dict(showgrid=False)
+    )
 
-        fig.update_layout(
-            height=200,
-            margin=dict(l=25, r=25, t=10, b=10),
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
-            bargap=0.35,
-            font=dict(color="white", size=11),
+    st.plotly_chart(fig, use_container_width=True)
 
-            xaxis=dict(
-                title="Overdue Items",
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)",
-                zeroline=True,
-                zerolinecolor="rgba(255,255,255,0.35)",
-                linecolor="rgba(255,255,255,0.25)",
-                tickfont=dict(color="white"),
-                title_font=dict(color="white")
-            ),
-
-            yaxis=dict(
-                showgrid=False,
-                tickfont=dict(color="white")
-            )
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
+    # =========================
+    # FOOTER
+    # =========================
+    st.markdown(f"""
+    <div style="
+        font-size:11px;
+        color:#cbd5e1;
+        margin-top:2px;
+    ">
+        Status: <span style="color:{color}; font-weight:600;">{impact}</span>
+    </div>
+    """, unsafe_allow_html=True)

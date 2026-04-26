@@ -1,3 +1,38 @@
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+from datetime import datetime
+
+
+# =========================
+# CARD WRAPPER (ONLY IF NOT IN SHARED FILE)
+# =========================
+def render_card(title, subtitle=None):
+    st.markdown(f"""
+    <div style="
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        padding: 18px 18px 10px 18px;
+        margin-bottom: 18px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    ">
+        <div style="font-size:18px; font-weight:700; color:white;">
+            {title}
+        </div>
+        <div style="font-size:13px; color:#9ca3af; margin-top:2px;">
+            {subtitle or ""}
+        </div>
+    """, unsafe_allow_html=True)
+
+
+def end_card():
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# =========================
+# MAIN TRACKER
+# =========================
 def render_tracker(df):
 
     if df is None or df.empty:
@@ -15,25 +50,22 @@ def render_tracker(df):
             return
 
     # =========================
-    # CLEAN + SAFE DATA PROCESSING
+    # SAFE CLEANING
     # =========================
-
     df["doc type"] = df["doc type"].astype(str).str.lower().str.strip()
 
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
     today = pd.Timestamp(datetime.today().date())
-
     df["age"] = (today - df["date sent"]).dt.days
 
-    # optional safety: remove invalid rows affecting age logic
     df = df[df["age"].notna()]
 
     total = len(df)
 
     # =========================
-    # SPLIT TYPES
+    # SPLIT
     # =========================
     tq = df[df["doc type"] == "tq"]
     rfi = df[df["doc type"] == "rfi"]
@@ -56,12 +88,12 @@ def render_tracker(df):
     total_not_pct = round((total_not / total) * 100, 1) if total else 0
 
     # =========================
-    # OVERDUE (>7 DAYS)
+    # OVERDUE
     # =========================
     overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
     # =========================
-    # CARD WRAPPER START
+    # CARD START
     # =========================
     render_card(
         "TQ & RFI Intelligence Hub",
@@ -76,20 +108,17 @@ def render_tracker(df):
     with left:
         fig = go.Figure()
 
-        # =================================================
-        # YOUR EXISTING FIGURE CODE (UNCHANGED)
-        # =================================================
-        # (keep all shapes, annotations, layout exactly as-is)
+        # =====================================================
+        # YOUR ORIGINAL FIGURE CODE GOES HERE (UNCHANGED)
+        # =====================================================
+        # keep all shapes, annotations, layout exactly as before
 
         st.plotly_chart(fig, use_container_width=True)
 
-    # =========================
-    # OPTIONAL RIGHT PANEL (IF YOU USE IT LATER)
-    # =========================
     with right:
         st.markdown("")
 
     # =========================
-    # CLOSE CARD
+    # END CARD
     # =========================
     end_card()

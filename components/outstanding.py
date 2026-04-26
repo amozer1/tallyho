@@ -25,20 +25,20 @@ def render_outstanding_line(df, total):
     date_col = find_col("date sent")
 
     if not status_col or not doc_col or not date_col:
-        st.error("Missing required columns")
+        st.error("Missing required columns: Status / Doc Type / Date Sent")
         return
 
     # =========================
     # CLEAN DATA
     # =========================
-    df[status_col] = df[status_col].astype(str).str.upper().str.strip()
-    df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
+    df[status_col] = df[status_col].astype(str).str.strip().str.upper()
+    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     today = pd.Timestamp.today()
 
     # =========================
-    # OUTSTANDING LOGIC
+    # CORE LOGIC
     # =========================
     open_df = df[df[status_col] == "OPEN"]
 
@@ -53,46 +53,37 @@ def render_outstanding_line(df, total):
     overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
     # =========================
-    # SEVERITY (SAME STYLE LOGIC)
+    # SEVERITY
     # =========================
     if overdue_total >= 15:
-        color = "#ef4444"
         status = "CRITICAL"
+        color = "#ef4444"
     elif overdue_total >= 5:
-        color = "#f97316"
         status = "HIGH"
+        color = "#f97316"
     else:
-        color = "#facc15"
         status = "MEDIUM"
+        color = "#facc15"
 
     # =========================
-    # CENTERED CARD LAYOUT (LIKE AGE OUTSTANDING)
+    # CENTER LAYOUT (MATCH AGE STYLE)
     # =========================
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
 
         # =========================
-        # TITLE CARD
+        # HEADER (COMPACT LINE — YOUR REQUEST)
         # =========================
-        st.markdown(f"""
-        <div style="
-            background:#0f172a;
-            border:1px solid #1f2937;
-            border-radius:12px;
-            padding:8px 10px;
-            margin-bottom:6px;
-            text-align:center;
-            font-size:13px;
-            font-weight:800;
-            color:{color};
-        ">
-            🚨 Outstanding (>7 Days) — {status}
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            f"## 🚨 Outstanding (>7 Days) — {status}\n"
+            f"**Overdue:** {overdue_total} ({overdue_pct}%) "
+            f"· **TQ:** {overdue_tq} "
+            f"· **RFI:** {overdue_rfi}"
+        )
 
         # =========================
-        # MAIN CHART (PRIMARY VISUAL)
+        # CHART (MAIN VISUAL)
         # =========================
         fig = go.Figure()
 
@@ -132,11 +123,3 @@ def render_outstanding_line(df, total):
         )
 
         st.plotly_chart(fig, use_container_width=True)
-
-        # =========================
-        # FOOTER SUMMARY (LIKE AGE OUTSTANDING STYLE)
-        # =========================
-        st.markdown(
-            f"**Total Overdue:** {overdue_total} ({overdue_pct}%)  |  "
-            f"**TQ:** {overdue_tq}  |  **RFI:** {overdue_rfi}"
-        )

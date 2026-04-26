@@ -48,9 +48,9 @@ def render_tracker(df):
     total_not = len(df[df["reply date"].isna()])
 
     # =========================
-    # COMPACT HEADER (HALF WIDTH)
+    # HEADER (COMPACT)
     # =========================
-    col1, col2, col3 = st.columns([1.8, 2, 1.8])
+    col1, col2, col3 = st.columns([2, 2, 2])
 
     with col2:
         st.markdown("""
@@ -77,20 +77,26 @@ def render_tracker(df):
     # =========================
     # CIRCLES
     # =========================
-    fig.add_shape(type="circle",
-                  x0=0.0, y0=0.2, x1=1.2, y1=1.4,
-                  fillcolor="rgba(96,165,250,0.35)",
-                  line=dict(color="#60A5FA", width=2))
+    fig.add_shape(
+        type="circle",
+        x0=0.0, y0=0.2, x1=1.2, y1=1.4,
+        fillcolor="rgba(96,165,250,0.35)",
+        line=dict(color="#60A5FA", width=2)
+    )
 
-    fig.add_shape(type="circle",
-                  x0=0.85, y0=0.15, x1=2.35, y1=1.65,
-                  fillcolor="rgba(168,85,247,0.45)",
-                  line=dict(color="#A855F7", width=2))
+    fig.add_shape(
+        type="circle",
+        x0=0.85, y0=0.15, x1=2.35, y1=1.65,
+        fillcolor="rgba(168,85,247,0.45)",
+        line=dict(color="#A855F7", width=2)
+    )
 
-    fig.add_shape(type="circle",
-                  x0=2.0, y0=0.2, x1=3.2, y1=1.4,
-                  fillcolor="rgba(74,222,128,0.35)",
-                  line=dict(color="#4ADE80", width=2))
+    fig.add_shape(
+        type="circle",
+        x0=2.0, y0=0.2, x1=3.2, y1=1.4,
+        fillcolor="rgba(74,222,128,0.35)",
+        line=dict(color="#4ADE80", width=2)
+    )
 
     # =========================
     # CENTERS
@@ -100,9 +106,8 @@ def render_tracker(df):
     rfi_x, rfi_y = 2.6, 0.8
 
     # =========================
-    # KPI BLOCKS
+    # TQ
     # =========================
-
     fig.add_annotation(x=tq_x, y=tq_y + 0.18,
                        text="<b>TQ</b>",
                        showarrow=False,
@@ -123,7 +128,9 @@ def render_tracker(df):
                        showarrow=False,
                        font=dict(color="#60A5FA", size=9))
 
+    # =========================
     # TOTAL
+    # =========================
     fig.add_annotation(x=total_x, y=total_y + 0.18,
                        text="<b>TOTAL</b>",
                        showarrow=False,
@@ -144,7 +151,9 @@ def render_tracker(df):
                        showarrow=False,
                        font=dict(color="#F87171", size=9))
 
+    # =========================
     # RFI
+    # =========================
     fig.add_annotation(x=rfi_x, y=rfi_y + 0.18,
                        text="<b>RFI</b>",
                        showarrow=False,
@@ -166,19 +175,24 @@ def render_tracker(df):
                        font=dict(color="#4ADE80", size=9))
 
     # =========================
-    # LAYOUT
+    # FIX: TRUE CIRCLES (NO EGGS)
+    # =========================
+    fig.update_yaxes(scaleanchor="x", scaleratio=1)
+
+    # =========================
+    # LAYOUT FIX
     # =========================
     fig.update_layout(
-        height=420,
+        height=430,
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
         margin=dict(l=0, r=0, t=0, b=0),
-        xaxis=dict(visible=False, range=[-0.3, 3.6]),
-        yaxis=dict(visible=False, range=[-0.3, 2.0])
+        xaxis=dict(visible=False, range=[-0.2, 3.4]),
+        yaxis=dict(visible=False, range=[-0.2, 2.0])
     )
 
     # =========================
-    # COMPACT CHART WIDTH (HALF PAGE)
+    # COMPACT CENTERED WIDTH
     # =========================
     col1, col2, col3 = st.columns([2.5, 2, 2.5])
 

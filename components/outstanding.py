@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
 
 
 def render_outstanding_line(df, total):
@@ -34,118 +35,115 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # IMPACT LOGIC (NEW)
+    # SEVERITY LOGIC (for attention)
     # =========================
     if overdue_total >= 15:
-        severity = "critical"
-        impact_line = "High impact on project delivery"
-        sub_line = "May block approvals & coordination"
         color = "#ef4444"
+        status = "CRITICAL"
+        impact = "High impact on project progress"
+        note = "May block approvals and coordination"
     elif overdue_total >= 5:
-        severity = "high"
-        impact_line = "Moderate impact on progress"
-        sub_line = "Attention required"
         color = "#f97316"
+        status = "HIGH"
+        impact = "Moderate impact on workflow"
+        note = "Action required"
     else:
-        severity = "low"
-        impact_line = "Low backlog risk"
-        sub_line = "Monitor"
-        color = "#f59e0b"
+        color = "#facc15"
+        status = "MEDIUM"
+        impact = "Low risk backlog"
+        note = "Monitor"
 
     # =========================
-    # CARD CONTAINER
+    # TITLE CARD (MATCH YOUR STYLE)
     # =========================
-    st.markdown(f"""
+    st.markdown("""
     <div style="
         background:#0f172a;
         border:1px solid #1f2937;
-        border-radius:14px;
-        padding:14px;
-        height:230px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-    ">
-    """, unsafe_allow_html=True)
-
-    # =========================
-    # TITLE (URGENT KPI HEADER)
-    # =========================
-    st.markdown(f"""
-    <div style="
+        border-radius:12px;
+        padding:8px 10px;
+        margin-bottom:6px;
         text-align:center;
         font-size:13px;
-        font-weight:900;
-        color:{color};
-        margin-bottom:8px;
-        letter-spacing:0.5px;
-    ">
-        🚨 OVERDUE (>7 DAYS)
-    </div>
-    """, unsafe_allow_html=True)
-
-    # =========================
-    # MAIN KPI (HERO)
-    # =========================
-    st.markdown(f"""
-    <div style="
-        text-align:center;
-        margin-bottom:10px;
-    ">
-        <div style="font-size:28px; font-weight:800; color:white; line-height:1;">
-            {overdue_total}
-        </div>
-        <div style="font-size:12px; color:#94a3b8; margin-top:4px;">
-            {overdue_pct}% of total documents
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # =========================
-    # ACTION LINES (NEW MEANING LAYER)
-    # =========================
-    st.markdown(f"""
-    <div style="
-        font-size:12.5px;
+        font-weight:800;
         color:white;
-        line-height:1.6;
-        margin-top:6px;
     ">
-
-        <div style="display:flex; justify-content:space-between;">
-            <span>Total Overdue</span>
-            <b>{overdue_total} ({overdue_pct}%)</b>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; color:#f97316;">
-            <span>TQ Overdue</span>
-            <b>{overdue_tq} ({tq_pct}%)</b>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; color:#38bdf8;">
-            <span>RFI Overdue</span>
-            <b>{overdue_rfi} ({rfi_pct}%)</b>
-        </div>
-
+        🚨 Outstanding (>7 days)
     </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # IMPACT / CONSEQUENCE LAYER (NEW)
+    # MAIN KPI ROW (NO HTML CARDS)
+    # =========================
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric(
+            label="Total Overdue",
+            value=f"{overdue_total}",
+            delta=f"{overdue_pct}% of total"
+        )
+
+    with col2:
+        st.markdown(f"""
+        <div style="padding-top:6px;">
+            <div style="color:{color}; font-weight:800; font-size:13px;">
+                {status} RISK
+            </div>
+            <div style="color:#cbd5e1; font-size:12px;">
+                {impact}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # =========================
+    # BREAKDOWN CHART (IMPORTANT VISUAL)
+    # =========================
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        x=[overdue_tq, overdue_rfi],
+        y=["TQ Overdue", "RFI Overdue"],
+        orientation="h",
+        marker=dict(color=["#f97316", "#38bdf8"]),
+        text=[
+            f"{overdue_tq} ({tq_pct}%)",
+            f"{overdue_rfi} ({rfi_pct}%)"
+        ],
+        textposition="outside"
+    ))
+
+    fig.update_layout(
+        height=180,
+        margin=dict(l=20, r=20, t=10, b=10),
+        paper_bgcolor="#0f172a",
+        plot_bgcolor="#0f172a",
+        font=dict(color="white", size=11),
+        xaxis=dict(
+            title="Overdue Items",
+            gridcolor="rgba(255,255,255,0.08)"
+        ),
+        yaxis=dict(
+            showgrid=False
+        )
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # IMPACT FOOTER (CONSEQUENCE LAYER)
     # =========================
     st.markdown(f"""
     <div style="
-        margin-top:10px;
-        padding-top:8px;
-        border-top:1px solid #1f2937;
         font-size:12px;
+        color:#cbd5e1;
+        margin-top:6px;
+        padding-top:6px;
+        border-top:1px solid #1f2937;
     ">
-        <div style="color:{color}; font-weight:700;">
-            {impact_line}
-        </div>
-        <div style="color:#cbd5e1; margin-top:2px;">
-            {sub_line}
-        </div>
+        <span style="color:{color}; font-weight:700;">
+            {impact}
+        </span>
+        — {note}
     </div>
     """, unsafe_allow_html=True)
-
-    # CLOSE CARD
-    st.markdown("</div>", unsafe_allow_html=True)

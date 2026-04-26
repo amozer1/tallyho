@@ -43,6 +43,9 @@ def render_tracker(df):
     tq_pct = round((tq_total / total) * 100, 1) if total else 0
     rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
+    # =========================
+    # NOT RESPONDED
+    # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
@@ -52,7 +55,7 @@ def render_tracker(df):
     total_not_pct = round((total_not / total) * 100, 1) if total else 0
 
     # =========================
-    # SIMPLE CARD HEADER (LIKE YOUR WORKING FILE)
+    # HEADER (SAME STYLE AS YOUR OTHER CARDS)
     # =========================
     st.markdown("""
     <div style="
@@ -79,44 +82,91 @@ def render_tracker(df):
 
         fig = go.Figure()
 
+        # =========================
+        # CIRCLES (FIXED)
+        # =========================
+
+        # TQ (LEFT)
         fig.add_shape(
-            type="rect",
-            x0=-0.2, y0=-0.25,
-            x1=3.4, y1=1.85,
-            line=dict(color="rgba(255,255,255,0.6)", width=2),
-            fillcolor="rgba(0,0,0,0)"
+            type="circle",
+            x0=0.0, y0=0.2,
+            x1=1.2, y1=1.4,
+            fillcolor="rgba(59,130,246,0.55)",
+            line=dict(color="#3b82f6", width=2)
+        )
+
+        # RFI (RIGHT)
+        fig.add_shape(
+            type="circle",
+            x0=2.0, y0=0.2,
+            x1=3.2, y1=1.4,
+            fillcolor="rgba(34,197,94,0.55)",
+            line=dict(color="#22c55e", width=2)
+        )
+
+        # 🔥 MIDDLE (TOTAL) — FIXED VISIBILITY
+        fig.add_shape(
+            type="circle",
+            x0=0.85, y0=0.15,
+            x1=2.35, y1=1.65,
+            fillcolor="rgba(168,85,247,0.85)",
+            line=dict(color="#a855f7", width=3),
+            layer="above"
+        )
+
+        # =========================
+        # ANNOTATIONS
+        # =========================
+
+        fig.add_annotation(
+            x=0.6, y=0.8,
+            text=f"<b>Total TQ</b><br>{tq_total}<br>{tq_pct}%",
+            showarrow=False,
+            font=dict(color="white", size=16),
+            align="center"
         )
 
         fig.add_annotation(
-            x=1.6, y=1.72,
-            text="<b>TQ & RFI Status Overview</b>",
+            x=1.6, y=0.82,
+            text=f"<b>Total</b><br>{total}<br>100%",
             showarrow=False,
-            font=dict(color="white", size=18)
+            font=dict(color="white", size=18),
+            align="center"
         )
 
-        fig.add_shape(type="circle", x0=0.0, y0=0.2, x1=1.2, y1=1.4,
-                      fillcolor="rgba(59,130,246,0.55)",
-                      line=dict(color="#3b82f6", width=2))
+        fig.add_annotation(
+            x=2.6, y=0.8,
+            text=f"<b>Total RFI</b><br>{rfi_total}<br>{rfi_pct}%",
+            showarrow=False,
+            font=dict(color="white", size=16),
+            align="center"
+        )
 
-        fig.add_shape(type="circle", x0=2.0, y0=0.2, x1=3.2, y1=1.4,
-                      fillcolor="rgba(34,197,94,0.55)",
-                      line=dict(color="#22c55e", width=2))
+        # NOT RESPONDED ROW
+        fig.add_annotation(
+            x=0.6, y=-0.05,
+            text=f"<b>TQ Not Responded</b><br>{tq_not} ({tq_not_pct}%)",
+            showarrow=False,
+            font=dict(color="#60a5fa", size=14)
+        )
 
-        fig.add_annotation(x=0.6, y=0.8,
-                           text=f"<b>TQ</b><br>{tq_total}<br>{tq_pct}%",
-                           showarrow=False,
-                           font=dict(color="white"))
+        fig.add_annotation(
+            x=1.6, y=-0.05,
+            text=f"<b>Total Not Responded</b><br>{total_not} ({total_not_pct}%)",
+            showarrow=False,
+            font=dict(color="#c084fc", size=14)
+        )
 
-        fig.add_annotation(x=1.6, y=0.8,
-                           text=f"<b>Total</b><br>{total}<br>100%",
-                           showarrow=False,
-                           font=dict(color="white"))
+        fig.add_annotation(
+            x=2.6, y=-0.05,
+            text=f"<b>RFI Not Responded</b><br>{rfi_not} ({rfi_not_pct}%)",
+            showarrow=False,
+            font=dict(color="#4ade80", size=14)
+        )
 
-        fig.add_annotation(x=2.6, y=0.8,
-                           text=f"<b>RFI</b><br>{rfi_total}<br>{rfi_pct}%",
-                           showarrow=False,
-                           font=dict(color="white"))
-
+        # =========================
+        # LAYOUT
+        # =========================
         fig.update_layout(
             height=380,
             paper_bgcolor="#0f172a",

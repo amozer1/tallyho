@@ -6,9 +6,6 @@ from datetime import datetime
 
 def render_tracker(df):
 
-    # =========================
-    # VALIDATION
-    # =========================
     if df is None or df.empty:
         st.warning("No data available.")
         return
@@ -23,9 +20,6 @@ def render_tracker(df):
             st.error(f"Missing column: {c}")
             return
 
-    # =========================
-    # CLEAN DATA
-    # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
@@ -87,38 +81,86 @@ def render_tracker(df):
                   line=dict(color="#4ADE80", width=2))
 
     # =========================
-    # FINAL CLEAN CENTER BLOCKS (NO STACKING ISSUES)
+    # CENTERS
     # =========================
+    tq_x, tq_y = 0.6, 0.8
+    total_x, total_y = 1.6, 0.85
+    rfi_x, rfi_y = 2.6, 0.8
 
-    fig.add_annotation(
-        x=0.6, y=0.8,
-        text=f"<b>TQ</b><br><span style='font-size:26px'>{tq_total}</span><br><span style='font-size:11px'>{tq_pct}% of total</span><br><span style='font-size:10px'>{tq_not} not responded</span>",
-        showarrow=False,
-        align="center",
-        font=dict(color="#60A5FA", size=12)
-    )
+    # =========================
+    # TQ (SPACED CLEANLY)
+    # =========================
+    fig.add_annotation(x=tq_x, y=tq_y + 0.18,
+                       text="<b>TQ</b>",
+                       showarrow=False,
+                       font=dict(color="#60A5FA", size=14))
 
-    fig.add_annotation(
-        x=1.6, y=0.85,
-        text=f"<b>TOTAL</b><br><span style='font-size:30px'>{total}</span><br><span style='font-size:11px'>All Documents</span><br><span style='font-size:10px'>{total_not} not responded</span>",
-        showarrow=False,
-        align="center",
-        font=dict(color="#A855F7", size=12)
-    )
+    fig.add_annotation(x=tq_x, y=tq_y,
+                       text=f"<b>{tq_total}</b>",
+                       showarrow=False,
+                       font=dict(color="white", size=26))
 
-    fig.add_annotation(
-        x=2.6, y=0.8,
-        text=f"<b>RFI</b><br><span style='font-size:26px'>{rfi_total}</span><br><span style='font-size:11px'>{rfi_pct}% of total</span><br><span style='font-size:10px'>{rfi_not} not responded</span>",
-        showarrow=False,
-        align="center",
-        font=dict(color="#4ADE80", size=12)
-    )
+    fig.add_annotation(x=tq_x, y=tq_y - 0.18,
+                       text=f"{tq_pct}% of total",
+                       showarrow=False,
+                       font=dict(color="rgba(255,255,255,0.65)", size=11))
+
+    fig.add_annotation(x=tq_x, y=tq_y - 0.33,
+                       text=f"{tq_not} not responded",
+                       showarrow=False,
+                       font=dict(color="#60A5FA", size=10))
+
+    # =========================
+    # TOTAL
+    # =========================
+    fig.add_annotation(x=total_x, y=total_y + 0.18,
+                       text="<b>TOTAL</b>",
+                       showarrow=False,
+                       font=dict(color="#A855F7", size=14))
+
+    fig.add_annotation(x=total_x, y=total_y,
+                       text=f"<b>{total}</b>",
+                       showarrow=False,
+                       font=dict(color="white", size=30))
+
+    fig.add_annotation(x=total_x, y=total_y - 0.18,
+                       text="All Documents",
+                       showarrow=False,
+                       font=dict(color="rgba(255,255,255,0.65)", size=11))
+
+    fig.add_annotation(x=total_x, y=total_y - 0.33,
+                       text=f"{total_not} not responded",
+                       showarrow=False,
+                       font=dict(color="#F87171", size=10))
+
+    # =========================
+    # RFI
+    # =========================
+    fig.add_annotation(x=rfi_x, y=rfi_y + 0.18,
+                       text="<b>RFI</b>",
+                       showarrow=False,
+                       font=dict(color="#4ADE80", size=14))
+
+    fig.add_annotation(x=rfi_x, y=rfi_y,
+                       text=f"<b>{rfi_total}</b>",
+                       showarrow=False,
+                       font=dict(color="white", size=26))
+
+    fig.add_annotation(x=rfi_x, y=rfi_y - 0.18,
+                       text=f"{rfi_pct}% of total",
+                       showarrow=False,
+                       font=dict(color="rgba(255,255,255,0.65)", size=11))
+
+    fig.add_annotation(x=rfi_x, y=rfi_y - 0.33,
+                       text=f"{rfi_not} not responded",
+                       showarrow=False,
+                       font=dict(color="#4ADE80", size=10))
 
     # =========================
     # LAYOUT
     # =========================
     fig.update_layout(
-        height=420,
+        height=430,
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
         margin=dict(l=0, r=0, t=0, b=0),

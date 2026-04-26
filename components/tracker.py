@@ -71,99 +71,52 @@ def render_tracker(df):
     # =========================
     # CIRCLES
     # =========================
+    fig.add_shape(type="circle",
+                  x0=0.0, y0=0.2, x1=1.2, y1=1.4,
+                  fillcolor="rgba(96,165,250,0.35)",
+                  line=dict(color="#60A5FA", width=2))
 
-    fig.add_shape(
-        type="circle",
-        x0=0.0, y0=0.2,
-        x1=1.2, y1=1.4,
-        fillcolor="rgba(96,165,250,0.35)",
-        line=dict(color="#60A5FA", width=2)
-    )
+    fig.add_shape(type="circle",
+                  x0=0.85, y0=0.15, x1=2.35, y1=1.65,
+                  fillcolor="rgba(168,85,247,0.45)",
+                  line=dict(color="#A855F7", width=2))
 
-    fig.add_shape(
-        type="circle",
-        x0=0.85, y0=0.15,
-        x1=2.35, y1=1.65,
-        fillcolor="rgba(168,85,247,0.45)",
-        line=dict(color="#A855F7", width=2)
-    )
-
-    fig.add_shape(
-        type="circle",
-        x0=2.0, y0=0.2,
-        x1=3.2, y1=1.4,
-        fillcolor="rgba(74,222,128,0.35)",
-        line=dict(color="#4ADE80", width=2)
-    )
+    fig.add_shape(type="circle",
+                  x0=2.0, y0=0.2, x1=3.2, y1=1.4,
+                  fillcolor="rgba(74,222,128,0.35)",
+                  line=dict(color="#4ADE80", width=2))
 
     # =========================
-    # TRUE CENTER CALCULATIONS
+    # FINAL CLEAN CENTER BLOCKS (NO STACKING ISSUES)
     # =========================
-    tq_x = (0.0 + 1.2) / 2
-    tq_y = (0.2 + 1.4) / 2
 
-    total_x = (0.85 + 2.35) / 2
-    total_y = (0.15 + 1.65) / 2
-
-    rfi_x = (2.0 + 3.2) / 2
-    rfi_y = (0.2 + 1.4) / 2
-
-    # =========================
-    # TQ CENTERED BLOCK
-    # =========================
     fig.add_annotation(
-        x=tq_x, y=tq_y,
-        text=f"<b>TQ</b><br><span style='font-size:26px'>{tq_total}</span><br><span style='font-size:11px'>{tq_pct}%</span>",
+        x=0.6, y=0.8,
+        text=f"<b>TQ</b><br><span style='font-size:26px'>{tq_total}</span><br><span style='font-size:11px'>{tq_pct}% of total</span><br><span style='font-size:10px'>{tq_not} not responded</span>",
         showarrow=False,
-        font=dict(color="#60A5FA"),
-        align="center"
+        align="center",
+        font=dict(color="#60A5FA", size=12)
     )
 
-    # =========================
-    # TOTAL CENTERED BLOCK
-    # =========================
     fig.add_annotation(
-        x=total_x, y=total_y,
-        text=f"<b>TOTAL</b><br><span style='font-size:30px'>{total}</span><br><span style='font-size:11px'>All Docs</span>",
+        x=1.6, y=0.85,
+        text=f"<b>TOTAL</b><br><span style='font-size:30px'>{total}</span><br><span style='font-size:11px'>All Documents</span><br><span style='font-size:10px'>{total_not} not responded</span>",
         showarrow=False,
-        font=dict(color="#A855F7"),
-        align="center"
+        align="center",
+        font=dict(color="#A855F7", size=12)
     )
 
-    # =========================
-    # RFI CENTERED BLOCK
-    # =========================
     fig.add_annotation(
-        x=rfi_x, y=rfi_y,
-        text=f"<b>RFI</b><br><span style='font-size:26px'>{rfi_total}</span><br><span style='font-size:11px'>{rfi_pct}%</span>",
+        x=2.6, y=0.8,
+        text=f"<b>RFI</b><br><span style='font-size:26px'>{rfi_total}</span><br><span style='font-size:11px'>{rfi_pct}% of total</span><br><span style='font-size:10px'>{rfi_not} not responded</span>",
         showarrow=False,
-        font=dict(color="#4ADE80"),
-        align="center"
+        align="center",
+        font=dict(color="#4ADE80", size=12)
     )
-
-    # =========================
-    # NOT RESPONDED (SMALL FOOT NOTE INSIDE SAME SPACE)
-    # =========================
-
-    fig.add_annotation(x=tq_x, y=0.28,
-                       text=f"{tq_not} not responded",
-                       showarrow=False,
-                       font=dict(color="#60A5FA", size=10))
-
-    fig.add_annotation(x=total_x, y=0.28,
-                       text=f"{total_not} not responded",
-                       showarrow=False,
-                       font=dict(color="#F87171", size=10))
-
-    fig.add_annotation(x=rfi_x, y=0.28,
-                       text=f"{rfi_not} not responded",
-                       showarrow=False,
-                       font=dict(color="#4ADE80", size=10))
 
     # =========================
     # LAYOUT
     # =========================
-
     fig.update_layout(
         height=420,
         paper_bgcolor="#0f172a",

@@ -43,9 +43,6 @@ def render_tracker(df):
     tq_pct = round((tq_total / total) * 100, 1) if total else 0
     rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
-    # =========================
-    # NOT RESPONDED
-    # =========================
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
@@ -69,9 +66,6 @@ def render_tracker(df):
     </div>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # FIGURE
-    # =========================
     fig = go.Figure()
 
     # =========================
@@ -103,111 +97,75 @@ def render_tracker(df):
     )
 
     # =========================
-    # TQ CIRCLE TEXT
+    # TRUE CENTER CALCULATIONS
     # =========================
+    tq_x = (0.0 + 1.2) / 2
+    tq_y = (0.2 + 1.4) / 2
 
-    fig.add_annotation(
-        x=0.6, y=0.85,
-        text="<b>TQ</b>",
-        showarrow=False,
-        font=dict(color="#60A5FA", size=16)
-    )
+    total_x = (0.85 + 2.35) / 2
+    total_y = (0.15 + 1.65) / 2
 
-    fig.add_annotation(
-        x=0.6, y=0.70,
-        text=f"<b>{tq_total}</b>",
-        showarrow=False,
-        font=dict(color="white", size=26)
-    )
+    rfi_x = (2.0 + 3.2) / 2
+    rfi_y = (0.2 + 1.4) / 2
 
+    # =========================
+    # TQ CENTERED BLOCK
+    # =========================
     fig.add_annotation(
-        x=0.6, y=0.56,
-        text=f"{tq_pct}% of total",
+        x=tq_x, y=tq_y,
+        text=f"<b>TQ</b><br><span style='font-size:26px'>{tq_total}</span><br><span style='font-size:11px'>{tq_pct}%</span>",
         showarrow=False,
-        font=dict(color="rgba(255,255,255,0.65)", size=11)
+        font=dict(color="#60A5FA"),
+        align="center"
     )
 
     # =========================
-    # TOTAL CIRCLE TEXT
+    # TOTAL CENTERED BLOCK
     # =========================
-
     fig.add_annotation(
-        x=1.6, y=0.88,
-        text="<b>TOTAL</b>",
+        x=total_x, y=total_y,
+        text=f"<b>TOTAL</b><br><span style='font-size:30px'>{total}</span><br><span style='font-size:11px'>All Docs</span>",
         showarrow=False,
-        font=dict(color="#A855F7", size=16)
-    )
-
-    fig.add_annotation(
-        x=1.6, y=0.70,
-        text=f"<b>{total}</b>",
-        showarrow=False,
-        font=dict(color="white", size=30)
-    )
-
-    fig.add_annotation(
-        x=1.6, y=0.56,
-        text="All Documents",
-        showarrow=False,
-        font=dict(color="rgba(255,255,255,0.6)", size=11)
+        font=dict(color="#A855F7"),
+        align="center"
     )
 
     # =========================
-    # RFI CIRCLE TEXT
+    # RFI CENTERED BLOCK
     # =========================
-
     fig.add_annotation(
-        x=2.6, y=0.85,
-        text="<b>RFI</b>",
+        x=rfi_x, y=rfi_y,
+        text=f"<b>RFI</b><br><span style='font-size:26px'>{rfi_total}</span><br><span style='font-size:11px'>{rfi_pct}%</span>",
         showarrow=False,
-        font=dict(color="#4ADE80", size=16)
-    )
-
-    fig.add_annotation(
-        x=2.6, y=0.70,
-        text=f"<b>{rfi_total}</b>",
-        showarrow=False,
-        font=dict(color="white", size=26)
-    )
-
-    fig.add_annotation(
-        x=2.6, y=0.56,
-        text=f"{rfi_pct}% of total",
-        showarrow=False,
-        font=dict(color="rgba(255,255,255,0.65)", size=11)
+        font=dict(color="#4ADE80"),
+        align="center"
     )
 
     # =========================
-    # NOT RESPONDED (SAFE SMALL TEXT INSIDE BOTTOM AREA)
+    # NOT RESPONDED (SMALL FOOT NOTE INSIDE SAME SPACE)
     # =========================
 
-    fig.add_annotation(
-        x=0.6, y=0.28,
-        text=f"<b>{tq_not}</b><br>Not Responded",
-        showarrow=False,
-        font=dict(color="#60A5FA", size=11)
-    )
+    fig.add_annotation(x=tq_x, y=0.28,
+                       text=f"{tq_not} not responded",
+                       showarrow=False,
+                       font=dict(color="#60A5FA", size=10))
 
-    fig.add_annotation(
-        x=1.6, y=0.28,
-        text=f"<b>{total_not}</b><br>Not Responded",
-        showarrow=False,
-        font=dict(color="#F87171", size=11)
-    )
+    fig.add_annotation(x=total_x, y=0.28,
+                       text=f"{total_not} not responded",
+                       showarrow=False,
+                       font=dict(color="#F87171", size=10))
 
-    fig.add_annotation(
-        x=2.6, y=0.28,
-        text=f"<b>{rfi_not}</b><br>Not Responded",
-        showarrow=False,
-        font=dict(color="#4ADE80", size=11)
-    )
+    fig.add_annotation(x=rfi_x, y=0.28,
+                       text=f"{rfi_not} not responded",
+                       showarrow=False,
+                       font=dict(color="#4ADE80", size=10))
 
     # =========================
-    # LAYOUT FIX
+    # LAYOUT
     # =========================
 
     fig.update_layout(
-        height=400,
+        height=420,
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
         margin=dict(l=0, r=0, t=0, b=0),

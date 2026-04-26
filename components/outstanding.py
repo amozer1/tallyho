@@ -34,68 +34,58 @@ def render_outstanding_line(df, total):
     rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
 
     # =========================
-    # SEVERITY (COMPACT)
+    # SEVERITY LOGIC
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
         label = "CRITICAL"
+        impact = "High risk to project progress"
     elif overdue_total >= 5:
         color = "#f97316"
         label = "HIGH"
+        impact = "Moderate impact on workflow"
     else:
         color = "#facc15"
         label = "MEDIUM"
+        impact = "Monitor backlog"
 
     # =========================
-    # HEADER (SMALL)
+    # TITLE
     # =========================
-    st.markdown(f"""
-    <div style="
-        background:#0f172a;
-        border:1px solid #1f2937;
-        border-radius:10px;
-        padding:6px 10px;
-        margin-bottom:6px;
-        text-align:center;
-        font-size:12px;
-        font-weight:800;
-        color:{color};
-    ">
-        🚨 OVERDUE ({label})
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("### 🚨 Outstanding (>7 days)")
+
+    st.caption(f"Status: {label} | {impact}")
 
     # =========================
-    # KPI ROW (COMPACT)
+    # MAIN KPI ROW
     # =========================
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("Total", overdue_total, f"{overdue_pct}%")
+        st.metric(
+            "Total Overdue",
+            overdue_total,
+            f"{overdue_pct}%"
+        )
 
     with col2:
-        st.metric("TQ", overdue_tq, f"{tq_pct}%")
+        st.metric(
+            "TQ Overdue",
+            overdue_tq,
+            f"{tq_pct}%"
+        )
 
     with col3:
-        st.metric("RFI", overdue_rfi, f"{rfi_pct}%")
+        st.metric(
+            "RFI Overdue",
+            overdue_rfi,
+            f"{rfi_pct}%"
+        )
 
     # =========================
-    # FOOTER (MINIMAL IMPACT)
+    # IMPACT FOOTNOTE
     # =========================
-    impact = (
-        "High impact on progress" if overdue_total >= 15
-        else "Monitor backlog"
+    st.markdown(
+        f"**Impact:** {impact}",
+        help="This indicates the operational risk level of overdue items."
     )
-
-    st.markdown(f"""
-    <div style="
-        font-size:11.5px;
-        color:#cbd5e1;
-        margin-top:4px;
-        text-align:center;
-    ">
-        <span style="color:{color}; font-weight:700;">
-            {impact}
-        </span>
-    </div>
-    """, unsafe_allow_html=True)

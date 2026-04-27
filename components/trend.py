@@ -13,13 +13,18 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # ONLY VALID TIME FIELD
+    # SAFE DATE PARSING
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 
-    # keep ONLY real months from your dataset
-    df = df[df["date sent"].notna()]
-    df["month"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
+    # REMOVE BAD ROWS (CRITICAL FIX)
+    df = df[df["date sent"].notna()].copy()
+
+    # =========================
+    # CREATE MONTH (STRING - NOT DATETIME)
+    # THIS IS THE KEY FIX
+    # =========================
+    df["month"] = df["date sent"].dt.to_period("M").astype(str)
 
     # =========================
     # STATE
@@ -33,18 +38,14 @@ def render_trend(df):
     rfi = df[df["doc type"] == "RFI"]
 
     # =========================
-    # CREATED (TRUE EVENTS)
+    # BUILD SERIES (SAFE GROUPING)
     # =========================
     tq_created = tq.groupby("month").size().reset_index(name="tq_created")
     rfi_created = rfi.groupby("month").size().reset_index(name="rfi_created")
-
-    # =========================
-    # CLOSED (STATE ONLY)
-    # =========================
     closed = df[df["is_closed"]].groupby("month").size().reset_index(name="closed")
 
     # =========================
-    # BUILD ONLY FROM REAL MONTHS IN DATA
+    # BUILD CONTROLLED AXIS (NO AUTO EXPANSION)
     # =========================
     all_months = pd.DataFrame({"month": sorted(df["month"].unique())})
 
@@ -52,10 +53,15 @@ def render_trend(df):
     data = data.merge(rfi_created, on="month", how="left")
     data = data.merge(closed, on="month", how="left")
 
-    data = data.fillna(0).sort_values("month")
+    data = data.fillna(0)
 
     # =========================
-    # PLOT (3 LINES ONLY)
+    # FORCE ORDER (CRITICAL)
+    # =========================
+    data = data.sort_values("month")
+
+    # =========================
+    # PLOT (3 CLEAN LINES)
     # =========================
     fig = go.Figure()
 
@@ -84,15 +90,20 @@ def render_trend(df):
     ))
 
     # =========================
-    # CLEAN LAYOUT
+    # HARD LOCK AXIS (PREVENTS FAKE DATES)
     # =========================
     fig.update_layout(
-        title="TQ / RFI Trends (Based Only on Actual Register Dates)",
+        title="TQ / RFI Trend (Strict Data Lock)",
         template="plotly_white",
         height=520,
         hovermode="x unified",
         legend=dict(orientation="h", y=1.02),
-        margin=dict(l=40, r=40, t=60, b=40)
+        margin=dict(l=40, r=40, t=60, b=40),
+
+        # 🔥 CRITICAL FIX
+        xaxis=dict(
+            type="category"
+        )
     )
 
     st.plotly_chart(fig, use_container_width=True)

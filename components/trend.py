@@ -13,76 +13,87 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # VALID DATE ONLY
+    # VALID DATE ONLY (YOUR DATA)
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df = df[df["date sent"].notna()].copy()
 
-    # Month (STRICTLY from real data)
     df["month"] = df["date sent"].dt.to_period("M").astype(str)
 
     # =========================
-    # FILTER RFI ONLY
+    # STATE
     # =========================
-    rfi = df[df["doc type"] == "RFI"]
-
-    # Monthly aggregation
-    trend = rfi.groupby("month").size().reset_index(name="rfi_created")
-    trend = trend.sort_values("month")
+    df["is_closed"] = df["status"].str.lower().eq("closed")
 
     # =========================
-    # CARD STYLE
+    # MONTHLY COUNTS
     # =========================
-    st.markdown("""
-    <div style="
-        background: #ffffff;
-        padding: 18px;
-        border-radius: 14px;
-        box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
-        margin-bottom: 15px;
-    ">
-    """, unsafe_allow_html=True)
+    monthly = df.groupby(["month", "doc type"]).size().unstack(fill_value=0)
 
-    st.subheader("RFI Created Trend")
+    if "RFI" not in monthly.columns:
+        monthly["RFI"] = 0
+    if "TQ" not in monthly.columns:
+        monthly["TQ"] = 0
+
+    monthly = monthly.reset_index().sort_values("month")
+
+    closed = df[df["is_closed"]].groupby("month").size().reset_index(name="closed")
+
+    data = monthly.merge(closed, on="month", how="left").fillna(0)
 
     # =========================
-    # STACKED STYLE LINE
+    # STACK LOGIC (TRUE 2D STACKED LINE)
+    # =========================
+    data["rfi_stack"] = data["RFI"]
+    data["tq_stack"] = data["RFI"] + data["TQ"]
+    data["closed_stack"] = data["RFI"] + data["TQ"] + data["closed"]
+
+    # =========================
+    # PLOT
     # =========================
     fig = go.Figure()
 
-    # soft area fill (visual depth)
+    # RFI base
     fig.add_trace(go.Scatter(
-        x=trend["month"],
-        y=trend["rfi_created"],
-        mode="lines",
-        line=dict(color="rgba(31,119,180,0.25)", width=0),
-        fill="tozeroy",
-        name="RFI Volume"
-    ))
-
-    # main line
-    fig.add_trace(go.Scatter(
-        x=trend["month"],
-        y=trend["rfi_created"],
+        x=data["month"],
+        y=data["rfi_stack"],
         mode="lines+markers",
         name="RFI Created",
-        line=dict(color="#1f77b4", width=4),
+        line=dict(color="#1f77b4", width=3),
+        marker=dict(size=7)
+    ))
+
+    # TQ stacked
+    fig.add_trace(go.Scatter(
+        x=data["month"],
+        y=data["tq_stack"],
+        mode="lines+markers",
+        name="TQ Created (Stacked)",
+        line=dict(color="#2ca02c", width=3),
+        marker=dict(size=7)
+    ))
+
+    # Closed stacked
+    fig.add_trace(go.Scatter(
+        x=data["month"],
+        y=data["closed_stack"],
+        mode="lines+markers",
+        name="Closed (Stacked)",
+        line=dict(color="#ff7f0e", width=4),
         marker=dict(size=8)
     ))
 
     # =========================
-    # LAYOUT
+    # CLEAN LAYOUT
     # =========================
     fig.update_layout(
+        title="Stacked Line Chart (RFI / TQ / Closed)",
         template="plotly_white",
-        height=380,
-        margin=dict(l=20, r=20, t=10, b=40),
+        height=500,
         hovermode="x unified",
-        xaxis=dict(title="Month"),
-        yaxis=dict(title="Count"),
-        showlegend=False
+        legend=dict(orientation="h", y=1.02),
+        xaxis_title="Month",
+        yaxis_title="Stacked Volume"
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)

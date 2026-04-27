@@ -3,57 +3,6 @@ import streamlit as st
 import plotly.graph_objects as go
 
 
-# =========================
-# CARD SYSTEM (GLOBAL STYLE)
-# =========================
-CARD = """
-<div style="
-    background: #ffffff;
-    padding: 18px;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    margin-bottom: 16px;
-">
-    {content}
-</div>
-"""
-
-KPI_CARD = """
-<div style="
-    background: #f9fafb;
-    padding: 16px;
-    border-radius: 14px;
-    text-align: center;
-    box-shadow: inset 0 0 0 1px #e5e7eb;
-">
-    <div style="font-size: 13px; color: #6b7280;">{title}</div>
-    <div style="font-size: 24px; font-weight: 700; margin-top: 6px;">
-        {value}
-    </div>
-</div>
-"""
-
-
-# =========================
-# TITLE CARD
-# =========================
-def render_title(title, subtitle=""):
-    st.markdown(
-        CARD.format(content=f"""
-        <div style="font-size: 20px; font-weight: 700;">
-            {title}
-        </div>
-        <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">
-            {subtitle}
-        </div>
-        """),
-        unsafe_allow_html=True
-    )
-
-
-# =========================
-# MAIN FUNCTION
-# =========================
 def render_trend(df):
 
     if df is None or df.empty:
@@ -68,7 +17,7 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     if "date sent" not in df.columns or "status" not in df.columns:
-        st.error("Missing required columns: 'date sent' or 'status'")
+        st.error("Missing required columns: date sent / status")
         return
 
     # =========================
@@ -77,82 +26,108 @@ def render_trend(df):
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df = df.dropna(subset=["date sent"])
 
-    df["status"] = df["status"].fillna("").str.lower()
+    df["status"] = df["status"].astype(str).str.strip().str.upper()
 
-    df["is_open"] = df["status"].eq("open")
-    df["is_closed"] = df["status"].eq("closed")
+    today = pd.Timestamp.today()
 
     # =========================
-    # SORT + CUMULATIVE FLOW
+    # OPEN / CLOSED SPLIT
+    # =========================
+    open_df = df[df["status"] == "OPEN"]
+    closed_df = df[df["status"] == "CLOSED"]
+
+    total = len(df)
+    open_count = len(open_df)
+    closed_count = len(closed_df)
+
+    open_pct = round((open_count / total) * 100, 1) if total else 0
+
+    # =========================
+    # SIMPLE TREND (DAILY COUNTS)
     # =========================
     df_sorted = df.sort_values("date sent")
 
-    df_sorted["open_cum"] = df_sorted["is_open"].cumsum()
-    df_sorted["closed_cum"] = df_sorted["is_closed"].cumsum()
-
-    total = len(df)
-    open_count = int(df["is_open"].sum())
-    closed_count = int(df["is_closed"].sum())
+    trend = df_sorted.groupby("date sent").size().cumsum().reset_index()
+    trend.columns = ["date", "cumulative"]
 
     # =========================
-    # TITLE CARD
+    # STATUS HEADER (LIKE YOUR STYLE)
     # =========================
-    render_title(
-        "RFI / TQ Workflow Intelligence",
-        "Open vs Closed tracking over time"
-    )
+    if open_count > closed_count:
+        color = "#f97316"
+        status = "WORK IN PROGRESS"
+    else:
+        color = "#22c55e"
+        status = "CONTROLLED"
 
-    # =========================
-    # KPI CARDS ROW
-    # =========================
-    col1, col2, col3 = st.columns(3)
-
-    col1.markdown(
-        KPI_CARD.format(title="Total Items", value=total),
-        unsafe_allow_html=True
-    )
-
-    col2.markdown(
-        KPI_CARD.format(title="Open Items", value=open_count),
-        unsafe_allow_html=True
-    )
-
-    col3.markdown(
-        KPI_CARD.format(title="Closed Items", value=closed_count),
-        unsafe_allow_html=True
-    )
+    st.markdown(f"""
+    <div style="
+        background:#0f172a;
+        border:1px solid #1f2937;
+        border-radius:10px;
+        padding:6px 10px;
+        margin-bottom:6px;
+        text-align:center;
+        font-size:12px;
+        font-weight:700;
+        color:{color};
+    ">
+        📊 RFI / TQ Trend — {status}
+    </div>
+    """, unsafe_allow_html=True)
 
     # =========================
-    # CHART CARD
+    # KPI ROW
     # =========================
-    st.markdown(CARD.format(content=""), unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
 
+    with col1:
+        st.metric(
+            label="Open Items",
+            value=open_count,
+            delta=f"{open_pct}% of total"
+        )
+
+    with col2:
+        st.metric(
+            label="Closed Items",
+            value=closed_count
+        )
+
+    # =========================
+    # MINI TREND CHART
+    # =========================
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
-        x=df_sorted["date sent"],
-        y=df_sorted["open_cum"],
+        x=trend["date"],
+        y=trend["cumulative"],
         mode="lines+markers",
-        name="Open Items"
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=df_sorted["date sent"],
-        y=df_sorted["closed_cum"],
-        mode="lines+markers",
-        name="Closed Items"
+        name="Cumulative Flow",
+        line=dict(color=color)
     ))
 
     fig.update_layout(
-        title="Workflow Trend (Open vs Closed)",
-        xaxis_title="Date Sent",
-        yaxis_title="Cumulative Count",
-        template="plotly_white",
-        height=480,
-        margin=dict(l=20, r=20, t=40, b=20),
-        legend=dict(orientation="h")
+        height=170,
+        margin=dict(l=10, r=10, t=5, b=5),
+        paper_bgcolor="#0f172a",
+        plot_bgcolor="#0f172a",
+        font=dict(color="white", size=11),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.08)")
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    # =========================
+    # FOOTER INSIGHT
+    # =========================
+    st.markdown(f"""
+    <div style="
+        font-size:11px;
+        color:#cbd5e1;
+        margin-top:2px;
+    ">
+        Open backlog at <span style="color:{color}; font-weight:600;">{open_pct}%</span> of total workload
+    </div>
+    """, unsafe_allow_html=True)

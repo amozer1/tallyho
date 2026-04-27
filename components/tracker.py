@@ -12,6 +12,15 @@ def render_tracker(df):
     df = df.copy()
     df.columns = [c.strip().lower() for c in df.columns]
 
+    # =========================
+    # CLEAN FIELDS
+    # =========================
+    required = ["doc type", "date sent", "reply date", "status"]
+    for c in required:
+        if c not in df.columns:
+            st.error(f"Missing column: {c}")
+            return
+
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
@@ -36,21 +45,22 @@ def render_tracker(df):
     st.markdown("""
     <div style="
         text-align:center;
+        font-size:14px;
         font-weight:800;
         color:#E2E8F0;
         margin-bottom:10px;
     ">
-        📊 TQ / RFI Control Panel
+        📊 TQ / RFI Tracker
     </div>
     """, unsafe_allow_html=True)
 
+    # =========================
+    # FIGURE
+    # =========================
     fig = go.Figure()
 
-    # =========================
-    # FIXED COORDINATE SYSTEM
-    # =========================
     fig.update_layout(
-        height=320,
+        height=420,
         margin=dict(l=0, r=0, t=0, b=0),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
@@ -58,12 +68,12 @@ def render_tracker(df):
         xaxis=dict(
             visible=False,
             range=[0, 3],
-            fixedrange=True,
-            constrain="domain"
+            fixedrange=True
         ),
+
         yaxis=dict(
             visible=False,
-            range=[0, 1],
+            range=[-0.2, 1.2],
             fixedrange=True,
             scaleanchor="x",
             scaleratio=1
@@ -71,13 +81,12 @@ def render_tracker(df):
     )
 
     # =========================
-    # CIRCLES (LARGER + FIXED)
+    # CIRCLES (BIGGER + BALANCED)
     # =========================
-
     circles = [
-        (0.15, 0.15, 0.95, 0.85, "rgba(59,130,246,0.20)", "#60A5FA"),   # TQ
-        (1.05, 0.10, 1.85, 0.90, "rgba(168,85,247,0.25)", "#A855F7"),   # TOTAL
-        (1.95, 0.15, 2.85, 0.85, "rgba(34,197,94,0.20)", "#4ADE80")     # RFI
+        (0.1, 0.05, 0.95, 0.95, "rgba(59,130,246,0.22)", "#60A5FA"),   # TQ
+        (1.05, 0.05, 1.95, 0.95, "rgba(168,85,247,0.25)", "#A855F7"),  # TOTAL
+        (2.0, 0.05, 2.9, 0.95, "rgba(34,197,94,0.22)", "#4ADE80")      # RFI
     ]
 
     for x0, y0, x1, y1, fill, line in circles:
@@ -89,44 +98,70 @@ def render_tracker(df):
         )
 
     # =========================
-    # CENTERS (CRITICAL FIX)
+    # CENTERS
     # =========================
     tq_x, tq_y = 0.55, 0.5
-    total_x, total_y = 1.45, 0.5
-    rfi_x, rfi_y = 2.35, 0.5
+    total_x, total_y = 1.5, 0.5
+    rfi_x, rfi_y = 2.45, 0.5
 
     # =========================
-    # SAFE TEXT INSIDE CIRCLES
+    # SAFE TEXT BLOCK
     # =========================
-
     def add_block(x, y, title, pct, count, color):
-        fig.add_annotation(x=x, y=y+0.18, text=f"<b>{title}</b>",
-                           showarrow=False, font=dict(color=color, size=13))
-        fig.add_annotation(x=x, y=y+0.02, text=f"<b>{pct}%</b>",
-                           showarrow=False, font=dict(color="white", size=20))
-        fig.add_annotation(x=x, y=y-0.14, text=f"<b>{count}</b>",
-                           showarrow=False, font=dict(color="white", size=24))
 
+        fig.add_annotation(
+            x=x, y=y+0.10,
+            text=f"<b>{title}</b>",
+            showarrow=False,
+            font=dict(color=color, size=13)
+        )
+
+        fig.add_annotation(
+            x=x, y=y,
+            text=f"<b>{pct}%</b>",
+            showarrow=False,
+            font=dict(color="white", size=22)
+        )
+
+        fig.add_annotation(
+            x=x, y=y-0.10,
+            text=f"<b>{count}</b>",
+            showarrow=False,
+            font=dict(color="white", size=26)
+        )
+
+    # =========================
+    # KPI BLOCKS
+    # =========================
     add_block(tq_x, tq_y, "TQ Only", tq_pct, tq_total, "#60A5FA")
     add_block(total_x, total_y, "TQ + RFI", 100, total, "#A855F7")
     add_block(rfi_x, rfi_y, "RFI Only", rfi_pct, rfi_total, "#4ADE80")
 
     # =========================
-    # NOT RESPONDED (FIXED BELOW, NOT FLOATING)
+    # NOT RESPONDED (SAFE INSIDE CARD)
     # =========================
-    fig.add_annotation(x=tq_x, y=0.08,
+    fig.add_annotation(
+        x=tq_x, y=0.05,
         text=f"TQ Not Responded: {tq_not}",
-        showarrow=False, font=dict(color="#60A5FA", size=10)
+        showarrow=False,
+        font=dict(color="#60A5FA", size=10)
     )
 
-    fig.add_annotation(x=total_x, y=0.08,
+    fig.add_annotation(
+        x=total_x, y=0.05,
         text=f"Total Not Responded: {total_not}",
-        showarrow=False, font=dict(color="#A855F7", size=10)
+        showarrow=False,
+        font=dict(color="#A855F7", size=10)
     )
 
-    fig.add_annotation(x=rfi_x, y=0.08,
+    fig.add_annotation(
+        x=rfi_x, y=0.05,
         text=f"RFI Not Responded: {rfi_not}",
-        showarrow=False, font=dict(color="#4ADE80", size=10)
+        showarrow=False,
+        font=dict(color="#4ADE80", size=10)
     )
 
+    # =========================
+    # RENDER
+    # =========================
     st.plotly_chart(fig, use_container_width=True)

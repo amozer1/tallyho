@@ -37,7 +37,6 @@ def render_tracker(df):
 
     tq_pct = round((tq_total / total) * 100, 1) if total else 0
     rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
-    both_pct = 100
 
     # =========================
     # HEADER
@@ -57,24 +56,31 @@ def render_tracker(df):
     </div>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # CIRCLES (PLOTLY ONLY)
-    # =========================
     fig = go.Figure()
 
-    fig.add_shape(type="circle",
+    # =========================
+    # CIRCLES (UPDATED COLORS)
+    # =========================
+
+    # LEFT - TQ
+    fig.add_shape(
+        type="circle",
         x0=0.1, y0=0.3, x1=1.1, y1=1.3,
         fillcolor="rgba(59,130,246,0.18)",
         line=dict(color="#60A5FA", width=2)
     )
 
-    fig.add_shape(type="circle",
+    # MIDDLE - BOTH (BRIGHT PURPLE FOCUS)
+    fig.add_shape(
+        type="circle",
         x0=0.95, y0=0.2, x1=1.95, y1=1.4,
-        fillcolor="rgba(0,123,255,0.22)",
-        line=dict(color="#007BFF", width=3)
+        fillcolor="rgba(168,85,247,0.22)",
+        line=dict(color="#A855F7", width=3)
     )
 
-    fig.add_shape(type="circle",
+    # RIGHT - RFI
+    fig.add_shape(
+        type="circle",
         x0=1.8, y0=0.3, x1=2.8, y1=1.3,
         fillcolor="rgba(34,197,94,0.18)",
         line=dict(color="#4ADE80", width=2)
@@ -88,24 +94,32 @@ def render_tracker(df):
     rfi_x, rfi_y = 2.3, 0.85
 
     # =========================
-    # INSIDE CIRCLE TEXT ONLY
-    # =========================
-
     # TQ
+    # =========================
     fig.add_annotation(x=tq_x, y=tq_y+0.15, text="<b>TQ Only</b>", showarrow=False, font=dict(color="#60A5FA", size=12))
     fig.add_annotation(x=tq_x, y=tq_y, text=f"<b>{tq_pct}%</b>", showarrow=False, font=dict(color="white", size=18))
     fig.add_annotation(x=tq_x, y=tq_y-0.15, text=f"<b>{tq_total}</b>", showarrow=False, font=dict(color="white", size=22))
+    fig.add_annotation(x=tq_x, y=0.35, text=f"Non-responded: {tq_not}", showarrow=False, font=dict(color="#60A5FA", size=10))
 
-    # TOTAL
-    fig.add_annotation(x=total_x, y=total_y+0.15, text="<b>BOTH (TQ + RFI)</b>", showarrow=False, font=dict(color="#007BFF", size=12))
-    fig.add_annotation(x=total_x, y=total_y, text=f"<b>{both_pct}%</b>", showarrow=False, font=dict(color="white", size=18))
+    # =========================
+    # BOTH (PURPLE FOCUS)
+    # =========================
+    fig.add_annotation(x=total_x, y=total_y+0.15, text="<b>TQ + RFI</b>", showarrow=False, font=dict(color="#A855F7", size=12))
+    fig.add_annotation(x=total_x, y=total_y, text=f"<b>100%</b>", showarrow=False, font=dict(color="white", size=18))
     fig.add_annotation(x=total_x, y=total_y-0.15, text=f"<b>{total}</b>", showarrow=False, font=dict(color="white", size=22))
+    fig.add_annotation(x=total_x, y=0.35, text=f"Non-responded: {total_not}", showarrow=False, font=dict(color="#A855F7", size=10))
 
+    # =========================
     # RFI
+    # =========================
     fig.add_annotation(x=rfi_x, y=rfi_y+0.15, text="<b>RFI Only</b>", showarrow=False, font=dict(color="#4ADE80", size=12))
     fig.add_annotation(x=rfi_x, y=rfi_y, text=f"<b>{rfi_pct}%</b>", showarrow=False, font=dict(color="white", size=18))
     fig.add_annotation(x=rfi_x, y=rfi_y-0.15, text=f"<b>{rfi_total}</b>", showarrow=False, font=dict(color="white", size=22))
+    fig.add_annotation(x=rfi_x, y=0.35, text=f"Non-responded: {rfi_not}", showarrow=False, font=dict(color="#4ADE80", size=10))
 
+    # =========================
+    # LAYOUT (STABLE)
+    # =========================
     fig.update_layout(
         height=240,
         paper_bgcolor="#0f172a",
@@ -116,45 +130,3 @@ def render_tracker(df):
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
-    # =========================
-    # BELOW-CIRCLE METRICS (STABLE STREAMLIT LAYER)
-    # =========================
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.markdown(f"""
-        <div style="text-align:center;">
-            <div style="font-size:12px;color:#60A5FA;font-weight:600;">
-                TQ Non-Responded
-            </div>
-            <div style="font-size:16px;color:white;font-weight:700;">
-                {tq_not}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with c2:
-        st.markdown(f"""
-        <div style="text-align:center;">
-            <div style="font-size:12px;color:#007BFF;font-weight:600;">
-                Total Non-Responded
-            </div>
-            <div style="font-size:16px;color:white;font-weight:700;">
-                {total_not}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with c3:
-        st.markdown(f"""
-        <div style="text-align:center;">
-            <div style="font-size:12px;color:#4ADE80;font-weight:600;">
-                RFI Non-Responded
-            </div>
-            <div style="font-size:16px;color:white;font-weight:700;">
-                {rfi_not}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)

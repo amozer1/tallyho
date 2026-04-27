@@ -91,7 +91,7 @@ def render_tracker(df):
     # TQ (SPACED CLEANLY)
     # =========================
     fig.add_annotation(x=tq_x, y=tq_y + 0.18,
-                       text="<b>TQ</b>",
+                       text="<b>TQ Only</b>",
                        showarrow=False,
                        font=dict(color="#60A5FA", size=14))
 
@@ -114,7 +114,7 @@ def render_tracker(df):
     # TOTAL
     # =========================
     fig.add_annotation(x=total_x, y=total_y + 0.18,
-                       text="<b>TOTAL</b>",
+                       text="<b>TOTAL TQ & RFI</b>",
                        showarrow=False,
                        font=dict(color="#A855F7", size=14))
 
@@ -137,7 +137,7 @@ def render_tracker(df):
     # RFI
     # =========================
     fig.add_annotation(x=rfi_x, y=rfi_y + 0.18,
-                       text="<b>RFI</b>",
+                       text="<b>RFI Only</b>",
                        showarrow=False,
                        font=dict(color="#4ADE80", size=14))
 

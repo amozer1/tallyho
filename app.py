@@ -8,6 +8,7 @@ from components.outstanding import render_outstanding_line
 from components.age_outstanding import render_age_outstanding
 from components.trend import render_trend
 
+
 # =========================
 # PAGE CONFIG
 # =========================
@@ -33,10 +34,10 @@ def load_data():
 df = load_data()
 
 # =========================
-# CLEAN DATA
+# CLEAN DATA (GLOBAL)
 # =========================
 df = df.copy()
-df.columns = [c.strip().lower() for c in df.columns]
+df.columns = df.columns.str.strip().str.lower()
 
 df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
@@ -44,45 +45,30 @@ df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 today = pd.Timestamp.today().normalize()
 df["age"] = (today - df["date sent"]).dt.days
 
-total = len(df)
 
 # =========================
-# KPI CALCULATIONS
+# DASHBOARD TITLE BLOCK
+# (optional lightweight header inside body)
 # =========================
-tq = df[df["doc type"].str.lower() == "tq"]
-rfi = df[df["doc type"].str.lower() == "rfi"]
+st.markdown("## 📊 TQ / RFI Control Dashboard")
 
-tq_total = len(tq)
-rfi_total = len(rfi)
-
-tq_not = len(tq[tq["reply date"].isna()])
-rfi_not = len(rfi[rfi["reply date"].isna()])
-total_not = len(df[df["reply date"].isna()])
-
-tq_not_pct = round((tq_not / tq_total) * 100, 1) if tq_total else 0
-rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
-
-overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
 # =========================
-# TOP KPI ROW
+# 2×2 CONTROL GRID (MAIN CHANGE)
 # =========================
-col1, col2 = st.columns([1, 1], gap="small")
+row1_col1, row1_col2 = st.columns(2, gap="large")
 
-with col1:
-    render_outstanding_line(df, total)
+with row1_col1:
+    render_trend(df)
 
-with col2:
+with row1_col2:
+    render_outstanding_line(df, total=len(df))
+
+
+row2_col1, row2_col2 = st.columns(2, gap="large")
+
+with row2_col1:
     render_age_outstanding(df)
 
-# =========================
-# TREND ANALYSIS
-# =========================
-st.markdown("### 📈 Trend Analysis")
-render_trend(df)
-
-# =========================
-# MAIN TRACKER
-# =========================
-st.markdown("### 📋 Tracker Dashboard")
-render_tracker(df)
+with row2_col2:
+    render_tracker(df)

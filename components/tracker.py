@@ -54,110 +54,113 @@ def render_tracker(df):
         text-align:center;
         font-size:13px;
         font-weight:800;
-        color:white;
+        color:#E2E8F0;
     ">
-        📊 TQ & RFI Status Overview
+        📊 Document Flow Overview
     </div>
     """, unsafe_allow_html=True)
 
     fig = go.Figure()
 
     # =========================
-    # SMALLER CIRCLES
+    # CIRCLES (balanced sizing)
     # =========================
-    fig.add_shape(type="circle",
-                  x0=0.1, y0=0.35, x1=0.95, y1=1.2,
-                  fillcolor="rgba(96,165,250,0.35)",
-                  line=dict(color="#60A5FA", width=2))
 
-    fig.add_shape(type="circle",
-                  x0=1.0, y0=0.25, x1=2.0, y1=1.35,
-                  fillcolor="rgba(168,85,247,0.45)",
-                  line=dict(color="#A855F7", width=2))
+    # LEFT - TQ (blue)
+    fig.add_shape(
+        type="circle",
+        x0=0.1, y0=0.35, x1=0.95, y1=1.2,
+        fillcolor="rgba(59,130,246,0.18)",
+        line=dict(color="#60A5FA", width=2)
+    )
 
-    fig.add_shape(type="circle",
-                  x0=2.05, y0=0.35, x1=2.9, y1=1.2,
-                  fillcolor="rgba(74,222,128,0.35)",
-                  line=dict(color="#4ADE80", width=2))
+    # MIDDLE - TOTAL (BRIGHT BLUE FOCUS)
+    fig.add_shape(
+        type="circle",
+        x0=1.05, y0=0.25, x1=1.95, y1=1.3,
+        fillcolor="rgba(0,123,255,0.25)",
+        line=dict(color="#007BFF", width=3)
+    )
+
+    # RIGHT - RFI (green)
+    fig.add_shape(
+        type="circle",
+        x0=2.05, y0=0.35, x1=2.95, y1=1.2,
+        fillcolor="rgba(34,197,94,0.18)",
+        line=dict(color="#4ADE80", width=2)
+    )
 
     # =========================
-    # CENTERS
+    # LEFT - TQ
     # =========================
-    tq_x, tq_y = 0.52, 0.78
-    total_x, total_y = 1.5, 0.8
-    rfi_x, rfi_y = 2.48, 0.78
-
-    # =========================
-    # TQ
-    # =========================
-    fig.add_annotation(x=tq_x, y=tq_y + 0.16,
-                       text="<b>TQ</b>",
+    fig.add_annotation(x=0.52, y=0.88,
+                       text="<b>TQs Only</b>",
                        showarrow=False,
-                       font=dict(color="#60A5FA", size=12))
+                       font=dict(color="#60A5FA", size=13))
 
-    fig.add_annotation(x=tq_x, y=tq_y,
-                       text=f"<b>{tq_total}</b>",
+    fig.add_annotation(x=0.52, y=0.70,
+                       text=f"<b style='font-size:26px'>{tq_total}</b>",
                        showarrow=False,
-                       font=dict(color="white", size=20))
+                       font=dict(color="white"))
 
-    fig.add_annotation(x=tq_x, y=tq_y - 0.15,
-                       text=f"{tq_pct}% of total",
+    fig.add_annotation(x=0.52, y=0.52,
+                       text=f"{tq_pct}% of workload",
                        showarrow=False,
-                       font=dict(color="rgba(255,255,255,0.65)", size=9))
+                       font=dict(color="rgba(255,255,255,0.75)", size=10))
 
-    fig.add_annotation(x=tq_x, y=tq_y - 0.28,
+    fig.add_annotation(x=0.52, y=0.35,
                        text=f"{tq_not} pending",
                        showarrow=False,
-                       font=dict(color="#60A5FA", size=8))
+                       font=dict(color="#60A5FA", size=10))
 
     # =========================
-    # TOTAL
+    # MIDDLE - TOTAL (FOCUS)
     # =========================
-    fig.add_annotation(x=total_x, y=total_y + 0.16,
-                       text="<b>TOTAL</b>",
+    fig.add_annotation(x=1.5, y=0.88,
+                       text="<b>Total Workload</b>",
                        showarrow=False,
-                       font=dict(color="#A855F7", size=12))
+                       font=dict(color="#007BFF", size=13))
 
-    fig.add_annotation(x=total_x, y=total_y,
-                       text=f"<b>{total}</b>",
+    fig.add_annotation(x=1.5, y=0.70,
+                       text=f"<b style='font-size:30px'>{total}</b>",
                        showarrow=False,
-                       font=dict(color="white", size=22))
+                       font=dict(color="white"))
 
-    fig.add_annotation(x=total_x, y=total_y - 0.15,
-                       text="All Docs",
+    fig.add_annotation(x=1.5, y=0.52,
+                       text="All Documents",
                        showarrow=False,
-                       font=dict(color="rgba(255,255,255,0.65)", size=9))
+                       font=dict(color="rgba(255,255,255,0.75)", size=10))
 
-    fig.add_annotation(x=total_x, y=total_y - 0.28,
-                       text=f"{total_not} pending",
+    fig.add_annotation(x=1.5, y=0.35,
+                       text=f"{total_not} outstanding",
                        showarrow=False,
-                       font=dict(color="#F87171", size=8))
+                       font=dict(color="#F87171", size=10))
 
     # =========================
-    # RFI
+    # RIGHT - RFI
     # =========================
-    fig.add_annotation(x=rfi_x, y=rfi_y + 0.16,
-                       text="<b>RFI</b>",
+    fig.add_annotation(x=2.48, y=0.88,
+                       text="<b>RFIs Only</b>",
                        showarrow=False,
-                       font=dict(color="#4ADE80", size=12))
+                       font=dict(color="#4ADE80", size=13))
 
-    fig.add_annotation(x=rfi_x, y=rfi_y,
-                       text=f"<b>{rfi_total}</b>",
+    fig.add_annotation(x=2.48, y=0.70,
+                       text=f"<b style='font-size:26px'>{rfi_total}</b>",
                        showarrow=False,
-                       font=dict(color="white", size=20))
+                       font=dict(color="white"))
 
-    fig.add_annotation(x=rfi_x, y=rfi_y - 0.15,
-                       text=f"{rfi_pct}% of total",
+    fig.add_annotation(x=2.48, y=0.52,
+                       text=f"{rfi_pct}% of workload",
                        showarrow=False,
-                       font=dict(color="rgba(255,255,255,0.65)", size=9))
+                       font=dict(color="rgba(255,255,255,0.75)", size=10))
 
-    fig.add_annotation(x=rfi_x, y=rfi_y - 0.28,
+    fig.add_annotation(x=2.48, y=0.35,
                        text=f"{rfi_not} pending",
                        showarrow=False,
-                       font=dict(color="#4ADE80", size=8))
+                       font=dict(color="#4ADE80", size=10))
 
     # =========================
-    # LAYOUT FIXED
+    # LAYOUT (IMPORTANT)
     # =========================
     fig.update_layout(
         height=220,

@@ -13,12 +13,19 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # STRICT DATE CLEANING
+    # 🔥 FORCE UK DATE FORMAT (CRITICAL FIX)
     # =========================
-    df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
+    df["date sent"] = pd.to_datetime(
+        df["date sent"],
+        format="%d/%m/%Y",
+        errors="coerce"
+    )
+
     df = df[df["date sent"].notna()].copy()
 
-    # REAL TIME AXIS (NO STRINGS)
+    # =========================
+    # REAL TIME AXIS
+    # =========================
     df["month"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
@@ -27,75 +34,71 @@ def render_trend(df):
     df["is_closed"] = df["status"].str.lower().eq("closed")
 
     # =========================
-    # AGGREGATION (REAL MONTHS ONLY)
+    # MONTHLY COUNTS
     # =========================
-    grouped = df.groupby(["month", "doc type"]).size().unstack(fill_value=0)
+    monthly = df.groupby(["month", "doc type"]).size().unstack(fill_value=0)
 
-    if "RFI" not in grouped.columns:
-        grouped["RFI"] = 0
-    if "TQ" not in grouped.columns:
-        grouped["TQ"] = 0
+    if "RFI" not in monthly.columns:
+        monthly["RFI"] = 0
+    if "TQ" not in monthly.columns:
+        monthly["TQ"] = 0
 
     closed = df[df["is_closed"]].groupby("month").size()
 
-    data = grouped.join(closed.rename("Closed"), how="outer").fillna(0)
-
-    # IMPORTANT: enforce real ordering
+    data = monthly.join(closed.rename("Closed"), how="outer").fillna(0)
     data = data.sort_index()
 
     # =========================
-    # STACK LOGIC (VISUAL ONLY)
+    # CUMULATIVE STACK (VALID VIEW)
     # =========================
-    data["RFI_stack"] = data["RFI"]
-    data["TQ_stack"] = data["RFI"] + data["TQ"]
-    data["Closed_stack"] = data["RFI"] + data["TQ"] + data["Closed"]
+    data["RFI_cum"] = data["RFI"].cumsum()
+    data["TQ_cum"] = data["TQ"].cumsum()
+    data["Closed_cum"] = data["Closed"].cumsum()
+
+    data["stack_rfi"] = data["RFI_cum"]
+    data["stack_tq"] = data["RFI_cum"] + data["TQ_cum"]
+    data["stack_closed"] = data["RFI_cum"] + data["TQ_cum"] + data["Closed_cum"]
 
     # =========================
-    # PLOT (REAL DATES ON X-AXIS)
+    # PLOT
     # =========================
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
         x=data.index,
-        y=data["RFI_stack"],
+        y=data["stack_rfi"],
         mode="lines+markers",
-        name="RFI Created",
+        name="RFI (Cumulative)",
         line=dict(color="#1f77b4", width=3),
         marker=dict(size=7)
     ))
 
     fig.add_trace(go.Scatter(
         x=data.index,
-        y=data["TQ_stack"],
+        y=data["stack_tq"],
         mode="lines+markers",
-        name="TQ Created",
+        name="TQ (Cumulative)",
         line=dict(color="#2ca02c", width=3),
         marker=dict(size=7)
     ))
 
     fig.add_trace(go.Scatter(
         x=data.index,
-        y=data["Closed_stack"],
+        y=data["stack_closed"],
         mode="lines+markers",
-        name="Closed",
+        name="Closed (Cumulative)",
         line=dict(color="#ff7f0e", width=4),
         marker=dict(size=8)
     ))
 
-    # =========================
-    # CRITICAL: FORCE REAL DATE AXIS
-    # =========================
     fig.update_layout(
-        title="Stacked Trend (Real Date Axis Only)",
+        title="Stacked Trend (Correct UK Date Handling)",
         template="plotly_white",
         height=500,
         hovermode="x unified",
         legend=dict(orientation="h", y=1.02),
-        xaxis=dict(
-            title="Date Sent (Month)",
-            type="date"   # 🔥 THIS IS THE KEY FIX
-        ),
-        yaxis_title="Volume"
+        xaxis=dict(title="Date Sent", type="date"),
+        yaxis_title="Cumulative Volume"
     )
 
     st.plotly_chart(fig, use_container_width=True)

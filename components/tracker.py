@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
 
 
 def render_tracker(df):
@@ -22,12 +23,12 @@ def render_tracker(df):
     tq_total = len(tq)
     rfi_total = len(rfi)
 
-    tq_pct = round((tq_total / total) * 100, 1) if total else 0
-    rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
-
     tq_not = len(tq[tq["reply date"].isna()])
     rfi_not = len(rfi[rfi["reply date"].isna()])
     total_not = len(df[df["reply date"].isna()])
+
+    tq_pct = round((tq_total / total) * 100, 1) if total else 0
+    rfi_pct = round((rfi_total / total) * 100, 1) if total else 0
 
     # =========================
     # HEADER
@@ -35,7 +36,6 @@ def render_tracker(df):
     st.markdown("""
     <div style="
         text-align:center;
-        font-size:14px;
         font-weight:800;
         color:#E2E8F0;
         margin-bottom:10px;
@@ -44,81 +44,89 @@ def render_tracker(df):
     </div>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # CSS CIRCLE STYLE
-    # =========================
-    st.markdown("""
-    <style>
-    .kpi-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-    }
-
-    .kpi-card {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .circle {
-        width: 160px;
-        height: 160px;
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-weight: 700;
-        text-align: center;
-    }
-
-    .tq { background: rgba(59,130,246,0.25); border:2px solid #60A5FA; }
-    .total { background: rgba(168,85,247,0.25); border:2px solid #A855F7; }
-    .rfi { background: rgba(34,197,94,0.25); border:2px solid #4ADE80; }
-
-    .small {
-        font-size: 12px;
-        opacity: 0.8;
-        margin-top: 4px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    fig = go.Figure()
 
     # =========================
-    # KPI CARDS
+    # FIXED COORDINATE SYSTEM
     # =========================
-    st.markdown(f"""
-    <div class="kpi-row">
+    fig.update_layout(
+        height=320,
+        margin=dict(l=0, r=0, t=0, b=0),
+        paper_bgcolor="#0f172a",
+        plot_bgcolor="#0f172a",
 
-        <div class="kpi-card">
-            <div class="circle tq">
-                <div>TQ Only</div>
-                <div style="font-size:20px;">{tq_pct}%</div>
-                <div style="font-size:24px;">{tq_total}</div>
-                <div class="small">Not: {tq_not}</div>
-            </div>
-        </div>
+        xaxis=dict(
+            visible=False,
+            range=[0, 3],
+            fixedrange=True,
+            constrain="domain"
+        ),
+        yaxis=dict(
+            visible=False,
+            range=[0, 1],
+            fixedrange=True,
+            scaleanchor="x",
+            scaleratio=1
+        )
+    )
 
-        <div class="kpi-card">
-            <div class="circle total">
-                <div>TQ + RFI</div>
-                <div style="font-size:20px;">100%</div>
-                <div style="font-size:24px;">{total}</div>
-                <div class="small">Not: {total_not}</div>
-            </div>
-        </div>
+    # =========================
+    # CIRCLES (LARGER + FIXED)
+    # =========================
 
-        <div class="kpi-card">
-            <div class="circle rfi">
-                <div>RFI Only</div>
-                <div style="font-size:20px;">{rfi_pct}%</div>
-                <div style="font-size:24px;">{rfi_total}</div>
-                <div class="small">Not: {rfi_not}</div>
-            </div>
-        </div>
+    circles = [
+        (0.15, 0.15, 0.95, 0.85, "rgba(59,130,246,0.20)", "#60A5FA"),   # TQ
+        (1.05, 0.10, 1.85, 0.90, "rgba(168,85,247,0.25)", "#A855F7"),   # TOTAL
+        (1.95, 0.15, 2.85, 0.85, "rgba(34,197,94,0.20)", "#4ADE80")     # RFI
+    ]
 
-    </div>
-    """, unsafe_allow_html=True)
+    for x0, y0, x1, y1, fill, line in circles:
+        fig.add_shape(
+            type="circle",
+            x0=x0, y0=y0, x1=x1, y1=y1,
+            fillcolor=fill,
+            line=dict(color=line, width=2)
+        )
+
+    # =========================
+    # CENTERS (CRITICAL FIX)
+    # =========================
+    tq_x, tq_y = 0.55, 0.5
+    total_x, total_y = 1.45, 0.5
+    rfi_x, rfi_y = 2.35, 0.5
+
+    # =========================
+    # SAFE TEXT INSIDE CIRCLES
+    # =========================
+
+    def add_block(x, y, title, pct, count, color):
+        fig.add_annotation(x=x, y=y+0.18, text=f"<b>{title}</b>",
+                           showarrow=False, font=dict(color=color, size=13))
+        fig.add_annotation(x=x, y=y+0.02, text=f"<b>{pct}%</b>",
+                           showarrow=False, font=dict(color="white", size=20))
+        fig.add_annotation(x=x, y=y-0.14, text=f"<b>{count}</b>",
+                           showarrow=False, font=dict(color="white", size=24))
+
+    add_block(tq_x, tq_y, "TQ Only", tq_pct, tq_total, "#60A5FA")
+    add_block(total_x, total_y, "TQ + RFI", 100, total, "#A855F7")
+    add_block(rfi_x, rfi_y, "RFI Only", rfi_pct, rfi_total, "#4ADE80")
+
+    # =========================
+    # NOT RESPONDED (FIXED BELOW, NOT FLOATING)
+    # =========================
+    fig.add_annotation(x=tq_x, y=0.08,
+        text=f"TQ Not Responded: {tq_not}",
+        showarrow=False, font=dict(color="#60A5FA", size=10)
+    )
+
+    fig.add_annotation(x=total_x, y=0.08,
+        text=f"Total Not Responded: {total_not}",
+        showarrow=False, font=dict(color="#A855F7", size=10)
+    )
+
+    fig.add_annotation(x=rfi_x, y=0.08,
+        text=f"RFI Not Responded: {rfi_not}",
+        showarrow=False, font=dict(color="#4ADE80", size=10)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)

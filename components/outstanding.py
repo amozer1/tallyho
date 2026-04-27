@@ -9,193 +9,73 @@ def render_outstanding_line(df, total):
         return
 
     df = df.copy()
+    df.columns = df.columns.str.strip().str.lower()
 
-    # =========================
-    # CLEAN COLUMN NAMES
-    # =========================
-    df.columns = df.columns.str.strip()
+    status_col = "status"
+    doc_col = "doc type"
 
-    # =========================
-    # FIND STATUS COLUMN (ROBUST)
-    # =========================
-    status_col = None
-    for col in df.columns:
-        if col.strip().lower() == "status":
-            status_col = col
-            break
-
-    if status_col is None:
-        st.error("❌ 'Status' column not found")
-        st.write("Available columns:", df.columns.tolist())
-        return
-
-    # =========================
-    # FIND DOC TYPE COLUMN (ROBUST)
-    # =========================
-    doc_col = None
-    for col in df.columns:
-        if col.strip().lower() == "doc type":
-            doc_col = col
-            break
-
-    if doc_col is None:
-        st.error("❌ 'doc type' column not found")
-        st.write("Available columns:", df.columns.tolist())
-        return
-
-    # =========================
-    # FIND DATE SENT COLUMN (ROBUST)
-    # =========================
-    date_col = None
-    for col in df.columns:
-        if col.strip().lower() == "date sent":
-            date_col = col
-            break
-
-    if date_col is None:
-        st.error("❌ 'Date Sent' column not found")
-        st.write("Available columns:", df.columns.tolist())
-        return
-
-    # =========================
-    # CLEAN DATA
-    # =========================
-    df[status_col] = df[status_col].astype(str).str.strip().str.upper()
-    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df[status_col] = df[status_col].astype(str).str.upper()
+    df[doc_col] = df[doc_col].astype(str).str.upper()
 
     today = pd.Timestamp.today()
 
-    # =========================
-    # CORE LOGIC
-    # =========================
     open_df = df[df[status_col] == "OPEN"]
+    overdue_df = open_df.copy()
 
-    overdue_df = open_df[
-        (today - open_df[date_col]).dt.days > 7
-    ]
+    date_col = "date sent"
+    overdue_df[date_col] = pd.to_datetime(overdue_df[date_col], errors="coerce")
 
-    overdue_total = len(overdue_df)
-    overdue_pct = round((overdue_total / total) * 100, 1)
+    overdue_df = overdue_df[(today - overdue_df[date_col]).dt.days > 7]
 
-    # =========================
-    # BREAKDOWN
-    # =========================
     overdue_tq = len(overdue_df[overdue_df[doc_col] == "TQ"])
     overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
 
-    total_tq = len(df[df[doc_col] == "TQ"])
-    total_rfi = len(df[df[doc_col] == "RFI"])
-
-    tq_pct = round((overdue_tq / total_tq) * 100, 1) if total_tq else 0
-    rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
-
     # =========================
-    # SEVERITY LOGIC
+    # HEADER (SAME STYLE)
     # =========================
-    if overdue_total >= 15:
-        color = "#ef4444"
-        status = "CRITICAL"
-        impact = "High backlog risk"
-    elif overdue_total >= 5:
-        color = "#f97316"
-        status = "HIGH"
-        impact = "Needs attention"
-    else:
-        color = "#facc15"
-        status = "MEDIUM"
-        impact = "Monitor"
-
-    # =========================
-    # HEADER
-    # =========================
-    st.markdown(f"""
+    st.markdown("""
     <div style="
         background:#0f172a;
-        border:1px solid #1f2937;
         border-radius:10px;
-        padding:6px 10px;
-        margin-bottom:6px;
+        padding:6px;
         text-align:center;
         font-size:12px;
         font-weight:700;
-        color:{color};
+        color:#f97316;
+        margin-bottom:6px;
     ">
-        🚨 Outstanding (>7 Days) — {status}
+        🚨 Outstanding (>7 Days)
     </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # KPI ROW
+    # KPI ROW (MINIMAL)
     # =========================
-    col1, col2 = st.columns([1.2, 1])
+    col1, col2 = st.columns(2)
 
     with col1:
-        st.metric(
-            label="Total Overdue",
-            value=f"{overdue_total}",
-            delta=f"{overdue_pct}% of total"
-        )
+        st.metric("Overdue Items", len(overdue_df))
 
     with col2:
-        st.markdown(f"""
-        <div style="padding-top:6px;">
-            <div style="font-size:12px; font-weight:700; color:{color};">
-                {impact}
-            </div>
-            <div style="font-size:11px; color:#cbd5e1;">
-                TQ: {overdue_tq} | RFI: {overdue_rfi}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Total Open", len(open_df))
 
     # =========================
-    # VERTICAL BAR CHART
+    # CHART (FORCED HEIGHT)
     # =========================
     fig = go.Figure()
 
     fig.add_trace(go.Bar(
-        x=["TQ Overdue", "RFI Overdue"],
-        y=[overdue_tq, overdue_rfi],
-        marker=dict(color=["#f97316", "#38bdf8"]),
-        text=[
-            f"{overdue_tq} ({tq_pct}%)",
-            f"{overdue_rfi} ({rfi_pct}%)"
-        ],
-        textposition="outside"
+        x=[overdue_tq, overdue_rfi],
+        y=["TQ", "RFI"],
+        orientation="h",
+        marker=dict(color=["#f97316", "#38bdf8"])
     ))
 
     fig.update_layout(
-        height=220,
-        margin=dict(l=15, r=15, t=10, b=10),
-        paper_bgcolor="#0f172a",
-        plot_bgcolor="#0f172a",
-        font=dict(color="white", size=11),
-
-        xaxis=dict(
-            showgrid=False,
-            tickfont=dict(color="white")
-        ),
-
-        yaxis=dict(
-            title="Overdue Items",
-            showgrid=True,
-            gridcolor="rgba(255,255,255,0.08)",
-            tickfont=dict(color="white")
-        )
+        height=240,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor="white",
+        plot_bgcolor="white"
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
-    # =========================
-    # FOOTER
-    # =========================
-    st.markdown(f"""
-    <div style="
-        font-size:11px;
-        color:#cbd5e1;
-        margin-top:2px;
-    ">
-        Status: <span style="color:{color}; font-weight:600;">{impact}</span>
-    </div>
-    """, unsafe_allow_html=True)

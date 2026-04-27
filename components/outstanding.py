@@ -70,10 +70,8 @@ def render_outstanding_line(df, total):
     # CORE LOGIC (SLA MODEL)
     # =========================
 
-    # 🔴 OPEN ITEMS
     open_df = df[df[status_col] == "OPEN"]
 
-    # 🚨 OVERDUE = OPEN + > 7 days since Date Sent
     overdue_df = open_df[
         (today - open_df[date_col]).dt.days > 7
     ]
@@ -153,7 +151,7 @@ def render_outstanding_line(df, total):
         """, unsafe_allow_html=True)
 
     # =========================
-    # BAR CHART
+    # BAR CHART (ONLY CHANGE IS HEIGHT)
     # =========================
     fig = go.Figure()
 
@@ -170,7 +168,7 @@ def render_outstanding_line(df, total):
     ))
 
     fig.update_layout(
-        height=150,
+        height=240,  # ✅ FIXED: matches age_outstanding.py
         margin=dict(l=15, r=15, t=5, b=5),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",

@@ -25,8 +25,6 @@ df.columns = df.columns.str.strip().str.lower()
 df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-st.markdown("## 📊 TQ / RFI Control Dashboard")
-
 # =========================
 # ROW 1 (PRIORITY VIEW)
 # =========================

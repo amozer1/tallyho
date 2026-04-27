@@ -17,13 +17,9 @@ st.set_page_config(
 )
 
 # =========================
-# SIDEBAR
+# UI FRAMEWORK
 # =========================
-page = render_sidebar()
-
-# =========================
-# HEADER
-# =========================
+render_sidebar()
 render_header()
 
 # =========================
@@ -69,19 +65,24 @@ rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
 overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
 # =========================
-# PAGE ROUTING
+# TOP KPI ROW
 # =========================
-if page == "Overview":
+col1, col2 = st.columns([1, 1], gap="small")
 
-    col1, col2 = st.columns([1, 1], gap="small")
+with col1:
+    render_outstanding_line(df, total)
 
-    with col1:
-        render_outstanding_line(df, total)
+with col2:
+    render_age_outstanding(df)
 
-    with col2:
-        render_age_outstanding(df)
+# =========================
+# TREND ANALYSIS
+# =========================
+st.markdown("### 📈 Trend Analysis")
+render_trend(df)
 
-    render_tracker(df)
-
-elif page == "Trend":
-    render_trend(df)
+# =========================
+# MAIN TRACKER
+# =========================
+st.markdown("### 📋 Tracker Dashboard")
+render_tracker(df)

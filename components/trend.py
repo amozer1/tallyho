@@ -13,92 +13,82 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # 🔥 FORCE UK DATE FORMAT (CRITICAL FIX)
+    # REAL DATE PARSING (UK FORMAT FIXED)
     # =========================
-    df["date sent"] = pd.to_datetime(
-        df["date sent"],
+    df["reply date"] = pd.to_datetime(
+        df["reply date"],
         format="%d/%m/%Y",
         errors="coerce"
     )
 
-    df = df[df["date sent"].notna()].copy()
+    # keep only valid dates
+    df = df[df["reply date"].notna()].copy()
+
+    # only CLOSED records
+    df = df[df["status"].str.lower() == "closed"].copy()
 
     # =========================
-    # REAL TIME AXIS
+    # REAL MONTH AXIS (NO STRINGS)
     # =========================
-    df["month"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
+    df["month"] = df["reply date"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
-    # STATE
+    # GROUP BY REAL MONTHS
     # =========================
-    df["is_closed"] = df["status"].str.lower().eq("closed")
+    grouped = df.groupby(["month", "doc type"]).size().unstack(fill_value=0)
 
-    # =========================
-    # MONTHLY COUNTS
-    # =========================
-    monthly = df.groupby(["month", "doc type"]).size().unstack(fill_value=0)
+    if "RFI" not in grouped.columns:
+        grouped["RFI"] = 0
+    if "TQ" not in grouped.columns:
+        grouped["TQ"] = 0
 
-    if "RFI" not in monthly.columns:
-        monthly["RFI"] = 0
-    if "TQ" not in monthly.columns:
-        monthly["TQ"] = 0
+    # IMPORTANT: enforce correct time order
+    grouped = grouped.sort_index()
 
-    closed = df[df["is_closed"]].groupby("month").size()
-
-    data = monthly.join(closed.rename("Closed"), how="outer").fillna(0)
-    data = data.sort_index()
+    data = grouped.reset_index()
 
     # =========================
-    # CUMULATIVE STACK (VALID VIEW)
-    # =========================
-    data["RFI_cum"] = data["RFI"].cumsum()
-    data["TQ_cum"] = data["TQ"].cumsum()
-    data["Closed_cum"] = data["Closed"].cumsum()
-
-    data["stack_rfi"] = data["RFI_cum"]
-    data["stack_tq"] = data["RFI_cum"] + data["TQ_cum"]
-    data["stack_closed"] = data["RFI_cum"] + data["TQ_cum"] + data["Closed_cum"]
-
-    # =========================
-    # PLOT
+    # PLOT (REAL MONTHS ON X-AXIS)
     # =========================
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
-        x=data.index,
-        y=data["stack_rfi"],
+        x=data["month"],
+        y=data["RFI"],
         mode="lines+markers",
-        name="RFI (Cumulative)",
-        line=dict(color="#1f77b4", width=3),
-        marker=dict(size=7)
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=data.index,
-        y=data["stack_tq"],
-        mode="lines+markers",
-        name="TQ (Cumulative)",
-        line=dict(color="#2ca02c", width=3),
-        marker=dict(size=7)
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=data.index,
-        y=data["stack_closed"],
-        mode="lines+markers",
-        name="Closed (Cumulative)",
-        line=dict(color="#ff7f0e", width=4),
+        name="RFI Closed",
+        line=dict(color="#1f77b4", width=4),
         marker=dict(size=8)
     ))
 
+    fig.add_trace(go.Scatter(
+        x=data["month"],
+        y=data["TQ"],
+        mode="lines+markers",
+        name="TQ Closed",
+        line=dict(color="#2ca02c", width=4),
+        marker=dict(size=8)
+    ))
+
+    # =========================
+    # CLEAN LAYOUT (REAL MONTHS ON HORIZONTAL AXIS)
+    # =========================
     fig.update_layout(
-        title="Stacked Trend (Correct UK Date Handling)",
+        title="Closed Trends (Real Monthly Timeline)",
         template="plotly_white",
         height=500,
         hovermode="x unified",
         legend=dict(orientation="h", y=1.02),
-        xaxis=dict(title="Date Sent", type="date"),
-        yaxis_title="Cumulative Volume"
+
+        xaxis=dict(
+            title="Month (from real data)",
+            type="date",          # 🔥 forces real chronological axis
+            tickformat="%b %Y"
+        ),
+
+        yaxis=dict(
+            title="Number of Closures"
+        )
     )
 
     st.plotly_chart(fig, use_container_width=True)

@@ -38,30 +38,31 @@ df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 
 # =========================
-# BOARD TITLE
+# TITLE
 # =========================
-st.markdown("## 📊 TQ / RFI Control Board")
+st.markdown("## 📊 TQ / RFI Control Dashboard")
 
 
 # =========================
-# ROW 1 (BIG IMPACT VISUALS)
+# FORCE 2×2 GRID (EQUAL PANELS)
 # =========================
-col1, col2 = st.columns([1.4, 1], gap="large")
 
-with col1:
-    render_trend(df)   # BIGGEST visual (trend always dominates)
+row1_col1, row1_col2 = st.columns(2, gap="large")
+row2_col1, row2_col2 = st.columns(2, gap="large")
 
-with col2:
+
+with row1_col1:
+    st.container()
+    render_trend(df)
+
+with row1_col2:
+    st.container()
     render_outstanding_line(df, total=len(df))
 
-
-# =========================
-# ROW 2 (SUPPORTING INTELLIGENCE)
-# =========================
-col3, col4 = st.columns([1, 1.2], gap="large")
-
-with col3:
+with row2_col1:
+    st.container()
     render_age_outstanding(df)
 
-with col4:
+with row2_col2:
+    st.container()
     render_tracker(df)

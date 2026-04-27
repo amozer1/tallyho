@@ -13,7 +13,7 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # SAFE DATE PARSING (UK FORMAT)
+    # REAL CLOSURE DATE
     # =========================
     df["reply date"] = pd.to_datetime(
         df["reply date"],
@@ -22,8 +22,6 @@ def render_trend(df):
     )
 
     df = df[df["reply date"].notna()].copy()
-
-    # ONLY CLOSED ITEMS (flow of completions)
     df = df[df["status"].str.lower() == "closed"].copy()
 
     # =========================
@@ -32,7 +30,7 @@ def render_trend(df):
     df["month"] = df["reply date"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
-    # GROUP BY MONTH + TYPE
+    # GROUP
     # =========================
     grouped = df.groupby(["month", "doc type"]).size().unstack(fill_value=0)
 
@@ -44,49 +42,61 @@ def render_trend(df):
     grouped = grouped.sort_index().reset_index()
 
     # =========================
-    # FLOW BALANCE (STACKED AREA STYLE)
+    # PLOT (CLEAR COMPARISON STYLE)
     # =========================
     fig = go.Figure()
 
-    # RFI area (base)
+    fig.add_trace(go.Bar(
+        x=grouped["month"],
+        y=grouped["RFI"],
+        name="RFI Closed",
+        marker=dict(color="#1f77b4")
+    ))
+
+    fig.add_trace(go.Bar(
+        x=grouped["month"],
+        y=grouped["TQ"],
+        name="TQ Closed",
+        marker=dict(color="#2ca02c")
+    ))
+
+    # =========================
+    # OVERLAY MARKERS (OPTIONAL CLARITY BOOST)
+    # =========================
     fig.add_trace(go.Scatter(
         x=grouped["month"],
         y=grouped["RFI"],
-        mode="lines",
-        name="RFI Closed",
-        line=dict(color="#1f77b4", width=2),
-        fill="tozeroy"
+        mode="markers",
+        name="RFI Points",
+        marker=dict(color="#1f77b4", size=7),
+        showlegend=False
     ))
 
-    # TQ stacked on RFI (flow layer)
     fig.add_trace(go.Scatter(
         x=grouped["month"],
-        y=grouped["RFI"] + grouped["TQ"],
-        mode="lines",
-        name="TQ Closed",
-        line=dict(color="#2ca02c", width=2),
-        fill="tonexty"
+        y=grouped["TQ"],
+        mode="markers",
+        name="TQ Points",
+        marker=dict(color="#2ca02c", size=7),
+        showlegend=False
     ))
 
     # =========================
-    # LAYOUT (CLEAN DASHBOARD STYLE)
+    # LAYOUT
     # =========================
     fig.update_layout(
-        title="Closure Flow Balance (RFI vs TQ)",
+        title="Monthly Closures (RFI vs TQ)",
         template="plotly_white",
+        barmode="group",
         height=500,
         hovermode="x unified",
         legend=dict(orientation="h", y=1.02),
-
         xaxis=dict(
-            title="Month (Actual Data)",
+            title="Month",
             type="date",
             tickformat="%b %Y"
         ),
-
-        yaxis=dict(
-            title="Closed Volume"
-        )
+        yaxis=dict(title="Closed Count")
     )
 
     st.plotly_chart(fig, use_container_width=True)

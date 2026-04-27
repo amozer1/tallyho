@@ -28,16 +28,19 @@ df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 st.markdown("## 📊 TQ / RFI Control Dashboard")
 
 # =========================
-# 2x2 GRID LAYOUT
+# ROW 1 (PRIORITY VIEW)
 # =========================
 row1_col1, row1_col2 = st.columns(2, gap="large")
 
 with row1_col1:
-    render_trend(df)
+    render_outstanding_line(df, total=len(df))   # 👈 NOW FIRST (IMPORTANT SIGNAL)
 
 with row1_col2:
-    render_outstanding_line(df, total=len(df))
+    render_trend(df)
 
+# =========================
+# ROW 2 (SUPPORTING VIEW)
+# =========================
 row2_col1, row2_col2 = st.columns(2, gap="large")
 
 with row2_col1:

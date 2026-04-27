@@ -13,31 +13,30 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # DATE PARSING
+    # DATE HANDLING (YOUR DATA)
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-    # Create clean monthly buckets (IMPORTANT: consistent type)
     df["month_sent"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
     df["month_closed"] = df["reply date"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
-    # SPLIT DATASETS
+    # SPLIT TYPES
     # =========================
     rfi = df[df["doc type"] == "RFI"]
     tq = df[df["doc type"] == "TQ"]
 
     # =========================
-    # BUILD TIME SERIES
+    # SERIES BUILDER
     # =========================
-    def build_series(data, sent_col, closed_col):
+    def build(data):
 
-        raised = data.groupby(sent_col).size().reset_index(name="raised")
+        raised = data.groupby("month_sent").size().reset_index(name="raised")
 
         closed = (
             data[data["status"].str.lower() == "closed"]
-            .groupby(closed_col)
+            .groupby("month_closed")
             .size()
             .reset_index(name="closed")
         )
@@ -45,84 +44,90 @@ def render_trend(df):
         merged = pd.merge(
             raised,
             closed,
-            left_on=sent_col,
-            right_on=closed_col,
+            left_on="month_sent",
+            right_on="month_closed",
             how="outer"
         ).fillna(0)
 
-        merged["month"] = merged[sent_col].fillna(merged[closed_col])
-
-        # FINAL FIX: enforce datetime consistency
+        merged["month"] = merged["month_sent"].fillna(merged["month_closed"])
         merged["month"] = pd.to_datetime(merged["month"], errors="coerce")
 
         merged = merged.sort_values("month")
 
+        merged["backlog"] = merged["raised"].cumsum() - merged["closed"].cumsum()
+
         return merged
 
-    rfi_ts = build_series(rfi, "month_sent", "month_closed")
-    tq_ts = build_series(tq, "month_sent", "month_closed")
+    rfi_ts = build(rfi)
+    tq_ts = build(tq)
 
     # =========================
-    # SPARKLINE FUNCTION
+    # SINGLE CLEAN FIGURE
     # =========================
-    def sparkline(x, y):
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=x,
-            y=y,
-            mode="lines",
-            line=dict(width=2)
-        ))
-
-        fig.update_layout(
-            height=180,
-            margin=dict(l=10, r=10, t=20, b=10),
-            template="plotly_white",
-            xaxis=dict(
-                title=None,
-                showgrid=False,
-                tickformat="%Y-%m"
-            ),
-            yaxis=dict(
-                title=None,
-                showgrid=False
-            ),
-            showlegend=False
-        )
-
-        return fig
+    fig = go.Figure()
 
     # =========================
-    # 4-PANEL DASHBOARD
+    # RFI (BLUE FAMILY)
     # =========================
-    col1, col2, col3, col4 = st.columns(4)
+    fig.add_trace(go.Scatter(
+        x=rfi_ts["month"],
+        y=rfi_ts["raised"],
+        mode="lines+markers",
+        name="RFI Raised",
+        line=dict(color="#1f77b4", width=3)
+    ))
 
-    with col1:
-        st.markdown("### RFI Raised")
-        st.plotly_chart(
-            sparkline(rfi_ts["month"], rfi_ts["raised"]),
-            use_container_width=True
-        )
+    fig.add_trace(go.Scatter(
+        x=rfi_ts["month"],
+        y=rfi_ts["closed"],
+        mode="lines+markers",
+        name="RFI Closed",
+        line=dict(color="#6baed6", width=3)
+    ))
 
-    with col2:
-        st.markdown("### RFI Closed")
-        st.plotly_chart(
-            sparkline(rfi_ts["month"], rfi_ts["closed"]),
-            use_container_width=True
-        )
+    # =========================
+    # TQ (GREEN FAMILY)
+    # =========================
+    fig.add_trace(go.Scatter(
+        x=tq_ts["month"],
+        y=tq_ts["raised"],
+        mode="lines+markers",
+        name="TQ Raised",
+        line=dict(color="#2ca02c", width=3)
+    ))
 
-    with col3:
-        st.markdown("### TQ Raised")
-        st.plotly_chart(
-            sparkline(tq_ts["month"], tq_ts["raised"]),
-            use_container_width=True
-        )
+    fig.add_trace(go.Scatter(
+        x=tq_ts["month"],
+        y=tq_ts["closed"],
+        mode="lines+markers",
+        name="TQ Closed",
+        line=dict(color="#98df8a", width=3)
+    ))
 
-    with col4:
-        st.markdown("### TQ Closed")
-        st.plotly_chart(
-            sparkline(tq_ts["month"], tq_ts["closed"]),
-            use_container_width=True
-        )
+    # =========================
+    # BACKLOG (ALL WORK)
+    # =========================
+    total = df.copy()
+    total = build(total)
+
+    fig.add_trace(go.Scatter(
+        x=total["month"],
+        y=total["backlog"],
+        mode="lines",
+        name="Total Backlog",
+        line=dict(color="#ff7f0e", width=4, dash="dash")
+    ))
+
+    # =========================
+    # LAYOUT (CLEAN EXECUTIVE STYLE)
+    # =========================
+    fig.update_layout(
+        title="TQ / RFI Trend Overview",
+        template="plotly_white",
+        height=520,
+        hovermode="x unified",
+        legend=dict(orientation="h", y=1.02),
+        margin=dict(l=40, r=40, t=60, b=40)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)

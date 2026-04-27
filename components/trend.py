@@ -16,10 +16,13 @@ def render_trend(df):
     # ONLY VALID TIME FIELD
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
+
+    # keep ONLY real months from your dataset
+    df = df[df["date sent"].notna()]
     df["month"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
-    # STATE (ONLY SOURCE OF TRUTH)
+    # STATE
     # =========================
     df["is_closed"] = df["status"].str.lower().eq("closed")
 
@@ -30,20 +33,20 @@ def render_trend(df):
     rfi = df[df["doc type"] == "RFI"]
 
     # =========================
-    # CREATED SERIES (DIRECT FROM DATA)
+    # CREATED (TRUE EVENTS)
     # =========================
     tq_created = tq.groupby("month").size().reset_index(name="tq_created")
     rfi_created = rfi.groupby("month").size().reset_index(name="rfi_created")
 
     # =========================
-    # CLOSED SERIES (STATE-BASED)
+    # CLOSED (STATE ONLY)
     # =========================
     closed = df[df["is_closed"]].groupby("month").size().reset_index(name="closed")
 
     # =========================
-    # MERGE ALL ON SAME TIMELINE
+    # BUILD ONLY FROM REAL MONTHS IN DATA
     # =========================
-    all_months = pd.DataFrame({"month": df["month"].dropna().unique()})
+    all_months = pd.DataFrame({"month": sorted(df["month"].unique())})
 
     data = all_months.merge(tq_created, on="month", how="left")
     data = data.merge(rfi_created, on="month", how="left")
@@ -52,7 +55,7 @@ def render_trend(df):
     data = data.fillna(0).sort_values("month")
 
     # =========================
-    # PLOT (ONLY 3 LINES)
+    # PLOT (3 LINES ONLY)
     # =========================
     fig = go.Figure()
 
@@ -76,15 +79,15 @@ def render_trend(df):
         x=data["month"],
         y=data["closed"],
         mode="lines+markers",
-        name="Closed (All)",
+        name="Closed",
         line=dict(color="#ff7f0e", width=4)
     ))
 
     # =========================
-    # CLEAN DASHBOARD STYLE
+    # CLEAN LAYOUT
     # =========================
     fig.update_layout(
-        title="TQ / RFI Creation & Closure Trend",
+        title="TQ / RFI Trends (Based Only on Actual Register Dates)",
         template="plotly_white",
         height=520,
         hovermode="x unified",

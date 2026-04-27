@@ -3,6 +3,57 @@ import streamlit as st
 import plotly.graph_objects as go
 
 
+# =========================
+# CARD SYSTEM (GLOBAL STYLE)
+# =========================
+CARD = """
+<div style="
+    background: #ffffff;
+    padding: 18px;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+">
+    {content}
+</div>
+"""
+
+KPI_CARD = """
+<div style="
+    background: #f9fafb;
+    padding: 16px;
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: inset 0 0 0 1px #e5e7eb;
+">
+    <div style="font-size: 13px; color: #6b7280;">{title}</div>
+    <div style="font-size: 24px; font-weight: 700; margin-top: 6px;">
+        {value}
+    </div>
+</div>
+"""
+
+
+# =========================
+# TITLE CARD
+# =========================
+def render_title(title, subtitle=""):
+    st.markdown(
+        CARD.format(content=f"""
+        <div style="font-size: 20px; font-weight: 700;">
+            {title}
+        </div>
+        <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">
+            {subtitle}
+        </div>
+        """),
+        unsafe_allow_html=True
+    )
+
+
+# =========================
+# MAIN FUNCTION
+# =========================
 def render_trend(df):
 
     if df is None or df.empty:
@@ -44,78 +95,37 @@ def render_trend(df):
     closed_count = int(df["is_closed"].sum())
 
     # =========================
-    # CARD WRAPPER STYLE
-    # =========================
-    card_container = """
-        <div style="
-            background: #ffffff;
-            padding: 18px;
-            border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            margin-bottom: 18px;
-        ">
-    """
-
-    card_close = "</div>"
-
-    # =========================
     # TITLE CARD
     # =========================
-    st.markdown(card_container, unsafe_allow_html=True)
-    st.markdown(
-        """
-        <div style="
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        ">
-        RFI / TQ Workflow Intelligence
-        </div>
-
-        <div style="
-            font-size: 13px;
-            color: #6b7280;
-        ">
-        Live tracking of open vs closed information requests over time
-        </div>
-        """,
-        unsafe_allow_html=True
+    render_title(
+        "RFI / TQ Workflow Intelligence",
+        "Open vs Closed tracking over time"
     )
-    st.markdown(card_close, unsafe_allow_html=True)
 
     # =========================
-    # KPI CARDS (INSIDE WRAPPER STYLE)
+    # KPI CARDS ROW
     # =========================
-    kpi_card = """
-        <div style="
-            background: #f9fafb;
-            padding: 16px;
-            border-radius: 14px;
-            text-align: center;
-            box-shadow: inset 0 0 0 1px #e5e7eb;
-        ">
-            <div style="font-size: 13px; color: #6b7280;">{title}</div>
-            <div style="font-size: 24px; font-weight: 700; margin-top: 6px;">
-                {value}
-            </div>
-        </div>
-    """
-
     col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.markdown(kpi_card.format(title="Total Items", value=total), unsafe_allow_html=True)
+    col1.markdown(
+        KPI_CARD.format(title="Total Items", value=total),
+        unsafe_allow_html=True
+    )
 
-    with col2:
-        st.markdown(kpi_card.format(title="Open Items", value=open_count), unsafe_allow_html=True)
+    col2.markdown(
+        KPI_CARD.format(title="Open Items", value=open_count),
+        unsafe_allow_html=True
+    )
 
-    with col3:
-        st.markdown(kpi_card.format(title="Closed Items", value=closed_count), unsafe_allow_html=True)
+    col3.markdown(
+        KPI_CARD.format(title="Closed Items", value=closed_count),
+        unsafe_allow_html=True
+    )
 
     # =========================
-    # CHART INSIDE CARD
+    # CHART CARD
     # =========================
-    st.markdown(card_container, unsafe_allow_html=True)
+    st.markdown(CARD.format(content=""), unsafe_allow_html=True)
 
     fig = go.Figure()
 
@@ -145,4 +155,4 @@ def render_trend(df):
 
     st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown(card_close, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)

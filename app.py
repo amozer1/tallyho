@@ -6,6 +6,7 @@ from components.header import render_header
 from components.tracker import render_tracker
 from components.outstanding import render_outstanding_line
 from components.age_outstanding import render_age_outstanding
+from components.trend import render_trend
 
 # =========================
 # PAGE CONFIG
@@ -16,9 +17,13 @@ st.set_page_config(
 )
 
 # =========================
-# UI FRAMEWORK
+# SIDEBAR
 # =========================
-render_sidebar()
+page = render_sidebar()
+
+# =========================
+# HEADER
+# =========================
 render_header()
 
 # =========================
@@ -32,7 +37,7 @@ def load_data():
 df = load_data()
 
 # =========================
-# CLEAN DATA (GLOBAL)
+# CLEAN DATA
 # =========================
 df = df.copy()
 df.columns = [c.strip().lower() for c in df.columns]
@@ -64,17 +69,19 @@ rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
 overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
 # =========================
-# TOP ROW (SIDE BY SIDE)
+# PAGE ROUTING
 # =========================
-col1, col2 = st.columns([1, 1], gap="small")
+if page == "Overview":
 
-with col1:
-    render_outstanding_line(df, total)
+    col1, col2 = st.columns([1, 1], gap="small")
 
-with col2:
-    render_age_outstanding(df)
+    with col1:
+        render_outstanding_line(df, total)
 
-# =========================
-# MAIN TRACKER DASHBOARD
-# =========================
-render_tracker(df)
+    with col2:
+        render_age_outstanding(df)
+
+    render_tracker(df)
+
+elif page == "Trend":
+    render_trend(df)

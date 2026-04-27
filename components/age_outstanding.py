@@ -11,7 +11,7 @@ def render_age_outstanding(df):
     df = df.copy()
 
     # =========================
-    # CLEAN + TRUE DATA LOGIC
+    # CLEAN DATA
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
@@ -20,7 +20,7 @@ def render_age_outstanding(df):
     df["age"] = df["age"].fillna(0)
 
     # =========================
-    # AGE BANDS (USING YOUR REAL DATA LOGIC)
+    # AGE BANDS
     # =========================
     bins = [-1, 2, 7, 14, 30, 10_000]
     labels = ["0–2 days", "3–7 days", "8–14 days", "15–30 days", ">30 days"]
@@ -33,7 +33,7 @@ def render_age_outstanding(df):
     pct = (summary / total * 100).round(1) if total else 0
 
     # =========================
-    # COLOURS (RISK-BASED)
+    # COLOURS
     # =========================
     def color_map(label):
         if "0–2" in label:
@@ -50,69 +50,62 @@ def render_age_outstanding(df):
     colors = [color_map(l) for l in labels]
 
     # =========================
-    # CARD LAYOUT (TITLE INSIDE CARD)
+    # CARD TITLE
     # =========================
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.markdown("""
+    <div style="
+        background:#0f172a;
+        border:1px solid #1f2937;
+        border-radius:12px;
+        padding:8px 10px;
+        margin-bottom:6px;
+        text-align:center;
+        font-size:13px;
+        font-weight:800;
+        color:white;
+    ">
+        📊 Outstanding by Age
+    </div>
+    """, unsafe_allow_html=True)
 
-    with col2:
+    # =========================
+    # CHART
+    # =========================
+    fig = go.Figure()
 
-        st.markdown("""
-        <div style="
-            background:#0f172a;
-            border:1px solid #1f2937;
-            border-radius:12px;
-            padding:8px 10px;
-            margin-bottom:6px;
-            text-align:center;
-            font-size:13px;
-            font-weight:800;
-            color:white;
-        ">
-            📊 Outstanding by Age
-        </div>
-        """, unsafe_allow_html=True)
+    fig.add_trace(go.Bar(
+        x=summary.values,
+        y=labels,
+        orientation="h",
+        marker=dict(color=colors),
+        text=[f"{v} ({p}%)" for v, p in zip(summary.values, pct)],
+        textposition="outside",
+        hovertemplate="Items: %{x}<extra></extra>"
+    ))
 
-        # =========================
-        # CHART
-        # =========================
-        fig = go.Figure()
+    fig.update_layout(
+        height=200,
+        margin=dict(l=25, r=25, t=10, b=10),
+        paper_bgcolor="#0f172a",
+        plot_bgcolor="#0f172a",
+        bargap=0.35,
+        font=dict(color="white", size=11),
 
-        fig.add_trace(go.Bar(
-            x=summary.values,
-            y=labels,
-            orientation="h",
-            marker=dict(color=colors),
-            text=[f"{v} ({p}%)" for v, p in zip(summary.values, pct)],
-            textposition="outside",
-            hovertemplate="Items: %{x}<extra></extra>"
-        ))
+        xaxis=dict(
+            title="Number of Items",
+            showgrid=True,
+            gridcolor="rgba(255,255,255,0.08)",
+            zeroline=True,
+            zerolinecolor="rgba(255,255,255,0.35)",
+            linecolor="rgba(255,255,255,0.25)",
+            tickfont=dict(color="white"),
+            title_font=dict(color="white")
+        ),
 
-        # =========================
-        # FINAL FIX: AXIS + BASELINE
-        # =========================
-        fig.update_layout(
-            height=200,
-            margin=dict(l=25, r=25, t=10, b=10),
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
-            bargap=0.35,
-            font=dict(color="white", size=11),
-
-            xaxis=dict(
-                title="Number of Items",
-                showgrid=True,
-                gridcolor="rgba(255,255,255,0.08)",
-                zeroline=True,  # 🔥 baseline line (your request)
-                zerolinecolor="rgba(255,255,255,0.35)",
-                linecolor="rgba(255,255,255,0.25)",  # axis line visible
-                tickfont=dict(color="white"),
-                title_font=dict(color="white")
-            ),
-
-            yaxis=dict(
-                showgrid=False,
-                tickfont=dict(color="white")
-            )
+        yaxis=dict(
+            showgrid=False,
+            tickfont=dict(color="white")
         )
+    )
 
-        st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)

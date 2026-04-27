@@ -67,7 +67,7 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # CORE LOGIC (SLA MODEL)
+    # CORE LOGIC
     # =========================
     open_df = df[df[status_col] == "OPEN"]
 
@@ -114,14 +114,14 @@ def render_outstanding_line(df, total):
         background:#0f172a;
         border:1px solid #1f2937;
         border-radius:10px;
-        padding:8px 10px;
-        margin-bottom:10px;
+        padding:6px 10px;
+        margin-bottom:6px;
         text-align:center;
         font-size:12px;
         font-weight:700;
         color:{color};
     ">
-        🚨 Outstanding (>7 Days SLA) — {status}
+        🚨 Outstanding (>7 Days) — {status}
     </div>
     """, unsafe_allow_html=True)
 
@@ -132,14 +132,14 @@ def render_outstanding_line(df, total):
 
     with col1:
         st.metric(
-            label="Total Overdue (SLA Breach)",
+            label="Total Overdue",
             value=f"{overdue_total}",
             delta=f"{overdue_pct}% of total"
         )
 
     with col2:
         st.markdown(f"""
-        <div style="padding-top:10px;">
+        <div style="padding-top:6px;">
             <div style="font-size:12px; font-weight:700; color:{color};">
                 {impact}
             </div>
@@ -149,17 +149,14 @@ def render_outstanding_line(df, total):
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
     # =========================
-    # BAR CHART
+    # VERTICAL BAR CHART
     # =========================
     fig = go.Figure()
 
     fig.add_trace(go.Bar(
-        x=[overdue_tq, overdue_rfi],
-        y=["TQ Overdue", "RFI Overdue"],
-        orientation="h",
+        x=["TQ Overdue", "RFI Overdue"],
+        y=[overdue_tq, overdue_rfi],
         marker=dict(color=["#f97316", "#38bdf8"]),
         text=[
             f"{overdue_tq} ({tq_pct}%)",
@@ -169,13 +166,23 @@ def render_outstanding_line(df, total):
     ))
 
     fig.update_layout(
-        height=320,
+        height=220,
         margin=dict(l=15, r=15, t=10, b=10),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
         font=dict(color="white", size=11),
-        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.08)"),
-        yaxis=dict(showgrid=False)
+
+        xaxis=dict(
+            showgrid=False,
+            tickfont=dict(color="white")
+        ),
+
+        yaxis=dict(
+            title="Overdue Items",
+            showgrid=True,
+            gridcolor="rgba(255,255,255,0.08)",
+            tickfont=dict(color="white")
+        )
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -187,7 +194,7 @@ def render_outstanding_line(df, total):
     <div style="
         font-size:11px;
         color:#cbd5e1;
-        margin-top:8px;
+        margin-top:2px;
     ">
         Status: <span style="color:{color}; font-weight:600;">{impact}</span>
     </div>

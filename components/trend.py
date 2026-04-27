@@ -13,47 +13,42 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # DATE HANDLING (YOUR DATA)
+    # ONLY VALID TIME FIELD
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
-    df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
-
-    df["month_sent"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
-    df["month_closed"] = df["reply date"].dt.to_period("M").dt.to_timestamp()
+    df["month"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
-    # SPLIT TYPES
+    # ONLY VALID STATE FIELD
+    # =========================
+    df["is_closed"] = df["status"].str.lower().eq("closed")
+
+    # =========================
+    # SPLIT BY TYPE (EXISTING FIELD)
     # =========================
     rfi = df[df["doc type"] == "RFI"]
     tq = df[df["doc type"] == "TQ"]
 
     # =========================
-    # SERIES BUILDER
+    # PURE TRANSFORMATION (NO INVENTION)
     # =========================
     def build(data):
 
-        raised = data.groupby("month_sent").size().reset_index(name="raised")
+        # Raised = actual records in that month
+        raised = data.groupby("month").size().reset_index(name="raised")
 
+        # Closed = ONLY status-based filtering (no Reply Date used)
         closed = (
-            data[data["status"].str.lower() == "closed"]
-            .groupby("month_closed")
+            data[data["is_closed"]]
+            .groupby("month")
             .size()
             .reset_index(name="closed")
         )
 
-        merged = pd.merge(
-            raised,
-            closed,
-            left_on="month_sent",
-            right_on="month_closed",
-            how="outer"
-        ).fillna(0)
-
-        merged["month"] = merged["month_sent"].fillna(merged["month_closed"])
-        merged["month"] = pd.to_datetime(merged["month"], errors="coerce")
-
+        merged = pd.merge(raised, closed, on="month", how="outer").fillna(0)
         merged = merged.sort_values("month")
 
+        # Backlog is mathematically derived (not assumed)
         merged["backlog"] = merged["raised"].cumsum() - merged["closed"].cumsum()
 
         return merged
@@ -62,13 +57,11 @@ def render_trend(df):
     tq_ts = build(tq)
 
     # =========================
-    # SINGLE CLEAN FIGURE
+    # SINGLE CLEAN GRAPH
     # =========================
     fig = go.Figure()
 
-    # =========================
-    # RFI (BLUE FAMILY)
-    # =========================
+    # RFI
     fig.add_trace(go.Scatter(
         x=rfi_ts["month"],
         y=rfi_ts["raised"],
@@ -82,12 +75,10 @@ def render_trend(df):
         y=rfi_ts["closed"],
         mode="lines+markers",
         name="RFI Closed",
-        line=dict(color="#6baed6", width=3)
+        line=dict(color="#6baed6", width=3, dash="dot")
     ))
 
-    # =========================
-    # TQ (GREEN FAMILY)
-    # =========================
+    # TQ
     fig.add_trace(go.Scatter(
         x=tq_ts["month"],
         y=tq_ts["raised"],
@@ -101,28 +92,32 @@ def render_trend(df):
         y=tq_ts["closed"],
         mode="lines+markers",
         name="TQ Closed",
-        line=dict(color="#98df8a", width=3)
+        line=dict(color="#98df8a", width=3, dash="dot")
     ))
 
-    # =========================
-    # BACKLOG (ALL WORK)
-    # =========================
-    total = df.copy()
-    total = build(total)
+    # BACKLOG (DERIVED ONLY)
+    total = df.groupby("month").size().reset_index(name="raised")
+
+    total_closed = df[df["is_closed"]].groupby("month").size().reset_index(name="closed")
+
+    total = pd.merge(total, total_closed, on="month", how="outer").fillna(0)
+    total = total.sort_values("month")
+
+    total["backlog"] = total["raised"].cumsum() - total["closed"].cumsum()
 
     fig.add_trace(go.Scatter(
         x=total["month"],
         y=total["backlog"],
         mode="lines",
-        name="Total Backlog",
+        name="Backlog",
         line=dict(color="#ff7f0e", width=4, dash="dash")
     ))
 
     # =========================
-    # LAYOUT (CLEAN EXECUTIVE STYLE)
+    # CLEAN LAYOUT
     # =========================
     fig.update_layout(
-        title="TQ / RFI Trend Overview",
+        title="TQ / RFI Trend (Derived from Register Data Only)",
         template="plotly_white",
         height=520,
         hovermode="x unified",

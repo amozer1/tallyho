@@ -12,44 +12,35 @@ def render_trend(df):
     df = df.copy()
 
     # =========================
-    # CLEAN COLUMN NAMES
+    # CLEAN COLUMNS
     # =========================
     df.columns = df.columns.str.strip().str.lower()
 
-    required_cols = ["date sent", "status"]
-
-    for col in required_cols:
-        if col not in df.columns:
-            st.error(f"Missing required column: {col}")
-            return
+    if "date sent" not in df.columns or "status" not in df.columns:
+        st.error("Missing required columns: 'date sent' or 'status'")
+        return
 
     # =========================
-    # CLEAN DATES
+    # CLEAN DATA
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
-
-    # drop invalid dates
     df = df.dropna(subset=["date sent"])
 
-    # =========================
-    # SAFE STATUS HANDLING
-    # =========================
     df["status"] = df["status"].fillna("").str.lower()
 
     df["is_open"] = df["status"].eq("open")
     df["is_closed"] = df["status"].eq("closed")
 
     # =========================
-    # SORT FOR TIME SERIES
+    # SORT + CUMULATIVE FLOW
     # =========================
     df_sorted = df.sort_values("date sent")
 
-    # cumulative counts
     df_sorted["open_cum"] = df_sorted["is_open"].cumsum()
     df_sorted["closed_cum"] = df_sorted["is_closed"].cumsum()
 
     # =========================
-    # PLOT
+    # TREND LINE
     # =========================
     fig = go.Figure()
 
@@ -72,21 +63,41 @@ def render_trend(df):
         xaxis_title="Date Sent",
         yaxis_title="Cumulative Count",
         template="plotly_white",
-        height=500,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        height=480,
+        legend=dict(orientation="h")
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
     # =========================
-    # KPIs
+    # KPI CARDS (CONSISTENT UI)
     # =========================
+    total = len(df)
+    open_count = int(df["is_open"].sum())
+    closed_count = int(df["is_closed"].sum())
+
+    card_style = """
+        <div style="
+            background: #ffffff;
+            padding: 18px;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            text-align: center;
+        ">
+            <div style="font-size: 14px; color: #6b7280;">{title}</div>
+            <div style="font-size: 26px; font-weight: 700; margin-top: 6px;">
+                {value}
+            </div>
+        </div>
+    """
+
     col1, col2, col3 = st.columns(3)
 
-    total = len(df)
-    open_count = df["is_open"].sum()
-    closed_count = df["is_closed"].sum()
+    with col1:
+        st.markdown(card_style.format(title="Total Items", value=total), unsafe_allow_html=True)
 
-    col1.metric("Total Items", int(total))
-    col2.metric("Open", int(open_count))
-    col3.metric("Closed", int(closed_count))
+    with col2:
+        st.markdown(card_style.format(title="Open Items", value=open_count), unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(card_style.format(title="Closed Items", value=closed_count), unsafe_allow_html=True)

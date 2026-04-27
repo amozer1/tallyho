@@ -13,12 +13,13 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # VALID DATE ONLY (YOUR DATA)
+    # STRICT DATE CLEANING
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df = df[df["date sent"].notna()].copy()
 
-    df["month"] = df["date sent"].dt.to_period("M").astype(str)
+    # REAL TIME AXIS (NO STRINGS)
+    df["month"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
     # STATE
@@ -26,74 +27,75 @@ def render_trend(df):
     df["is_closed"] = df["status"].str.lower().eq("closed")
 
     # =========================
-    # MONTHLY COUNTS
+    # AGGREGATION (REAL MONTHS ONLY)
     # =========================
-    monthly = df.groupby(["month", "doc type"]).size().unstack(fill_value=0)
+    grouped = df.groupby(["month", "doc type"]).size().unstack(fill_value=0)
 
-    if "RFI" not in monthly.columns:
-        monthly["RFI"] = 0
-    if "TQ" not in monthly.columns:
-        monthly["TQ"] = 0
+    if "RFI" not in grouped.columns:
+        grouped["RFI"] = 0
+    if "TQ" not in grouped.columns:
+        grouped["TQ"] = 0
 
-    monthly = monthly.reset_index().sort_values("month")
+    closed = df[df["is_closed"]].groupby("month").size()
 
-    closed = df[df["is_closed"]].groupby("month").size().reset_index(name="closed")
+    data = grouped.join(closed.rename("Closed"), how="outer").fillna(0)
 
-    data = monthly.merge(closed, on="month", how="left").fillna(0)
-
-    # =========================
-    # STACK LOGIC (TRUE 2D STACKED LINE)
-    # =========================
-    data["rfi_stack"] = data["RFI"]
-    data["tq_stack"] = data["RFI"] + data["TQ"]
-    data["closed_stack"] = data["RFI"] + data["TQ"] + data["closed"]
+    # IMPORTANT: enforce real ordering
+    data = data.sort_index()
 
     # =========================
-    # PLOT
+    # STACK LOGIC (VISUAL ONLY)
+    # =========================
+    data["RFI_stack"] = data["RFI"]
+    data["TQ_stack"] = data["RFI"] + data["TQ"]
+    data["Closed_stack"] = data["RFI"] + data["TQ"] + data["Closed"]
+
+    # =========================
+    # PLOT (REAL DATES ON X-AXIS)
     # =========================
     fig = go.Figure()
 
-    # RFI base
     fig.add_trace(go.Scatter(
-        x=data["month"],
-        y=data["rfi_stack"],
+        x=data.index,
+        y=data["RFI_stack"],
         mode="lines+markers",
         name="RFI Created",
         line=dict(color="#1f77b4", width=3),
         marker=dict(size=7)
     ))
 
-    # TQ stacked
     fig.add_trace(go.Scatter(
-        x=data["month"],
-        y=data["tq_stack"],
+        x=data.index,
+        y=data["TQ_stack"],
         mode="lines+markers",
-        name="TQ Created (Stacked)",
+        name="TQ Created",
         line=dict(color="#2ca02c", width=3),
         marker=dict(size=7)
     ))
 
-    # Closed stacked
     fig.add_trace(go.Scatter(
-        x=data["month"],
-        y=data["closed_stack"],
+        x=data.index,
+        y=data["Closed_stack"],
         mode="lines+markers",
-        name="Closed (Stacked)",
+        name="Closed",
         line=dict(color="#ff7f0e", width=4),
         marker=dict(size=8)
     ))
 
     # =========================
-    # CLEAN LAYOUT
+    # CRITICAL: FORCE REAL DATE AXIS
     # =========================
     fig.update_layout(
-        title="Stacked Line Chart (RFI / TQ / Closed)",
+        title="Stacked Trend (Real Date Axis Only)",
         template="plotly_white",
         height=500,
         hovermode="x unified",
         legend=dict(orientation="h", y=1.02),
-        xaxis_title="Month",
-        yaxis_title="Stacked Volume"
+        xaxis=dict(
+            title="Date Sent (Month)",
+            type="date"   # 🔥 THIS IS THE KEY FIX
+        ),
+        yaxis_title="Volume"
     )
 
     st.plotly_chart(fig, use_container_width=True)

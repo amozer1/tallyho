@@ -1,9 +1,8 @@
-import streamlit as st
 import pandas as pd
-import plotly.express as px
+import streamlit as st
+import plotly.graph_objects as go
 
-
-def render_trend(df):
+def render_tracker(df):
 
     if df is None or df.empty:
         st.warning("No data available.")
@@ -13,57 +12,63 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # CLEAN DATES (REAL ONLY)
+    # CLEAN DATES
     # =========================
-    df["date sent"] = pd.to_datetime(df["date sent"], format="%d/%m/%Y", errors="coerce")
-    df["reply date"] = pd.to_datetime(df["reply date"], format="%d/%m/%Y", errors="coerce")
+    df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
+    df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
     # =========================
-    # CREATED
+    # CREATE STATUS FLAGS
     # =========================
-    created = df.dropna(subset=["date sent"]).copy()
-    created["month"] = created["date sent"].dt.to_period("M").dt.to_timestamp()
-
-    created_counts = created.groupby(["month", "doc type"]).size().unstack(fill_value=0)
-    created_counts.columns = [f"{c} Created" for c in created_counts.columns]
+    df["is_open"] = df["status"].str.lower().eq("open")
+    df["is_closed"] = df["status"].str.lower().eq("closed")
 
     # =========================
-    # CLOSED
+    # TIME SERIES BUILD
     # =========================
-    closed = df[df["status"].str.lower() == "closed"].dropna(subset=["reply date"]).copy()
-    closed["month"] = closed["reply date"].dt.to_period("M").dt.to_timestamp()
+    df_sorted = df.sort_values("date sent")
 
-    closed_counts = closed.groupby(["month", "doc type"]).size().unstack(fill_value=0)
-    closed_counts.columns = [f"{c} Closed" for c in closed_counts.columns]
-
-    # =========================
-    # MERGE ALL
-    # =========================
-    data = created_counts.join(closed_counts, how="outer").fillna(0)
-    data = data.sort_index().reset_index()
-    data["month"] = data["month"].dt.strftime("%b %Y")
-
-    # reshape for heatmap
-    melted = data.melt(id_vars="month", var_name="Metric", value_name="Count")
+    df_sorted["open_cum"] = df_sorted["is_open"].cumsum()
+    df_sorted["closed_cum"] = df_sorted["is_closed"].cumsum()
 
     # =========================
-    # HEATMAP (MEETING FRIENDLY)
+    # LINE CHART
     # =========================
-    fig = px.density_heatmap(
-        melted,
-        x="Metric",
-        y="month",
-        z="Count",
-        text_auto=True,
-        color_continuous_scale="Blues",
-        title="RFI / TQ Monthly Flow Snapshot"
-    )
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=df_sorted["date sent"],
+        y=df_sorted["open_cum"],
+        mode="lines",
+        name="Open Items"
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=df_sorted["date sent"],
+        y=df_sorted["closed_cum"],
+        mode="lines",
+        name="Closed Items"
+    ))
 
     fig.update_layout(
+        title="RFI / TQ Workflow Trend",
+        xaxis_title="Date Sent",
+        yaxis_title="Cumulative Count",
         template="plotly_white",
-        height=520,
-        xaxis_title="",
-        yaxis_title="Month"
+        height=450
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # SIMPLE KPIs
+    # =========================
+    col1, col2, col3 = st.columns(3)
+
+    total = len(df)
+    open_count = df["is_open"].sum()
+    closed_count = df["is_closed"].sum()
+
+    col1.metric("Total Items", total)
+    col2.metric("Open", open_count)
+    col3.metric("Closed", closed_count)

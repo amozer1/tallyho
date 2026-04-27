@@ -19,105 +19,72 @@ def render_trend(df):
     df["month"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
-    # ONLY VALID STATE FIELD
+    # STATE (ONLY SOURCE OF TRUTH)
     # =========================
     df["is_closed"] = df["status"].str.lower().eq("closed")
 
     # =========================
-    # SPLIT BY TYPE (EXISTING FIELD)
+    # SPLIT TYPES
     # =========================
-    rfi = df[df["doc type"] == "RFI"]
     tq = df[df["doc type"] == "TQ"]
+    rfi = df[df["doc type"] == "RFI"]
 
     # =========================
-    # PURE TRANSFORMATION (NO INVENTION)
+    # CREATED SERIES (DIRECT FROM DATA)
     # =========================
-    def build(data):
-
-        # Raised = actual records in that month
-        raised = data.groupby("month").size().reset_index(name="raised")
-
-        # Closed = ONLY status-based filtering (no Reply Date used)
-        closed = (
-            data[data["is_closed"]]
-            .groupby("month")
-            .size()
-            .reset_index(name="closed")
-        )
-
-        merged = pd.merge(raised, closed, on="month", how="outer").fillna(0)
-        merged = merged.sort_values("month")
-
-        # Backlog is mathematically derived (not assumed)
-        merged["backlog"] = merged["raised"].cumsum() - merged["closed"].cumsum()
-
-        return merged
-
-    rfi_ts = build(rfi)
-    tq_ts = build(tq)
+    tq_created = tq.groupby("month").size().reset_index(name="tq_created")
+    rfi_created = rfi.groupby("month").size().reset_index(name="rfi_created")
 
     # =========================
-    # SINGLE CLEAN GRAPH
+    # CLOSED SERIES (STATE-BASED)
+    # =========================
+    closed = df[df["is_closed"]].groupby("month").size().reset_index(name="closed")
+
+    # =========================
+    # MERGE ALL ON SAME TIMELINE
+    # =========================
+    all_months = pd.DataFrame({"month": df["month"].dropna().unique()})
+
+    data = all_months.merge(tq_created, on="month", how="left")
+    data = data.merge(rfi_created, on="month", how="left")
+    data = data.merge(closed, on="month", how="left")
+
+    data = data.fillna(0).sort_values("month")
+
+    # =========================
+    # PLOT (ONLY 3 LINES)
     # =========================
     fig = go.Figure()
 
-    # RFI
     fig.add_trace(go.Scatter(
-        x=rfi_ts["month"],
-        y=rfi_ts["raised"],
+        x=data["month"],
+        y=data["tq_created"],
         mode="lines+markers",
-        name="RFI Raised",
-        line=dict(color="#1f77b4", width=3)
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=rfi_ts["month"],
-        y=rfi_ts["closed"],
-        mode="lines+markers",
-        name="RFI Closed",
-        line=dict(color="#6baed6", width=3, dash="dot")
-    ))
-
-    # TQ
-    fig.add_trace(go.Scatter(
-        x=tq_ts["month"],
-        y=tq_ts["raised"],
-        mode="lines+markers",
-        name="TQ Raised",
+        name="TQs Created",
         line=dict(color="#2ca02c", width=3)
     ))
 
     fig.add_trace(go.Scatter(
-        x=tq_ts["month"],
-        y=tq_ts["closed"],
+        x=data["month"],
+        y=data["rfi_created"],
         mode="lines+markers",
-        name="TQ Closed",
-        line=dict(color="#98df8a", width=3, dash="dot")
+        name="RFIs Created",
+        line=dict(color="#1f77b4", width=3)
     ))
-
-    # BACKLOG (DERIVED ONLY)
-    total = df.groupby("month").size().reset_index(name="raised")
-
-    total_closed = df[df["is_closed"]].groupby("month").size().reset_index(name="closed")
-
-    total = pd.merge(total, total_closed, on="month", how="outer").fillna(0)
-    total = total.sort_values("month")
-
-    total["backlog"] = total["raised"].cumsum() - total["closed"].cumsum()
 
     fig.add_trace(go.Scatter(
-        x=total["month"],
-        y=total["backlog"],
-        mode="lines",
-        name="Backlog",
-        line=dict(color="#ff7f0e", width=4, dash="dash")
+        x=data["month"],
+        y=data["closed"],
+        mode="lines+markers",
+        name="Closed (All)",
+        line=dict(color="#ff7f0e", width=4)
     ))
 
     # =========================
-    # CLEAN LAYOUT
+    # CLEAN DASHBOARD STYLE
     # =========================
     fig.update_layout(
-        title="TQ / RFI Trend (Derived from Register Data Only)",
+        title="TQ / RFI Creation & Closure Trend",
         template="plotly_white",
         height=520,
         hovermode="x unified",

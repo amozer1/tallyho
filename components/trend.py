@@ -13,22 +13,23 @@ def render_trend(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # DATE HANDLING
+    # DATE PARSING
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-    df["month_sent"] = df["date sent"].dt.to_period("M").astype(str)
-    df["month_closed"] = df["reply date"].dt.to_period("M").astype(str)
+    # Create clean monthly buckets (IMPORTANT: consistent type)
+    df["month_sent"] = df["date sent"].dt.to_period("M").dt.to_timestamp()
+    df["month_closed"] = df["reply date"].dt.to_period("M").dt.to_timestamp()
 
     # =========================
-    # SPLIT TYPES
+    # SPLIT DATASETS
     # =========================
     rfi = df[df["doc type"] == "RFI"]
     tq = df[df["doc type"] == "TQ"]
 
     # =========================
-    # AGGREGATION FUNCTION
+    # BUILD TIME SERIES
     # =========================
     def build_series(data, sent_col, closed_col):
 
@@ -41,9 +42,19 @@ def render_trend(df):
             .reset_index(name="closed")
         )
 
-        merged = pd.merge(raised, closed, left_on=sent_col, right_on=closed_col, how="outer").fillna(0)
+        merged = pd.merge(
+            raised,
+            closed,
+            left_on=sent_col,
+            right_on=closed_col,
+            how="outer"
+        ).fillna(0)
 
         merged["month"] = merged[sent_col].fillna(merged[closed_col])
+
+        # FINAL FIX: enforce datetime consistency
+        merged["month"] = pd.to_datetime(merged["month"], errors="coerce")
+
         merged = merged.sort_values("month")
 
         return merged
@@ -52,7 +63,7 @@ def render_trend(df):
     tq_ts = build_series(tq, "month_sent", "month_closed")
 
     # =========================
-    # SMALL LINE CHART
+    # SPARKLINE FUNCTION
     # =========================
     def sparkline(x, y):
 
@@ -69,41 +80,48 @@ def render_trend(df):
             height=180,
             margin=dict(l=10, r=10, t=20, b=10),
             template="plotly_white",
-            xaxis=dict(title=None, showgrid=False),
-            yaxis=dict(title=None, showgrid=False),
+            xaxis=dict(
+                title=None,
+                showgrid=False,
+                tickformat="%Y-%m"
+            ),
+            yaxis=dict(
+                title=None,
+                showgrid=False
+            ),
             showlegend=False
         )
 
         return fig
 
     # =========================
-    # 4-COLUMN LAYOUT
+    # 4-PANEL DASHBOARD
     # =========================
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.markdown("**RFI Raised**")
+        st.markdown("### RFI Raised")
         st.plotly_chart(
             sparkline(rfi_ts["month"], rfi_ts["raised"]),
             use_container_width=True
         )
 
     with col2:
-        st.markdown("**RFI Closed**")
+        st.markdown("### RFI Closed")
         st.plotly_chart(
             sparkline(rfi_ts["month"], rfi_ts["closed"]),
             use_container_width=True
         )
 
     with col3:
-        st.markdown("**TQ Raised**")
+        st.markdown("### TQ Raised")
         st.plotly_chart(
             sparkline(tq_ts["month"], tq_ts["raised"]),
             use_container_width=True
         )
 
     with col4:
-        st.markdown("**TQ Closed**")
+        st.markdown("### TQ Closed")
         st.plotly_chart(
             sparkline(tq_ts["month"], tq_ts["closed"]),
             use_container_width=True

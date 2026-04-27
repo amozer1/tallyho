@@ -69,7 +69,6 @@ def render_outstanding_line(df, total):
     # =========================
     # CORE LOGIC (SLA MODEL)
     # =========================
-
     open_df = df[df[status_col] == "OPEN"]
 
     overdue_df = open_df[
@@ -115,8 +114,8 @@ def render_outstanding_line(df, total):
         background:#0f172a;
         border:1px solid #1f2937;
         border-radius:10px;
-        padding:6px 10px;
-        margin-bottom:6px;
+        padding:8px 10px;
+        margin-bottom:10px;
         text-align:center;
         font-size:12px;
         font-weight:700;
@@ -140,7 +139,7 @@ def render_outstanding_line(df, total):
 
     with col2:
         st.markdown(f"""
-        <div style="padding-top:6px;">
+        <div style="padding-top:10px;">
             <div style="font-size:12px; font-weight:700; color:{color};">
                 {impact}
             </div>
@@ -150,8 +149,10 @@ def render_outstanding_line(df, total):
         </div>
         """, unsafe_allow_html=True)
 
+    st.markdown("<br>", unsafe_allow_html=True)
+
     # =========================
-    # BAR CHART (ONLY CHANGE IS HEIGHT)
+    # BAR CHART
     # =========================
     fig = go.Figure()
 
@@ -168,8 +169,8 @@ def render_outstanding_line(df, total):
     ))
 
     fig.update_layout(
-        height=240,  # ✅ FIXED: matches age_outstanding.py
-        margin=dict(l=15, r=15, t=5, b=5),
+        height=320,
+        margin=dict(l=15, r=15, t=10, b=10),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
         font=dict(color="white", size=11),
@@ -186,7 +187,7 @@ def render_outstanding_line(df, total):
     <div style="
         font-size:11px;
         color:#cbd5e1;
-        margin-top:2px;
+        margin-top:8px;
     ">
         Status: <span style="color:{color}; font-weight:600;">{impact}</span>
     </div>

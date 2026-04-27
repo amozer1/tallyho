@@ -12,15 +12,6 @@ def render_tracker(df):
     df = df.copy()
     df.columns = [c.strip().lower() for c in df.columns]
 
-    # =========================
-    # CLEAN FIELDS
-    # =========================
-    required = ["doc type", "date sent", "reply date", "status"]
-    for c in required:
-        if c not in df.columns:
-            st.error(f"Missing column: {c}")
-            return
-
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
@@ -45,7 +36,7 @@ def render_tracker(df):
     st.markdown("""
     <div style="
         text-align:center;
-        font-size:14px;
+        font-size:15px;
         font-weight:800;
         color:#E2E8F0;
         margin-bottom:10px;
@@ -55,113 +46,62 @@ def render_tracker(df):
     """, unsafe_allow_html=True)
 
     # =========================
-    # FIGURE
+    # BASE FIGURE (ONLY SHAPES)
     # =========================
     fig = go.Figure()
 
     fig.update_layout(
-        height=420,
+        height=320,
         margin=dict(l=0, r=0, t=0, b=0),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
-
-        xaxis=dict(
-            visible=False,
-            range=[0, 3],
-            fixedrange=True
-        ),
-
-        yaxis=dict(
-            visible=False,
-            range=[-0.2, 1.2],
-            fixedrange=True,
-            scaleanchor="x",
-            scaleratio=1
-        )
+        xaxis=dict(visible=False, range=[0, 3]),
+        yaxis=dict(visible=False, range=[0, 1], scaleanchor="x", scaleratio=1)
     )
 
-    # =========================
-    # CIRCLES (BIGGER + BALANCED)
-    # =========================
-    circles = [
-        (0.1, 0.05, 0.95, 0.95, "rgba(59,130,246,0.22)", "#60A5FA"),   # TQ
-        (1.05, 0.05, 1.95, 0.95, "rgba(168,85,247,0.25)", "#A855F7"),  # TOTAL
-        (2.0, 0.05, 2.9, 0.95, "rgba(34,197,94,0.22)", "#4ADE80")      # RFI
-    ]
+    # Circles only (NO TEXT HERE)
+    fig.add_shape(type="circle", x0=0.1, y0=0.1, x1=0.9, y1=0.9,
+                  line=dict(color="#60A5FA"), fillcolor="rgba(96,165,250,0.25)")
 
-    for x0, y0, x1, y1, fill, line in circles:
-        fig.add_shape(
-            type="circle",
-            x0=x0, y0=y0, x1=x1, y1=y1,
-            fillcolor=fill,
-            line=dict(color=line, width=2)
-        )
+    fig.add_shape(type="circle", x0=1.1, y0=0.1, x1=1.9, y1=0.9,
+                  line=dict(color="#A855F7"), fillcolor="rgba(168,85,247,0.25)")
 
-    # =========================
-    # CENTERS
-    # =========================
-    tq_x, tq_y = 0.55, 0.5
-    total_x, total_y = 1.5, 0.5
-    rfi_x, rfi_y = 2.45, 0.5
+    fig.add_shape(type="circle", x0=2.1, y0=0.1, x1=2.9, y1=0.9,
+                  line=dict(color="#4ADE80"), fillcolor="rgba(74,222,128,0.25)")
 
-    # =========================
-    # SAFE TEXT BLOCK
-    # =========================
-    def add_block(x, y, title, pct, count, color):
-
-        fig.add_annotation(
-            x=x, y=y+0.10,
-            text=f"<b>{title}</b>",
-            showarrow=False,
-            font=dict(color=color, size=13)
-        )
-
-        fig.add_annotation(
-            x=x, y=y,
-            text=f"<b>{pct}%</b>",
-            showarrow=False,
-            font=dict(color="white", size=22)
-        )
-
-        fig.add_annotation(
-            x=x, y=y-0.10,
-            text=f"<b>{count}</b>",
-            showarrow=False,
-            font=dict(color="white", size=26)
-        )
-
-    # =========================
-    # KPI BLOCKS
-    # =========================
-    add_block(tq_x, tq_y, "TQ Only", tq_pct, tq_total, "#60A5FA")
-    add_block(total_x, total_y, "TQ + RFI", 100, total, "#A855F7")
-    add_block(rfi_x, rfi_y, "RFI Only", rfi_pct, rfi_total, "#4ADE80")
-
-    # =========================
-    # NOT RESPONDED (SAFE INSIDE CARD)
-    # =========================
-    fig.add_annotation(
-        x=tq_x, y=0.05,
-        text=f"TQ Not Responded: {tq_not}",
-        showarrow=False,
-        font=dict(color="#60A5FA", size=10)
-    )
-
-    fig.add_annotation(
-        x=total_x, y=0.05,
-        text=f"Total Not Responded: {total_not}",
-        showarrow=False,
-        font=dict(color="#A855F7", size=10)
-    )
-
-    fig.add_annotation(
-        x=rfi_x, y=0.05,
-        text=f"RFI Not Responded: {rfi_not}",
-        showarrow=False,
-        font=dict(color="#4ADE80", size=10)
-    )
-
-    # =========================
-    # RENDER
-    # =========================
     st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # TEXT LAYER (STREAMLIT CONTROLLED = STABLE)
+    # =========================
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(f"""
+        <div style="text-align:center">
+            <b>TQ Only</b><br>
+            <span style="font-size:22px;">{tq_pct}%</span><br>
+            <span style="font-size:26px;">{tq_total}</span><br>
+            <small>Not responded: {tq_not}</small>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div style="text-align:center">
+            <b>Total</b><br>
+            <span style="font-size:22px;">100%</span><br>
+            <span style="font-size:26px;">{total}</span><br>
+            <small>Not responded: {total_not}</small>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f"""
+        <div style="text-align:center">
+            <b>RFI Only</b><br>
+            <span style="font-size:22px;">{rfi_pct}%</span><br>
+            <span style="font-size:26px;">{rfi_total}</span><br>
+            <small>Not responded: {rfi_not}</small>
+        </div>
+        """, unsafe_allow_html=True)

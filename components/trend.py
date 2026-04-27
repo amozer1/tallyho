@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 
-def render_rfi_created(df):
+def render_trend(df):
 
     if df is None or df.empty:
         st.warning("No data available.")
@@ -13,25 +13,25 @@ def render_rfi_created(df):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # ONLY VALID DATE FIELD
+    # VALID DATE ONLY
     # =========================
     df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
     df = df[df["date sent"].notna()].copy()
 
-    # Month bucket (safe + stable)
+    # Month (STRICTLY from real data)
     df["month"] = df["date sent"].dt.to_period("M").astype(str)
 
     # =========================
-    # FILTER ONLY RFI
+    # FILTER RFI ONLY
     # =========================
     rfi = df[df["doc type"] == "RFI"]
 
-    # Monthly aggregation (pure count)
-    rfi_trend = rfi.groupby("month").size().reset_index(name="rfi_created")
-    rfi_trend = rfi_trend.sort_values("month")
+    # Monthly aggregation
+    trend = rfi.groupby("month").size().reset_index(name="rfi_created")
+    trend = trend.sort_values("month")
 
     # =========================
-    # CARD WRAPPER
+    # CARD STYLE
     # =========================
     st.markdown("""
     <div style="
@@ -46,24 +46,24 @@ def render_rfi_created(df):
     st.subheader("RFI Created Trend")
 
     # =========================
-    # STACKED STYLE LINE (FILL + LINE)
+    # STACKED STYLE LINE
     # =========================
     fig = go.Figure()
 
-    # Base filled area (soft stack effect)
+    # soft area fill (visual depth)
     fig.add_trace(go.Scatter(
-        x=rfi_trend["month"],
-        y=rfi_trend["rfi_created"],
+        x=trend["month"],
+        y=trend["rfi_created"],
         mode="lines",
-        line=dict(color="rgba(31,119,180,0.3)", width=0),
+        line=dict(color="rgba(31,119,180,0.25)", width=0),
         fill="tozeroy",
-        name="RFI Volume (Area)"
+        name="RFI Volume"
     ))
 
-    # Main line
+    # main line
     fig.add_trace(go.Scatter(
-        x=rfi_trend["month"],
-        y=rfi_trend["rfi_created"],
+        x=trend["month"],
+        y=trend["rfi_created"],
         mode="lines+markers",
         name="RFI Created",
         line=dict(color="#1f77b4", width=4),
@@ -71,19 +71,18 @@ def render_rfi_created(df):
     ))
 
     # =========================
-    # LAYOUT (CLEAN DASHBOARD STYLE)
+    # LAYOUT
     # =========================
     fig.update_layout(
         template="plotly_white",
         height=380,
-        margin=dict(l=20, r=20, t=20, b=40),
+        margin=dict(l=20, r=20, t=10, b=40),
         hovermode="x unified",
         xaxis=dict(title="Month"),
-        yaxis=dict(title="RFI Created"),
+        yaxis=dict(title="Count"),
         showlegend=False
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # close card
     st.markdown("</div>", unsafe_allow_html=True)

@@ -63,29 +63,29 @@ def render_tracker(df):
     fig = go.Figure()
 
     # =========================
-    # CIRCLES (balanced sizing)
+    # OVERLAPPING CIRCLES (FIXED LAYOUT)
     # =========================
 
-    # LEFT - TQ (blue)
+    # LEFT - TQ
     fig.add_shape(
         type="circle",
-        x0=0.1, y0=0.35, x1=0.95, y1=1.2,
+        x0=0.05, y0=0.35, x1=1.05, y1=1.25,
         fillcolor="rgba(59,130,246,0.18)",
         line=dict(color="#60A5FA", width=2)
     )
 
-    # MIDDLE - TOTAL (BRIGHT BLUE FOCUS)
+    # MIDDLE - TOTAL (BRIGHT BLUE FOCUS, OVERLAPS BOTH)
     fig.add_shape(
         type="circle",
-        x0=1.05, y0=0.25, x1=1.95, y1=1.3,
+        x0=0.85, y0=0.25, x1=1.85, y1=1.35,
         fillcolor="rgba(0,123,255,0.25)",
         line=dict(color="#007BFF", width=3)
     )
 
-    # RIGHT - RFI (green)
+    # RIGHT - RFI
     fig.add_shape(
         type="circle",
-        x0=2.05, y0=0.35, x1=2.95, y1=1.2,
+        x0=1.75, y0=0.35, x1=2.75, y1=1.25,
         fillcolor="rgba(34,197,94,0.18)",
         line=dict(color="#4ADE80", width=2)
     )
@@ -93,77 +93,101 @@ def render_tracker(df):
     # =========================
     # LEFT - TQ
     # =========================
-    fig.add_annotation(x=0.52, y=0.88,
-                       text="<b>TQs Only</b>",
-                       showarrow=False,
-                       font=dict(color="#60A5FA", size=13))
+    fig.add_annotation(
+        x=0.55, y=0.90,
+        text="<b>Total TQs</b>",
+        showarrow=False,
+        font=dict(color="#60A5FA", size=13)
+    )
 
-    fig.add_annotation(x=0.52, y=0.70,
-                       text=f"<b style='font-size:26px'>{tq_total}</b>",
-                       showarrow=False,
-                       font=dict(color="white"))
+    fig.add_annotation(
+        x=0.55, y=0.72,
+        text=f"<b style='font-size:26px'>{tq_total}</b>",
+        showarrow=False,
+        font=dict(color="white")
+    )
 
-    fig.add_annotation(x=0.52, y=0.52,
-                       text=f"{tq_pct}% of workload",
-                       showarrow=False,
-                       font=dict(color="rgba(255,255,255,0.75)", size=10))
+    fig.add_annotation(
+        x=0.55, y=0.56,
+        text=f"{tq_pct}% of workload",
+        showarrow=False,
+        font=dict(color="rgba(255,255,255,0.75)", size=10)
+    )
 
-    fig.add_annotation(x=0.52, y=0.35,
-                       text=f"{tq_not} pending",
-                       showarrow=False,
-                       font=dict(color="#60A5FA", size=10))
+    fig.add_annotation(
+        x=0.55, y=0.42,
+        text=f"{tq_not} pending",
+        showarrow=False,
+        font=dict(color="#60A5FA", size=10)
+    )
 
     # =========================
     # MIDDLE - TOTAL (FOCUS)
     # =========================
-    fig.add_annotation(x=1.5, y=0.88,
-                       text="<b>Total Workload</b>",
-                       showarrow=False,
-                       font=dict(color="#007BFF", size=13))
+    fig.add_annotation(
+        x=1.35, y=0.90,
+        text="<b>Total Workload</b>",
+        showarrow=False,
+        font=dict(color="#007BFF", size=13)
+    )
 
-    fig.add_annotation(x=1.5, y=0.70,
-                       text=f"<b style='font-size:30px'>{total}</b>",
-                       showarrow=False,
-                       font=dict(color="white"))
+    fig.add_annotation(
+        x=1.35, y=0.72,
+        text=f"<b style='font-size:30px'>{total}</b>",
+        showarrow=False,
+        font=dict(color="white")
+    )
 
-    fig.add_annotation(x=1.5, y=0.52,
-                       text="All Documents",
-                       showarrow=False,
-                       font=dict(color="rgba(255,255,255,0.75)", size=10))
+    fig.add_annotation(
+        x=1.35, y=0.56,
+        text="All Documents",
+        showarrow=False,
+        font=dict(color="rgba(255,255,255,0.75)", size=10)
+    )
 
-    fig.add_annotation(x=1.5, y=0.35,
-                       text=f"{total_not} outstanding",
-                       showarrow=False,
-                       font=dict(color="#F87171", size=10))
+    fig.add_annotation(
+        x=1.35, y=0.42,
+        text=f"{total_not} outstanding",
+        showarrow=False,
+        font=dict(color="#F87171", size=10)
+    )
 
     # =========================
     # RIGHT - RFI
     # =========================
-    fig.add_annotation(x=2.48, y=0.88,
-                       text="<b>RFIs Only</b>",
-                       showarrow=False,
-                       font=dict(color="#4ADE80", size=13))
+    fig.add_annotation(
+        x=2.15, y=0.90,
+        text="<b>Total RFIs</b>",
+        showarrow=False,
+        font=dict(color="#4ADE80", size=13)
+    )
 
-    fig.add_annotation(x=2.48, y=0.70,
-                       text=f"<b style='font-size:26px'>{rfi_total}</b>",
-                       showarrow=False,
-                       font=dict(color="white"))
+    fig.add_annotation(
+        x=2.15, y=0.72,
+        text=f"<b style='font-size:26px'>{rfi_total}</b>",
+        showarrow=False,
+        font=dict(color="white")
+    )
 
-    fig.add_annotation(x=2.48, y=0.52,
-                       text=f"{rfi_pct}% of workload",
-                       showarrow=False,
-                       font=dict(color="rgba(255,255,255,0.75)", size=10))
+    fig.add_annotation(
+        x=2.15, y=0.56,
+        text=f"{rfi_pct}% of workload",
+        showarrow=False,
+        font=dict(color="rgba(255,255,255,0.75)", size=10)
+    )
 
-    fig.add_annotation(x=2.48, y=0.35,
-                       text=f"{rfi_not} pending",
-                       showarrow=False,
-                       font=dict(color="#4ADE80", size=10))
+    fig.add_annotation(
+        x=2.15, y=0.42,
+        text=f"{rfi_not} pending",
+        showarrow=False,
+        font=dict(color="#4ADE80", size=10)
+    )
 
     # =========================
-    # LAYOUT (IMPORTANT)
+    # LAYOUT
     # =========================
     fig.update_layout(
-        height=220,
+        height=230,
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",
         margin=dict(l=0, r=0, t=0, b=0),

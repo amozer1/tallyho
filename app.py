@@ -3,15 +3,12 @@ import pandas as pd
 
 from components.sidebar import render_sidebar
 from components.header import render_header
-from components.tracker import render_tracker
+from components.trend import render_trend
 from components.outstanding import render_outstanding_line
 from components.age_outstanding import render_age_outstanding
-from components.trend import render_trend
+from components.tracker import render_tracker
 
-st.set_page_config(
-    page_title="TQ / RFI Intelligence Hub",
-    layout="wide"
-)
+st.set_page_config(page_title="TQ / RFI Dashboard", layout="wide")
 
 render_sidebar()
 render_header()
@@ -28,29 +25,23 @@ df.columns = df.columns.str.strip().str.lower()
 df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-today = pd.Timestamp.today().normalize()
-df["age"] = (today - df["date sent"]).dt.days
-
 st.markdown("## 📊 TQ / RFI Control Dashboard")
 
-# ROW 1
-col1, col2 = st.columns(2)
+# =========================
+# 2x2 GRID LAYOUT
+# =========================
+row1_col1, row1_col2 = st.columns(2, gap="large")
 
-with col1:
-    with st.container():
-        render_trend(df)
+with row1_col1:
+    render_trend(df)
 
-with col2:
-    with st.container():
-        render_outstanding_line(df, total=len(df))
+with row1_col2:
+    render_outstanding_line(df, total=len(df))
 
-# ROW 2
-col3, col4 = st.columns(2)
+row2_col1, row2_col2 = st.columns(2, gap="large")
 
-with col3:
-    with st.container():
-        render_age_outstanding(df)
+with row2_col1:
+    render_age_outstanding(df)
 
-with col4:
-    with st.container():
-        render_tracker(df)
+with row2_col2:
+    render_tracker(df)

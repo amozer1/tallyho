@@ -38,12 +38,14 @@ def render_outstanding_line(df, total):
     def get_counts(sub_df):
         open_items = len(sub_df[sub_df[status_col] == "OPEN"])
         closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
+
         outstanding_items = len(
             sub_df[
                 (sub_df[status_col] == "OPEN") &
                 ((today - sub_df[date_col]).dt.days > 14)
             ]
         )
+
         return open_items, closed_items, outstanding_items
 
     tq_open, tq_closed, tq_out = get_counts(tq_df)
@@ -56,16 +58,22 @@ def render_outstanding_line(df, total):
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # FULL CARD BUILDER (100% INSIDE FIGURE)
+    # SAFE VALUE FUNCTION (KEY FIX)
+    # =========================
+    def safe(v):
+        return v if v > 0 else 0.0001
+
+    # =========================
+    # CARD BUILDER
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
         fig = go.Figure()
 
-        # PIE
+        # PIE (ZERO SAFE)
         fig.add_trace(go.Pie(
             labels=["Open", "Closed"],
-            values=[open_c, closed_c],
+            values=[safe(open_c), safe(closed_c)],
             hole=0.12,
             marker=dict(
                 colors=[colors["open"], colors["closed"]],
@@ -75,7 +83,7 @@ def render_outstanding_line(df, total):
             textfont=dict(color="white", size=14)
         ))
 
-        # TITLE (inside card)
+        # TITLE
         fig.add_annotation(
             text=f"<b>{title}</b>",
             x=0.5, y=1.15,
@@ -83,7 +91,7 @@ def render_outstanding_line(df, total):
             font=dict(size=18, color="white")
         )
 
-        # OPEN / CLOSED TEXT (inside card)
+        # OPEN/CLOSED TEXT (REAL VALUES)
         fig.add_annotation(
             text=f"Open: {open_c}   |   Closed: {closed_c}",
             x=0.5, y=-0.10,
@@ -91,7 +99,7 @@ def render_outstanding_line(df, total):
             font=dict(size=12, color="#cbd5e1")
         )
 
-        # OUTSTANDING (inside card bottom)
+        # OUTSTANDING
         fig.add_annotation(
             text=f"Outstanding (>14 days): {out_c}",
             x=0.5, y=-0.22,

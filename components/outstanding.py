@@ -97,7 +97,7 @@ def render_outstanding_line(df, total):
         # TITLE
         # =========================
         fig.add_annotation(
-            text=f"<b>{title}Information</b>",
+            text=f"<b>{title} Information</b>",
             x=0.5, y=1.15,
             showarrow=False,
             font=dict(size=18, color="white")

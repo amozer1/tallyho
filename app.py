@@ -6,6 +6,7 @@ from components.header import render_header
 from components.trend import render_trend
 from components.outstanding import render_outstanding_line
 from components.age_outstanding import render_age_outstanding
+from components.tracker import render_tracker
 
 st.set_page_config(page_title="TQ / RFI Dashboard", layout="wide")
 
@@ -25,31 +26,23 @@ df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 # =========================
-# ROW 1 (OUTSTANDING CARDS)
+# ROW 1 (PRIORITY VIEW)
 # =========================
-top_col1, top_col2 = st.columns(2, gap="large")
+row1_col1, row1_col2 = st.columns(2, gap="large")
 
-with top_col1:
-    render_outstanding_line(
-        df[df["doc type"] == "TQ"],
-        total=len(df),
-        key="tq_outstanding"
-    )
+with row1_col1:
+    render_outstanding_line(df, total=len(df))   # 👈 NOW FIRST (IMPORTANT SIGNAL)
 
-with top_col2:
-    render_outstanding_line(
-        df[df["doc type"] == "RFI"],
-        total=len(df),
-        key="rfi_outstanding"
-    )
-
-# =========================
-# ROW 2 (ANALYTICS)
-# =========================
-bottom_col1, bottom_col2 = st.columns(2, gap="large")
-
-with bottom_col1:
+with row1_col2:
     render_trend(df)
 
-with bottom_col2:
+# =========================
+# ROW 2 (SUPPORTING VIEW)
+# =========================
+row2_col1, row2_col2 = st.columns(2, gap="large")
+
+with row2_col1:
     render_age_outstanding(df)
+
+with row2_col2:
+    render_tracker(df)

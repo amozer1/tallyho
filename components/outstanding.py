@@ -58,7 +58,7 @@ def render_outstanding_line(df, total):
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # PIE (STABLE)
+    # PIE (UNCHANGED)
     # =========================
     def pie(open_c, closed_c, colors):
 
@@ -89,45 +89,42 @@ def render_outstanding_line(df, total):
         return fig
 
     # =========================
-    # TRUE SINGLE CARD (FIXED LAYOUT)
+    # STRICT CARD (ALL CONTENT INSIDE ONE BLOCK)
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
-        with st.container():
-
-            # CARD TITLE (INSIDE CARD)
-            st.markdown(
-                f"""
-                <div style="
-                    background:#111827;
-                    border:1px solid #1f2937;
-                    border-radius:14px;
-                    padding:14px;
-                ">
-                    <div style="
-                        text-align:center;
-                        font-size:18px;
-                        font-weight:800;
-                        color:{colors['open']};
-                        margin-bottom:10px;
-                    ">
-                        {title}
-                    </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            # PIE
-            st.plotly_chart(
-                pie(open_c, closed_c, colors),
-                use_container_width=True
-            )
-
-            # TEXTS (INSIDE SAME CARD BLOCK)
-            st.markdown(
-                f"""
+        st.markdown(
+            f"""
+            <div style="
+                background:#111827;
+                border:1px solid #1f2937;
+                border-radius:14px;
+                padding:16px;
+                margin-bottom:16px;
+            ">
                 <div style="
                     text-align:center;
+                    font-size:18px;
+                    font-weight:800;
+                    color:{colors['open']};
+                    margin-bottom:10px;
+                ">
+                    {title}
+                </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.plotly_chart(
+            pie(open_c, closed_c, colors),
+            use_container_width=True
+        )
+
+        st.markdown(
+            f"""
+                <div style="
+                    text-align:center;
+                    margin-top:10px;
                     padding-top:10px;
                     border-top:1px solid #1f2937;
                 ">
@@ -145,8 +142,8 @@ def render_outstanding_line(df, total):
                 </div>
             </div>
             """,
-                unsafe_allow_html=True
-            )
+            unsafe_allow_html=True
+        )
 
     # =========================
     # DASHBOARD

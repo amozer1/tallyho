@@ -50,12 +50,12 @@ def render_outstanding_line(df, total):
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # COLOURS (ONLY TQ CHANGED)
+    # COLOURS (ONLY TQ UPDATED - GREEN BRIDGE THEME)
     # =========================
     TQ = {
-        "open": "#FF3B30",      # red
-        "closed": "#FF6B6B",    # soft red
-        "out": "#B91C1C"        # dark red
+        "open": "#22C55E",      # bridge green
+        "closed": "#16A34A",    # darker structural green
+        "out": "#EF4444"        # risk red (kept consistent)
     }
 
     RFI = {

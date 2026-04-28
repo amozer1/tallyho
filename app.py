@@ -25,15 +25,23 @@ df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 # =========================
-# ROW 1 (OUTSTANDING - 2 CARDS SIDE BY SIDE)
+# ROW 1 (OUTSTANDING CARDS)
 # =========================
 top_col1, top_col2 = st.columns(2, gap="large")
 
 with top_col1:
-    render_outstanding_line(df, total=len(df))
+    render_outstanding_line(
+        df[df["doc type"] == "TQ"],
+        total=len(df),
+        key="tq_outstanding"
+    )
 
 with top_col2:
-    render_outstanding_line(df, total=len(df))  # or second variant if you have TQ vs RFI split later
+    render_outstanding_line(
+        df[df["doc type"] == "RFI"],
+        total=len(df),
+        key="rfi_outstanding"
+    )
 
 # =========================
 # ROW 2 (ANALYTICS)

@@ -50,18 +50,18 @@ def render_outstanding_line(df, total):
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # COLOURS (ONLY RED CHANGED)
+    # COLOURS (ONLY TQ CHANGED)
     # =========================
     TQ = {
-        "open": "#00D4FF",      # bright cyan
-        "closed": "#22C55E",    # green
-        "out": "#FF3B30"        # UPDATED red
+        "open": "#FF3B30",      # red
+        "closed": "#FF6B6B",    # soft red
+        "out": "#B91C1C"        # dark red
     }
 
     RFI = {
-        "open": "#A78BFA",      # light purple
-        "closed": "#6D28D9",    # deep purple
-        "out": "#FF3B30"        # UPDATED red
+        "open": "#A78BFA",      # light purple (UNCHANGED)
+        "closed": "#6D28D9",    # deep purple (UNCHANGED)
+        "out": "#EF4444"        # red (UNCHANGED)
     }
 
     # =========================

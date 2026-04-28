@@ -80,6 +80,7 @@ def render_outstanding_line(df, total):
         font-size:12px;
         font-weight:700;
         color:{color};
+        margin-bottom:8px;
     ">
         🚨 Outstanding (>14 Days) — {status}
     </div>
@@ -101,15 +102,34 @@ def render_outstanding_line(df, total):
             values=[tq_open, tq_closed, tq_overdue],
             hole=0.55,
             marker=dict(colors=["#38bdf8", "#22c55e", "#f97316"]),
-            textinfo="label+value"
+            textinfo="value",
+            textposition="inside",
+            insidetextorientation="horizontal",
+            textfont=dict(size=16, color="white")
         )])
 
         fig_tq.update_layout(
             title="TQ Status",
-            height=300,
+            height=320,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
-            font=dict(color="white")
+            font=dict(color="white"),
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                y=-0.1,
+                x=0.5,
+                xanchor="center"
+            ),
+            annotations=[
+                dict(
+                    text=f"<b>TQ</b><br>{sum([tq_open,tq_closed,tq_overdue])}",
+                    x=0.5,
+                    y=0.5,
+                    font=dict(size=20, color="white"),
+                    showarrow=False
+                )
+            ]
         )
 
         st.plotly_chart(fig_tq, use_container_width=True)
@@ -120,15 +140,34 @@ def render_outstanding_line(df, total):
             values=[rfi_open, rfi_closed, rfi_overdue],
             hole=0.55,
             marker=dict(colors=["#38bdf8", "#22c55e", "#f97316"]),
-            textinfo="label+value"
+            textinfo="value",
+            textposition="inside",
+            insidetextorientation="horizontal",
+            textfont=dict(size=16, color="white")
         )])
 
         fig_rfi.update_layout(
             title="RFI Status",
-            height=300,
+            height=320,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
-            font=dict(color="white")
+            font=dict(color="white"),
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                y=-0.1,
+                x=0.5,
+                xanchor="center"
+            ),
+            annotations=[
+                dict(
+                    text=f"<b>RFI</b><br>{sum([rfi_open,rfi_closed,rfi_overdue])}",
+                    x=0.5,
+                    y=0.5,
+                    font=dict(size=20, color="white"),
+                    showarrow=False
+                )
+            ]
         )
 
         st.plotly_chart(fig_rfi, use_container_width=True)

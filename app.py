@@ -24,9 +24,6 @@ def load_data():
 
 df = load_data()
 
-# =========================
-# CLEAN COLUMNS
-# =========================
 df = df.copy()
 df.columns = df.columns.str.strip().str.lower()
 
@@ -34,23 +31,22 @@ df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 # =========================
-# ROW 1 (CORE PERFORMANCE)
+# LAYOUT
+# LEFT = Outstanding (full focus)
+# RIGHT = Age (top) + Trend (bottom)
 # =========================
-row1_col1, row1_col2 = st.columns(2, gap="large")
-
-with row1_col1:
-    render_outstanding_line(df, total=len(df))   # 2-card internal (TQ + RFI)
-
-with row1_col2:
-    render_trend(df)
+col_left, col_right = st.columns([1.4, 1], gap="large")
 
 # =========================
-# ROW 2 (SUPPORTING ANALYTICS)
+# LEFT COLUMN
 # =========================
-row2_col1, row2_col2 = st.columns(2, gap="large")
+with col_left:
+    render_outstanding_line(df, total=len(df))
 
-with row2_col1:
+# =========================
+# RIGHT COLUMN (STACKED)
+# =========================
+with col_right:
     render_age_outstanding(df)
-
-with row2_col2:
-    st.empty()  # reserved space for future module (optional)
+    st.markdown("---")  # visual separator
+    render_trend(df)

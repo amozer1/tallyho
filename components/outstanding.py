@@ -23,7 +23,7 @@ def render_outstanding_line(df, total):
         return
 
     # =========================
-    # CLEAN DATA (YOUR DATA)
+    # CLEAN DATA (YOUR REAL DATA)
     # =========================
     df[status_col] = df[status_col].astype(str).str.strip().str.upper()
     df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
@@ -54,48 +54,44 @@ def render_outstanding_line(df, total):
     # BRIGHT MODERN COLORS
     # =========================
     COLORS = {
-        "open": "#00D9FF",        # neon blue
-        "closed": "#00FF85",      # neon green
-        "outstanding": "#FF3B6B"  # neon red/pink
+        "open": "#00D9FF",
+        "closed": "#00FF85",
+        "outstanding": "#FF3B6B"
     }
 
     # =========================
-    # PIE CHART
+    # PIE (OPEN vs CLOSED ONLY)
     # =========================
-    def make_pie(title, open_count, closed_count, outstanding_count):
+    def make_pie(title, open_count, closed_count):
 
         fig = go.Figure(data=[go.Pie(
-            labels=["Open", "Closed", "Outstanding"],
-            values=[open_count, closed_count, outstanding_count],
-            hole=0.15,  # slightly thick (not donut look)
+            labels=["Open", "Closed"],
+            values=[open_count, closed_count],
+            hole=0.08,
             sort=False,
             marker=dict(
-                colors=[
-                    COLORS["open"],
-                    COLORS["closed"],
-                    COLORS["outstanding"]
-                ],
+                colors=[COLORS["open"], COLORS["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
             textinfo="label+value",
             textposition="inside",
-            textfont=dict(size=14, color="white")
+            textfont=dict(size=15, color="white")
         )])
 
         fig.update_layout(
             title=title,
-            height=300,
+            height=280,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),
             showlegend=False,
-            margin=dict(l=10, r=10, t=40, b=10)
+            margin=dict(l=10, r=10, t=30, b=10)
         )
 
         return fig
 
     # =========================
-    # DASHBOARD CARD WRAPPER
+    # MAIN DASHBOARD CARD
     # =========================
     st.markdown("""
     <div style="
@@ -136,17 +132,23 @@ def render_outstanding_line(df, total):
 
     with col1:
         st.plotly_chart(
-            make_pie("TQ Status", tq_open, tq_closed, tq_outstanding),
+            make_pie("TQ Status", tq_open, tq_closed),
             use_container_width=True
         )
 
     with col2:
         st.markdown(f"""
-        <div style="text-align:center; padding-top:60px;">
+        <div style="
+            height:100%;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+        ">
             <div style="font-size:13px; color:#cbd5e1;">
-                Outstanding (>14 days)
+                Outstanding (&gt;14 days)
             </div>
-            <div style="font-size:34px; font-weight:900; color:{COLORS['outstanding']};">
+            <div style="font-size:38px; font-weight:900; color:{COLORS['outstanding']};">
                 {tq_outstanding}
             </div>
         </div>
@@ -172,17 +174,23 @@ def render_outstanding_line(df, total):
 
     with col3:
         st.plotly_chart(
-            make_pie("RFI Status", rfi_open, rfi_closed, rfi_outstanding),
+            make_pie("RFI Status", rfi_open, rfi_closed),
             use_container_width=True
         )
 
     with col4:
         st.markdown(f"""
-        <div style="text-align:center; padding-top:60px;">
+        <div style="
+            height:100%;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+        ">
             <div style="font-size:13px; color:#cbd5e1;">
-                Outstanding (>14 days)
+                Outstanding (&gt;14 days)
             </div>
-            <div style="font-size:34px; font-weight:900; color:{COLORS['outstanding']};">
+            <div style="font-size:38px; font-weight:900; color:{COLORS['outstanding']};">
                 {rfi_outstanding}
             </div>
         </div>
@@ -191,7 +199,7 @@ def render_outstanding_line(df, total):
     st.markdown("</div>", unsafe_allow_html=True)
 
     # =========================
-    # FOOTER
+    # FOOTER SUMMARY
     # =========================
     st.markdown(f"""
     <div style="

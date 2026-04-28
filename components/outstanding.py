@@ -63,7 +63,7 @@ def render_outstanding_line(df, total):
         fig = go.Figure()
 
         # =========================
-        # PIE (ONLY INCLUDE >=1 VALUES)
+        # PIE (REMOVE ZEROS ONLY)
         # =========================
         labels = []
         values = []
@@ -84,12 +84,18 @@ def render_outstanding_line(df, total):
                 labels=labels,
                 values=values,
                 hole=0.12,
+
                 marker=dict(
                     colors=pie_colors,
                     line=dict(color="#0f172a", width=2)
                 ),
+
+                # 🔥 FORCE LABELS INSIDE
                 textinfo="label+value",
-                textfont=dict(color="white", size=14)
+                textposition="inside",
+                insidetextorientation="radial",
+                textfont=dict(color="white", size=14),
+                automargin=False
             ))
         else:
             fig.add_annotation(
@@ -129,13 +135,20 @@ def render_outstanding_line(df, total):
             font=dict(size=14, color=colors["out"])
         )
 
+        # =========================
+        # LAYOUT FIX (IMPORTANT)
+        # =========================
         fig.update_layout(
             height=360,
             margin=dict(l=10, r=10, t=50, b=70),
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),
-            showlegend=False
+            showlegend=False,
+
+            # 🔥 prevents label escaping
+            uniformtext_minsize=12,
+            uniformtext_mode="hide"
         )
 
         return fig

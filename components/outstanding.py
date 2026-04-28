@@ -52,13 +52,13 @@ def render_outstanding_line(df, total):
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # THEMES
+    # COLORS
     # =========================
     TQ = {"open": "#A855F7", "closed": "#3B82F6", "out": "#EF4444"}
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # PIE (FIXED TEXT INSIDE SLICES)
+    # SAFE PIE (NO RISKY PARAMS)
     # =========================
     def pie(open_c, closed_c, colors):
 
@@ -68,18 +68,16 @@ def render_outstanding_line(df, total):
 
             sort=False,
             hole=0.12,
-            pull=0,
 
             marker=dict(
                 colors=[colors["open"], colors["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
 
-            # 🔥 KEY FIX: text fully inside slice
+            # ✔ SAFE TEXT SETTINGS ONLY
             textinfo="label+value",
-            textposition="inside",
-            insidetextorientation="radial",
             texttemplate="%{label}<br>%{value}",
+            textposition="inside",
             textfont=dict(color="white", size=14)
         )])
 
@@ -89,14 +87,13 @@ def render_outstanding_line(df, total):
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),
-            showlegend=False,
-            automargin=True
+            showlegend=False
         )
 
         return fig
 
     # =========================
-    # CARD BUILDER
+    # CARD
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
@@ -108,12 +105,9 @@ def render_outstanding_line(df, total):
         )
 
         st.markdown(
-            f"""
-            **Outstanding (>14 days):**  
-            <span style="color:{colors['out']}; font-size:18px; font-weight:700;">
-            {out_c}
-            </span>
-            """,
+            f"**Outstanding (>14 days):**  "
+            f"<span style='color:{colors['out']}; font-size:18px; font-weight:700;'>"
+            f"{out_c}</span>",
             unsafe_allow_html=True
         )
 

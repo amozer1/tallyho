@@ -32,8 +32,8 @@ def render_outstanding_line(df, total):
 
     today = pd.Timestamp.today()
 
-    tq_df = df[df[doc_col] == "TQ"]
-    rfi_df = df[df[doc_col] == "RFI"]
+    tq_df = df[df[doc_col] == "TQ Information"]
+    rfi_df = df[df[doc_col] == "RFI Information"]
 
     def get_counts(sub_df):
         open_items = len(sub_df[sub_df[status_col] == "OPEN"])

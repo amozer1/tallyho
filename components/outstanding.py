@@ -58,7 +58,7 @@ def render_outstanding_line(df, total):
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # PIE (UNCHANGED)
+    # PIE
     # =========================
     def pie(open_c, closed_c, colors):
 
@@ -89,7 +89,7 @@ def render_outstanding_line(df, total):
         return fig
 
     # =========================
-    # STRICT CARD (ALL CONTENT INSIDE ONE BLOCK)
+    # TRUE FULL CARD (ALL CONTENT INSIDE)
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
@@ -102,6 +102,8 @@ def render_outstanding_line(df, total):
                 padding:16px;
                 margin-bottom:16px;
             ">
+
+                <!-- TITLE -->
                 <div style="
                     text-align:center;
                     font-size:18px;
@@ -109,17 +111,19 @@ def render_outstanding_line(df, total):
                     color:{colors['open']};
                     margin-bottom:10px;
                 ">
-                    {title}
+                    {title} DETAILS
                 </div>
             """,
             unsafe_allow_html=True
         )
 
+        # PIE INSIDE CARD
         st.plotly_chart(
             pie(open_c, closed_c, colors),
             use_container_width=True
         )
 
+        # METRICS INSIDE CARD
         st.markdown(
             f"""
                 <div style="
@@ -128,17 +132,23 @@ def render_outstanding_line(df, total):
                     padding-top:10px;
                     border-top:1px solid #1f2937;
                 ">
-                    <div style="color:#cbd5e1; font-size:13px;">
-                        Open: {open_c} | Closed: {closed_c}
-                    </div>
+
                     <div style="
-                        color:{colors['out']};
+                        font-size:14px;
+                        color:#cbd5e1;
+                        margin-bottom:6px;
+                    ">
+                        OPEN: {open_c} &nbsp; | &nbsp; CLOSED: {closed_c}
+                    </div>
+
+                    <div style="
                         font-size:18px;
                         font-weight:800;
-                        margin-top:6px;
+                        color:{colors['out']};
                     ">
-                        Outstanding (>14 days): {out_c}
+                        OUTSTANDING (>14 DAYS): {out_c}
                     </div>
+
                 </div>
             </div>
             """,

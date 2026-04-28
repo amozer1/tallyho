@@ -58,31 +58,27 @@ def render_outstanding_line(df, total):
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # SAFE PIE (NO RISKY PARAMS)
+    # PIE (UNCHANGED - GOOD)
     # =========================
     def pie(open_c, closed_c, colors):
 
         fig = go.Figure(data=[go.Pie(
             labels=["Open", "Closed"],
             values=[open_c, closed_c],
-
             sort=False,
             hole=0.12,
-
             marker=dict(
                 colors=[colors["open"], colors["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
-
-            # ✔ SAFE TEXT SETTINGS ONLY
             textinfo="label+value",
-            texttemplate="%{label}<br>%{value}",
             textposition="inside",
+            texttemplate="%{label}<br>%{value}",
             textfont=dict(color="white", size=14)
         )])
 
         fig.update_layout(
-            height=340,
+            height=320,
             margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
@@ -93,11 +89,31 @@ def render_outstanding_line(df, total):
         return fig
 
     # =========================
-    # CARD
+    # TRUE CARD (ALL CONTENT INSIDE)
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
-        st.markdown(f"### {title}")
+        st.markdown(
+            f"""
+            <div style="
+                background:#111827;
+                border:1px solid #1f2937;
+                border-radius:14px;
+                padding:16px;
+                margin-bottom:16px;
+            ">
+                <div style="
+                    text-align:center;
+                    font-size:18px;
+                    font-weight:800;
+                    color:{colors['open']};
+                    margin-bottom:10px;
+                ">
+                    {title}
+                </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         st.plotly_chart(
             pie(open_c, closed_c, colors),
@@ -105,9 +121,27 @@ def render_outstanding_line(df, total):
         )
 
         st.markdown(
-            f"**Outstanding (>14 days):**  "
-            f"<span style='color:{colors['out']}; font-size:18px; font-weight:700;'>"
-            f"{out_c}</span>",
+            f"""
+            <div style="
+                text-align:center;
+                margin-top:8px;
+                padding:10px;
+                border-top:1px solid #1f2937;
+            ">
+                <div style="color:#cbd5e1; font-size:13px;">
+                    Open: {open_c} | Closed: {closed_c}
+                </div>
+                <div style="
+                    color:{colors['out']};
+                    font-size:18px;
+                    font-weight:800;
+                    margin-top:6px;
+                ">
+                    Outstanding (>14 days): {out_c}
+                </div>
+            </div>
+        </div>
+        """,
             unsafe_allow_html=True
         )
 

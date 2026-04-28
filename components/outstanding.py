@@ -13,7 +13,7 @@ def render_outstanding_line(df, total):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # COLUMN DETECTION
+    # COLUMNS
     # =========================
     status_col = next((c for c in df.columns if c.lower() == "status"), None)
     doc_col = next((c for c in df.columns if c.lower() == "doc type"), None)
@@ -52,118 +52,68 @@ def render_outstanding_line(df, total):
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # COLORS (CLEAR + DISTINCT)
+    # COLORS
     # =========================
-    TQ_COLORS = {
-        "open": "#A855F7",
-        "closed": "#3B82F6",
-        "outstanding": "#EF4444"
-    }
-
-    RFI_COLORS = {
-        "open": "#14B8A6",
-        "closed": "#FACC15",
-        "outstanding": "#EF4444"
-    }
+    TQ = {"open": "#A855F7", "closed": "#3B82F6", "out": "#EF4444"}
+    RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # PIE
+    # PIE (NO TITLE INSIDE PLOTLY)
     # =========================
-    def pie(title, open_c, closed_c, colors):
+    def pie(open_c, closed_c, colors):
+
         fig = go.Figure(data=[go.Pie(
             labels=["Open", "Closed"],
             values=[open_c, closed_c],
-            hole=0.12,
-            sort=False,
+            hole=0.10,
             marker=dict(
                 colors=[colors["open"], colors["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
             textinfo="label+value",
             textposition="inside",
-            textfont=dict(size=14, color="white")
+            textfont=dict(color="white", size=14)
         )])
 
         fig.update_layout(
-            title=dict(text=title, font=dict(color="white", size=14)),
             height=260,
+            margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),
-            showlegend=False,
-            margin=dict(l=10, r=10, t=30, b=10)
+            showlegend=False
         )
 
         return fig
 
     # =========================
-    # CARD WRAPPER (TRUE STRUCTURE FIX)
+    # CARD BUILDER
     # =========================
-    def render_card(title, open_c, closed_c, out_c, colors):
+    def card(title, open_c, closed_c, out_c, colors):
 
-        st.markdown(
-            f"""
-            <div style="
-                background:#111827;
-                border:1px solid #1f2937;
-                border-radius:14px;
-                padding:14px;
-                margin-bottom:14px;
-            ">
-            <div style="
-                text-align:center;
-                font-size:16px;
-                font-weight:800;
-                color:{colors['open']};
-                margin-bottom:8px;
-            ">
-                {title}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        with st.container():
 
-        st.plotly_chart(
-            pie("Open vs Closed", open_c, closed_c, colors),
-            use_container_width=True
-        )
+            # CARD TITLE (clean, centered)
+            st.markdown(
+                f"<h3 style='text-align:center;color:{colors['open']};margin-bottom:5px;'>{title}</h3>",
+                unsafe_allow_html=True
+            )
 
-        st.markdown(
-            f"""
-            <div style="
-                margin-top:10px;
-                padding:12px;
-                border-radius:10px;
-                background:#0f172a;
-                border:1px solid #1f2937;
-                text-align:center;
-            ">
-                <div style="color:#cbd5e1; font-size:13px;">
-                    Outstanding (>14 days)
-                </div>
-                <div style="font-size:34px; font-weight:900; color:{colors['outstanding']};">
-                    {out_c}
-                </div>
-            </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+            # PIE
+            st.plotly_chart(
+                pie(open_c, closed_c, colors),
+                use_container_width=True
+            )
+
+            # KPI BLOCK (fully inside card, no HTML styling hacks)
+            st.metric("Open", open_c)
+            st.metric("Closed", closed_c)
+            st.metric("Outstanding (>14 days)", out_c)
+
+            st.divider()
 
     # =========================
-    # TITLE
+    # CARDS
     # =========================
-    st.markdown("### 📊 TQ & RFI Status Dashboard")
-
-    # =========================
-    # RENDER CARDS (STACKED CLEANLY)
-    # =========================
-    render_card("TQ", tq_open, tq_closed, tq_out, TQ_COLORS)
-    render_card("RFI", rfi_open, rfi_closed, rfi_out, RFI_COLORS)
-
-    # =========================
-    # FOOTER
-    # =========================
-    st.markdown(
-        f"**Totals → TQ:** {len(tq_df)} | **RFI:** {len(rfi_df)}"
-    )
+    card("TQ", tq_open, tq_closed, tq_out, TQ)
+    card("RFI", rfi_open, rfi_closed, rfi_out, RFI)

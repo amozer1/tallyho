@@ -56,26 +56,52 @@ def render_outstanding_line(df, total):
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # FULL CARD BUILDER (100% INSIDE FIGURE)
+    # CARD BUILDER
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
         fig = go.Figure()
 
-        # PIE
-        fig.add_trace(go.Pie(
-            labels=["Open", "Closed"],
-            values=[open_c, closed_c],
-            hole=0.12,
-            marker=dict(
-                colors=[colors["open"], colors["closed"]],
-                line=dict(color="#0f172a", width=2)
-            ),
-            textinfo="label+value",
-            textfont=dict(color="white", size=14)
-        ))
+        # =========================
+        # DYNAMIC PIE (NO ZEROS)
+        # =========================
+        labels = []
+        values = []
+        pie_colors = []
 
-        # TITLE (inside card)
+        if open_c > 0:
+            labels.append("Open")
+            values.append(open_c)
+            pie_colors.append(colors["open"])
+
+        if closed_c > 0:
+            labels.append("Closed")
+            values.append(closed_c)
+            pie_colors.append(colors["closed"])
+
+        if values:
+            fig.add_trace(go.Pie(
+                labels=labels,
+                values=values,
+                hole=0.12,
+                marker=dict(
+                    colors=pie_colors,
+                    line=dict(color="#0f172a", width=2)
+                ),
+                textinfo="label+value",
+                textfont=dict(color="white", size=14)
+            ))
+        else:
+            fig.add_annotation(
+                text="No Open / Closed Items",
+                x=0.5, y=0.5,
+                showarrow=False,
+                font=dict(size=14, color="white")
+            )
+
+        # =========================
+        # TITLE
+        # =========================
         fig.add_annotation(
             text=f"<b>{title}</b>",
             x=0.5, y=1.15,
@@ -83,7 +109,9 @@ def render_outstanding_line(df, total):
             font=dict(size=18, color="white")
         )
 
-        # OPEN / CLOSED TEXT (inside card)
+        # =========================
+        # OPEN / CLOSED TEXT
+        # =========================
         fig.add_annotation(
             text=f"Open: {open_c}   |   Closed: {closed_c}",
             x=0.5, y=-0.10,
@@ -91,7 +119,9 @@ def render_outstanding_line(df, total):
             font=dict(size=12, color="#cbd5e1")
         )
 
-        # OUTSTANDING (inside card bottom)
+        # =========================
+        # OUTSTANDING
+        # =========================
         fig.add_annotation(
             text=f"Outstanding (>14 days): {out_c}",
             x=0.5, y=-0.22,

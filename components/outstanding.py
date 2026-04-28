@@ -58,7 +58,7 @@ def render_outstanding_line(df, total):
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # PIE (UNCHANGED - GOOD)
+    # PIE (STABLE)
     # =========================
     def pie(open_c, closed_c, colors):
 
@@ -89,61 +89,64 @@ def render_outstanding_line(df, total):
         return fig
 
     # =========================
-    # TRUE CARD (ALL CONTENT INSIDE)
+    # TRUE SINGLE CARD (FIXED LAYOUT)
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
-        st.markdown(
-            f"""
-            <div style="
-                background:#111827;
-                border:1px solid #1f2937;
-                border-radius:14px;
-                padding:16px;
-                margin-bottom:16px;
-            ">
+        with st.container():
+
+            # CARD TITLE (INSIDE CARD)
+            st.markdown(
+                f"""
+                <div style="
+                    background:#111827;
+                    border:1px solid #1f2937;
+                    border-radius:14px;
+                    padding:14px;
+                ">
+                    <div style="
+                        text-align:center;
+                        font-size:18px;
+                        font-weight:800;
+                        color:{colors['open']};
+                        margin-bottom:10px;
+                    ">
+                        {title}
+                    </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # PIE
+            st.plotly_chart(
+                pie(open_c, closed_c, colors),
+                use_container_width=True
+            )
+
+            # TEXTS (INSIDE SAME CARD BLOCK)
+            st.markdown(
+                f"""
                 <div style="
                     text-align:center;
-                    font-size:18px;
-                    font-weight:800;
-                    color:{colors['open']};
-                    margin-bottom:10px;
+                    padding-top:10px;
+                    border-top:1px solid #1f2937;
                 ">
-                    {title}
-                </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.plotly_chart(
-            pie(open_c, closed_c, colors),
-            use_container_width=True
-        )
-
-        st.markdown(
-            f"""
-            <div style="
-                text-align:center;
-                margin-top:8px;
-                padding:10px;
-                border-top:1px solid #1f2937;
-            ">
-                <div style="color:#cbd5e1; font-size:13px;">
-                    Open: {open_c} | Closed: {closed_c}
-                </div>
-                <div style="
-                    color:{colors['out']};
-                    font-size:18px;
-                    font-weight:800;
-                    margin-top:6px;
-                ">
-                    Outstanding (>14 days): {out_c}
+                    <div style="color:#cbd5e1; font-size:13px;">
+                        Open: {open_c} | Closed: {closed_c}
+                    </div>
+                    <div style="
+                        color:{colors['out']};
+                        font-size:18px;
+                        font-weight:800;
+                        margin-top:6px;
+                    ">
+                        Outstanding (>14 days): {out_c}
+                    </div>
                 </div>
             </div>
-        </div>
-        """,
-            unsafe_allow_html=True
-        )
+            """,
+                unsafe_allow_html=True
+            )
 
     # =========================
     # DASHBOARD

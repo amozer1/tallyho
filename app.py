@@ -25,18 +25,23 @@ df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 # =========================
-# 4 EQUAL DASHBOARD LAYOUT
+# ROW 1 (OUTSTANDING - 2 CARDS SIDE BY SIDE)
 # =========================
-col1, col2, col3, col4 = st.columns(4, gap="large")
+top_col1, top_col2 = st.columns(2, gap="large")
 
-with col1:
+with top_col1:
     render_outstanding_line(df, total=len(df))
 
-with col2:
+with top_col2:
+    render_outstanding_line(df, total=len(df))  # or second variant if you have TQ vs RFI split later
+
+# =========================
+# ROW 2 (ANALYTICS)
+# =========================
+bottom_col1, bottom_col2 = st.columns(2, gap="large")
+
+with bottom_col1:
     render_trend(df)
 
-with col3:
+with bottom_col2:
     render_age_outstanding(df)
-
-with col4:
-    st.info("KPI / Summary Panel (Future Use)")

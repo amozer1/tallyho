@@ -50,18 +50,18 @@ def render_outstanding_line(df, total):
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # 🎨 NEW BLUE + GREEN THEME
+    # COLOURS
     # =========================
     TQ = {
-        "open": "#1E3A8A",      # dark blue
-        "closed": "#22C55E",    # green
-        "out": "#EF4444"        # red
+        "open": "#60A5FA",
+        "closed": "#34D399",
+        "out": "#EF4444"
     }
 
     RFI = {
-        "open": "#1D4ED8",      # blue variant
-        "closed": "#16A34A",    # green variant
-        "out": "#EF4444"        # red
+        "open": "#93C5FD",
+        "closed": "#6EE7B7",
+        "out": "#EF4444"
     }
 
     # =========================
@@ -72,7 +72,7 @@ def render_outstanding_line(df, total):
         fig = go.Figure()
 
         # =========================
-        # PIE (ALWAYS SHOW OPEN + CLOSED)
+        # PIE
         # =========================
         fig.add_trace(go.Pie(
             labels=["Open", "Closed"],
@@ -138,9 +138,7 @@ def render_outstanding_line(df, total):
         return fig
 
     # =========================
-    # DASHBOARD
+    # OUTPUT
     # =========================
-    st.markdown("### 📊 TQ & RFI Status Dashboard")
-
     st.plotly_chart(card("TQ", tq_open, tq_closed, tq_out, TQ), use_container_width=True)
     st.plotly_chart(card("RFI", rfi_open, rfi_closed, rfi_out, RFI), use_container_width=True)

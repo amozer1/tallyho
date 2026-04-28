@@ -56,54 +56,33 @@ def render_outstanding_line(df, total):
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # CARD BUILDER
+    # CARD FUNCTION
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
         fig = go.Figure()
 
         # =========================
-        # PIE (REMOVE ZEROS ONLY)
+        # PIE (ALWAYS SHOW OPEN + CLOSED)
         # =========================
-        labels = []
-        values = []
-        pie_colors = []
+        fig.add_trace(go.Pie(
+            labels=["Open", "Closed"],
+            values=[open_c, closed_c],
 
-        if open_c >= 1:
-            labels.append("Open")
-            values.append(open_c)
-            pie_colors.append(colors["open"])
+            hole=0.12,
 
-        if closed_c >= 1:
-            labels.append("Closed")
-            values.append(closed_c)
-            pie_colors.append(colors["closed"])
+            marker=dict(
+                colors=[colors["open"], colors["closed"]],
+                line=dict(color="#0f172a", width=2)
+            ),
 
-        if values:
-            fig.add_trace(go.Pie(
-                labels=labels,
-                values=values,
-                hole=0.12,
+            textinfo="label+value",
+            textposition="inside",
+            insidetextorientation="radial",
 
-                marker=dict(
-                    colors=pie_colors,
-                    line=dict(color="#0f172a", width=2)
-                ),
-
-                # 🔥 FORCE LABELS INSIDE
-                textinfo="label+value",
-                textposition="inside",
-                insidetextorientation="radial",
-                textfont=dict(color="white", size=14),
-                automargin=False
-            ))
-        else:
-            fig.add_annotation(
-                text="No Open/Closed Items",
-                x=0.5, y=0.5,
-                showarrow=False,
-                font=dict(size=14, color="white")
-            )
+            automargin=False,
+            textfont=dict(color="white", size=14)
+        ))
 
         # =========================
         # TITLE
@@ -135,20 +114,13 @@ def render_outstanding_line(df, total):
             font=dict(size=14, color=colors["out"])
         )
 
-        # =========================
-        # LAYOUT FIX (IMPORTANT)
-        # =========================
         fig.update_layout(
             height=360,
             margin=dict(l=10, r=10, t=50, b=70),
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),
-            showlegend=False,
-
-            # 🔥 prevents label escaping
-            uniformtext_minsize=12,
-            uniformtext_mode="hide"
+            showlegend=False
         )
 
         return fig

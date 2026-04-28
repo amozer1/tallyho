@@ -63,18 +63,18 @@ def render_outstanding_line(df, total):
         fig = go.Figure()
 
         # =========================
-        # DYNAMIC PIE (NO ZEROS)
+        # PIE (ONLY INCLUDE >=1 VALUES)
         # =========================
         labels = []
         values = []
         pie_colors = []
 
-        if open_c > 0:
+        if open_c >= 1:
             labels.append("Open")
             values.append(open_c)
             pie_colors.append(colors["open"])
 
-        if closed_c > 0:
+        if closed_c >= 1:
             labels.append("Closed")
             values.append(closed_c)
             pie_colors.append(colors["closed"])
@@ -93,7 +93,7 @@ def render_outstanding_line(df, total):
             ))
         else:
             fig.add_annotation(
-                text="No Open / Closed Items",
+                text="No Open/Closed Items",
                 x=0.5, y=0.5,
                 showarrow=False,
                 font=dict(size=14, color="white")

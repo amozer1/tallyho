@@ -12,7 +12,7 @@ def render_outstanding_line(df, total):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # FIND COLUMNS
+    # COLUMNS
     # =========================
     status_col = next((c for c in df.columns if c.lower() == "status"), None)
     doc_col = next((c for c in df.columns if c.lower() == "doc type"), None)
@@ -47,34 +47,28 @@ def render_outstanding_line(df, total):
 
         return open_items, closed_items, outstanding_items
 
-    tq_open, tq_closed, tq_outstanding = get_counts(tq_df)
-    rfi_open, rfi_closed, rfi_outstanding = get_counts(rfi_df)
+    tq_open, tq_closed, tq_out = get_counts(tq_df)
+    rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # BRIGHT MODERN COLORS
+    # MODERN COLORS
     # =========================
     COLORS = {
-        "open": "#00D9FF",        # neon blue
-        "closed": "#00FF85",      # neon green
-        "outstanding": "#FF3B6B"  # neon red/pink
+        "open": "#00D9FF",
+        "closed": "#00FF85",
+        "outstanding": "#FF3B6B"
     }
 
     # =========================
-    # PIE FUNCTION (3-SLICE)
+    # PIE: OPEN vs CLOSED
     # =========================
-    def make_pie(title, open_count, closed_count, outstanding_count):
-
+    def pie_main(title, open_c, closed_c):
         fig = go.Figure(data=[go.Pie(
-            labels=["Open", "Closed", "Outstanding"],
-            values=[open_count, closed_count, outstanding_count],
-            hole=0.10,  # slightly thick pie (NOT donut)
-            sort=False,
+            labels=["Open", "Closed"],
+            values=[open_c, closed_c],
+            hole=0.08,
             marker=dict(
-                colors=[
-                    COLORS["open"],
-                    COLORS["closed"],
-                    COLORS["outstanding"]
-                ],
+                colors=[COLORS["open"], COLORS["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
             textinfo="label+value",
@@ -84,18 +78,38 @@ def render_outstanding_line(df, total):
 
         fig.update_layout(
             title=title,
-            height=300,
+            height=250,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),
             showlegend=False,
             margin=dict(l=10, r=10, t=30, b=10)
         )
-
         return fig
 
     # =========================
-    # MAIN CARD WRAPPER
+    # OUTSTANDING MINI DISPLAY (SAME CARD)
+    # =========================
+    def outstanding_block(label, value):
+        return f"""
+        <div style="
+            background:#111827;
+            border-radius:12px;
+            padding:10px;
+            text-align:center;
+            margin-top:8px;
+        ">
+            <div style="font-size:13px; color:#cbd5e1;">
+                {label}
+            </div>
+            <div style="font-size:32px; font-weight:900; color:{COLORS['outstanding']};">
+                {value}
+            </div>
+        </div>
+        """
+
+    # =========================
+    # MAIN WRAPPER
     # =========================
     st.markdown("""
     <div style="
@@ -119,7 +133,7 @@ def render_outstanding_line(df, total):
     """, unsafe_allow_html=True)
 
     # =========================
-    # TQ CARD (FULL PIE)
+    # TQ CARD
     # =========================
     st.markdown("""
     <div style="
@@ -133,26 +147,19 @@ def render_outstanding_line(df, total):
     st.markdown("<div style='text-align:center;font-weight:700;color:#00D9FF;'>TQ</div>", unsafe_allow_html=True)
 
     st.plotly_chart(
-        make_pie("TQ Status", tq_open, tq_closed, tq_outstanding),
+        pie_main("TQ: Open vs Closed", tq_open, tq_closed),
         use_container_width=True
     )
 
-    st.markdown(f"""
-    <div style="
-        text-align:center;
-        font-size:13px;
-        color:#cbd5e1;
-        margin-top:6px;
-    ">
-        Outstanding (&gt;14 days): 
-        <span style="color:#FF3B6B; font-weight:800;">{tq_outstanding}</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        outstanding_block("TQ Outstanding (>14 days)", tq_out),
+        unsafe_allow_html=True
+    )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     # =========================
-    # RFI CARD (FULL PIE)
+    # RFI CARD
     # =========================
     st.markdown("""
     <div style="
@@ -166,26 +173,19 @@ def render_outstanding_line(df, total):
     st.markdown("<div style='text-align:center;font-weight:700;color:#00FF85;'>RFI</div>", unsafe_allow_html=True)
 
     st.plotly_chart(
-        make_pie("RFI Status", rfi_open, rfi_closed, rfi_outstanding),
+        pie_main("RFI: Open vs Closed", rfi_open, rfi_closed),
         use_container_width=True
     )
 
-    st.markdown(f"""
-    <div style="
-        text-align:center;
-        font-size:13px;
-        color:#cbd5e1;
-        margin-top:6px;
-    ">
-        Outstanding (&gt;14 days): 
-        <span style="color:#FF3B6B; font-weight:800;">{rfi_outstanding}</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        outstanding_block("RFI Outstanding (>14 days)", rfi_out),
+        unsafe_allow_html=True
+    )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     # =========================
-    # FOOTER SUMMARY
+    # FOOTER
     # =========================
     st.markdown(f"""
     <div style="

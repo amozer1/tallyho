@@ -32,8 +32,8 @@ def render_outstanding_line(df, total):
 
     today = pd.Timestamp.today()
 
-    tq_df = df[df[doc_col] == "TQ Information"]
-    rfi_df = df[df[doc_col] == "RFI Information"]
+    tq_df = df[df[doc_col] == "TQ"]
+    rfi_df = df[df[doc_col] == "RFI"]
 
     def get_counts(sub_df):
         open_items = len(sub_df[sub_df[status_col] == "OPEN"])
@@ -97,7 +97,7 @@ def render_outstanding_line(df, total):
         # TITLE
         # =========================
         fig.add_annotation(
-            text=f"<b>{title}</b>",
+            text=f"<b>{title}Information</b>",
             x=0.5, y=1.15,
             showarrow=False,
             font=dict(size=18, color="white")

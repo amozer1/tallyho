@@ -50,13 +50,22 @@ def render_outstanding_line(df, total):
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # THEMES
+    # 🎨 NEW BRIGHT COLOUR THEME
     # =========================
-    TQ = {"open": "#A855F7", "closed": "#3B82F6", "out": "#EF4444"}
-    RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
+    TQ = {
+        "open": "#38BDF8",      # bright sky blue
+        "closed": "#A855F7",    # vibrant purple
+        "out": "#EF4444"        # red
+    }
+
+    RFI = {
+        "open": "#60A5FA",      # soft electric blue
+        "closed": "#C084FC",    # light purple
+        "out": "#EF4444"        # red
+    }
 
     # =========================
-    # CARD FUNCTION
+    # CARD BUILDER
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
@@ -114,6 +123,9 @@ def render_outstanding_line(df, total):
             font=dict(size=14, color=colors["out"])
         )
 
+        # =========================
+        # LAYOUT
+        # =========================
         fig.update_layout(
             height=360,
             margin=dict(l=10, r=10, t=50, b=70),
@@ -125,10 +137,6 @@ def render_outstanding_line(df, total):
 
         return fig
 
-    # =========================
-    # DASHBOARD
-    # =========================
-    st.markdown("### 📊 TQ & RFI Status Dashboard")
 
     st.plotly_chart(card("TQ", tq_open, tq_closed, tq_out, TQ), use_container_width=True)
     st.plotly_chart(card("RFI", rfi_open, rfi_closed, rfi_out, RFI), use_container_width=True)

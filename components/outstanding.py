@@ -25,31 +25,28 @@ def render_outstanding_line(df, total):
     # =========================
     # CLEAN DATA
     # =========================
-    df[status_col] = df[status_col].astype(str).str.strip().str.upper()
-    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
+    df[status_col] = df[status_col].fillna("").astype(str).str.strip().str.upper()
+    df[doc_col] = df[doc_col].fillna("").astype(str).str.strip().str.upper()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     today = pd.Timestamp.today()
 
-    # =========================
-    # SPLIT DATA
-    # =========================
-    tq_df = df[df[doc_col] == "TQ"]
-    rfi_df = df[df[doc_col] == "RFI"]
+    tq_df = df[df[doc_col].str.contains("TQ", na=False)]
+    rfi_df = df[df[doc_col].str.contains("RFI", na=False)]
 
     def get_counts(sub_df):
-        closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
+        closed_items = len(sub_df[sub_df[status_col].str.contains("CLOSED", na=False)])
 
         outstanding_items = len(
             sub_df[
-                (sub_df[status_col] == "OPEN") &
+                (sub_df[status_col].str.contains("OPEN", na=False)) &
                 ((today - sub_df[date_col]).dt.days > 14)
             ]
         )
 
         open_recent = len(
             sub_df[
-                (sub_df[status_col] == "OPEN") &
+                (sub_df[status_col].str.contains("OPEN", na=False)) &
                 ((today - sub_df[date_col]).dt.days <= 14)
             ]
         )
@@ -63,49 +60,12 @@ def render_outstanding_line(df, total):
     overdue_pct = round((overdue_total / total) * 100, 1)
 
     # =========================
-    # SEVERITY
-    # =========================
-    if overdue_total >= 15:
-        color = "#ef4444"
-        status = "CRITICAL"
-    elif overdue_total >= 5:
-        color = "#f97316"
-        status = "HIGH"
-    else:
-        color = "#facc15"
-        status = "MEDIUM"
-
-    # =========================
-    # HEADER
-    # =========================
-    st.markdown(f"""
-    <div style="
-        background:#0f172a;
-        border:1px solid #1f2937;
-        border-radius:10px;
-        padding:6px;
-        text-align:center;
-        font-size:12px;
-        font-weight:700;
-        color:{color};
-        margin-bottom:8px;
-    ">
-        🚨 Outstanding (>14 Days) — {status}
-    </div>
-    """, unsafe_allow_html=True)
-
-    # =========================
-    # KPI
-    # =========================
-    st.metric("Total Outstanding", overdue_total, f"{overdue_pct}% of total")
-
-    # =========================
-    # PIE CHART FUNCTION
+    # PIE CHART
     # =========================
     def make_pie(title, open_count, closed_count):
         fig = go.Figure(data=[go.Pie(
             labels=["Open", "Closed"],
-            values=[open_count, closed_count],
+            values=[max(open_count, 0.001), max(closed_count, 0.001)],
             hole=0.05,
             sort=False,
             marker=dict(
@@ -114,68 +74,93 @@ def render_outstanding_line(df, total):
             ),
             textinfo="label+value",
             textposition="inside",
-            insidetextorientation="horizontal",
-            textfont=dict(size=16, color="white")
+            textfont=dict(size=15, color="white")
         )])
 
         fig.update_layout(
             title=title,
-            height=300,
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
+            height=260,
+            paper_bgcolor="#111827",
+            plot_bgcolor="#111827",
             font=dict(color="white"),
             showlegend=False,
-            margin=dict(l=10, r=10, t=40, b=10)
+            margin=dict(l=5, r=5, t=35, b=5)
         )
         return fig
 
     # =========================
-    # CHARTS
+    # CARD START
     # =========================
+    st.markdown("""
+    <div style="
+        background:#111827;
+        border:1px solid #1f2937;
+        border-radius:14px;
+        padding:14px;
+        margin-top:8px;
+    ">
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="
+        text-align:center;
+        font-size:15px;
+        font-weight:700;
+        color:white;
+        margin-bottom:8px;
+    ">
+        🚨 Outstanding Tracker
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="
+        text-align:center;
+        font-size:28px;
+        font-weight:800;
+        color:#f97316;
+        margin-bottom:4px;
+    ">
+        {overdue_total}
+    </div>
+    <div style="
+        text-align:center;
+        font-size:12px;
+        color:#cbd5e1;
+        margin-bottom:10px;
+    ">
+        {overdue_pct}% of total outstanding
+    </div>
+    """, unsafe_allow_html=True)
+
     col1, col2 = st.columns(2)
 
     with col1:
         st.plotly_chart(
-            make_pie("TQ Status", tq_open, tq_closed),
+            make_pie("TQ", tq_open, tq_closed),
             use_container_width=True
         )
 
     with col2:
         st.plotly_chart(
-            make_pie("RFI Status", rfi_open, rfi_closed),
+            make_pie("RFI", rfi_open, rfi_closed),
             use_container_width=True
         )
 
-    # =========================
-    # OUTSTANDING FOOTER
-    # =========================
     st.markdown(f"""
     <div style="
-        background:#111827;
-        border:1px solid #1f2937;
+        background:#0f172a;
         border-radius:10px;
         padding:8px;
-        margin-top:8px;
         text-align:center;
-        font-size:12px;
+        font-size:13px;
         color:white;
+        margin-top:8px;
     ">
-        ⚠️ <b>Outstanding (&gt;14 Days)</b><br>
-        TQ: <span style="color:#f97316;">{tq_outstanding}</span> &nbsp; | &nbsp;
-        RFI: <span style="color:#f97316;">{rfi_outstanding}</span>
+        ⚠ Outstanding (&gt;14 Days): 
+        <span style="color:#f97316;">TQ {tq_outstanding}</span> |
+        <span style="color:#f97316;">RFI {rfi_outstanding}</span>
     </div>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # SUMMARY FOOTER
-    # =========================
-    st.markdown(f"""
-    <div style="
-        font-size:11px;
-        color:#cbd5e1;
-        margin-top:4px;
-        text-align:center;
-    ">
-        TQ Total: {len(tq_df)} | RFI Total: {len(rfi_df)}
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)

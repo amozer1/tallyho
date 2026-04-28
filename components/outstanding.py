@@ -9,52 +9,17 @@ def render_outstanding_line(df, total):
         return
 
     df = df.copy()
-
-    # =========================
-    # CLEAN COLUMN NAMES
-    # =========================
     df.columns = df.columns.str.strip()
 
     # =========================
-    # FIND STATUS COLUMN (ROBUST)
+    # FIND COLUMNS
     # =========================
-    status_col = None
-    for col in df.columns:
-        if col.strip().lower() == "status":
-            status_col = col
-            break
+    status_col = next((c for c in df.columns if c.lower() == "status"), None)
+    doc_col = next((c for c in df.columns if c.lower() == "doc type"), None)
+    date_col = next((c for c in df.columns if c.lower() == "date sent"), None)
 
-    if status_col is None:
-        st.error("❌ 'Status' column not found")
-        st.write("Available columns:", df.columns.tolist())
-        return
-
-    # =========================
-    # FIND DOC TYPE COLUMN (ROBUST)
-    # =========================
-    doc_col = None
-    for col in df.columns:
-        if col.strip().lower() == "doc type":
-            doc_col = col
-            break
-
-    if doc_col is None:
-        st.error("❌ 'doc type' column not found")
-        st.write("Available columns:", df.columns.tolist())
-        return
-
-    # =========================
-    # FIND DATE SENT COLUMN (ROBUST)
-    # =========================
-    date_col = None
-    for col in df.columns:
-        if col.strip().lower() == "date sent":
-            date_col = col
-            break
-
-    if date_col is None:
-        st.error("❌ 'Date Sent' column not found")
-        st.write("Available columns:", df.columns.tolist())
+    if not status_col or not doc_col or not date_col:
+        st.error("Required columns missing.")
         return
 
     # =========================
@@ -67,44 +32,40 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # CORE LOGIC
+    # SPLIT DATA
     # =========================
-    open_df = df[df[status_col] == "OPEN"]
+    tq_df = df[df[doc_col] == "TQ"]
+    rfi_df = df[df[doc_col] == "RFI"]
 
-    overdue_df = open_df[
-        (today - open_df[date_col]).dt.days > 7
-    ]
+    def get_counts(sub_df):
+        open_items = len(sub_df[sub_df[status_col] == "OPEN"])
+        closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
+        overdue_items = len(
+            sub_df[
+                (sub_df[status_col] == "OPEN") &
+                ((today - sub_df[date_col]).dt.days > 14)
+            ]
+        )
+        return open_items, closed_items, overdue_items
 
-    overdue_total = len(overdue_df)
+    tq_open, tq_closed, tq_overdue = get_counts(tq_df)
+    rfi_open, rfi_closed, rfi_overdue = get_counts(rfi_df)
+
+    overdue_total = tq_overdue + rfi_overdue
     overdue_pct = round((overdue_total / total) * 100, 1)
 
     # =========================
-    # BREAKDOWN
-    # =========================
-    overdue_tq = len(overdue_df[overdue_df[doc_col] == "TQ"])
-    overdue_rfi = len(overdue_df[overdue_df[doc_col] == "RFI"])
-
-    total_tq = len(df[df[doc_col] == "TQ"])
-    total_rfi = len(df[df[doc_col] == "RFI"])
-
-    tq_pct = round((overdue_tq / total_tq) * 100, 1) if total_tq else 0
-    rfi_pct = round((overdue_rfi / total_rfi) * 100, 1) if total_rfi else 0
-
-    # =========================
-    # SEVERITY LOGIC
+    # SEVERITY
     # =========================
     if overdue_total >= 15:
         color = "#ef4444"
         status = "CRITICAL"
-        impact = "High backlog risk"
     elif overdue_total >= 5:
         color = "#f97316"
         status = "HIGH"
-        impact = "Needs attention"
     else:
         color = "#facc15"
         status = "MEDIUM"
-        impact = "Monitor"
 
     # =========================
     # HEADER
@@ -114,78 +75,63 @@ def render_outstanding_line(df, total):
         background:#0f172a;
         border:1px solid #1f2937;
         border-radius:10px;
-        padding:6px 10px;
-        margin-bottom:6px;
+        padding:6px;
         text-align:center;
         font-size:12px;
         font-weight:700;
         color:{color};
     ">
-        🚨 Outstanding (>7 Days) — {status}
+        🚨 Outstanding (>14 Days) — {status}
     </div>
     """, unsafe_allow_html=True)
 
     # =========================
-    # KPI ROW
+    # KPI
     # =========================
-    col1, col2 = st.columns([1.2, 1])
+    st.metric("Total Outstanding", overdue_total, f"{overdue_pct}% of total")
+
+    # =========================
+    # PIE CHARTS
+    # =========================
+    col1, col2 = st.columns(2)
 
     with col1:
-        st.metric(
-            label="Total Overdue",
-            value=f"{overdue_total}",
-            delta=f"{overdue_pct}% of total"
+        fig_tq = go.Figure(data=[go.Pie(
+            labels=["Open", "Closed", "Outstanding"],
+            values=[tq_open, tq_closed, tq_overdue],
+            hole=0.55,
+            marker=dict(colors=["#38bdf8", "#22c55e", "#f97316"]),
+            textinfo="label+value"
+        )])
+
+        fig_tq.update_layout(
+            title="TQ Status",
+            height=300,
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(color="white")
         )
+
+        st.plotly_chart(fig_tq, use_container_width=True)
 
     with col2:
-        st.markdown(f"""
-        <div style="padding-top:6px;">
-            <div style="font-size:12px; font-weight:700; color:{color};">
-                {impact}
-            </div>
-            <div style="font-size:11px; color:#cbd5e1;">
-                TQ: {overdue_tq} | RFI: {overdue_rfi}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        fig_rfi = go.Figure(data=[go.Pie(
+            labels=["Open", "Closed", "Outstanding"],
+            values=[rfi_open, rfi_closed, rfi_overdue],
+            hole=0.55,
+            marker=dict(colors=["#38bdf8", "#22c55e", "#f97316"]),
+            textinfo="label+value"
+        )])
 
-    # =========================
-    # VERTICAL BAR CHART
-    # =========================
-    fig = go.Figure()
-
-    fig.add_trace(go.Bar(
-        x=["TQ Overdue", "RFI Overdue"],
-        y=[overdue_tq, overdue_rfi],
-        marker=dict(color=["#f97316", "#38bdf8"]),
-        text=[
-            f"{overdue_tq} ({tq_pct}%)",
-            f"{overdue_rfi} ({rfi_pct}%)"
-        ],
-        textposition="outside"
-    ))
-
-    fig.update_layout(
-        height=220,
-        margin=dict(l=15, r=15, t=10, b=10),
-        paper_bgcolor="#0f172a",
-        plot_bgcolor="#0f172a",
-        font=dict(color="white", size=11),
-
-        xaxis=dict(
-            showgrid=False,
-            tickfont=dict(color="white")
-        ),
-
-        yaxis=dict(
-            title="Overdue Items",
-            showgrid=True,
-            gridcolor="rgba(255,255,255,0.08)",
-            tickfont=dict(color="white")
+        fig_rfi.update_layout(
+            title="RFI Status",
+            height=300,
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(color="white")
         )
-    )
 
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_rfi, use_container_width=True)
 
     # =========================
     # FOOTER
@@ -194,8 +140,9 @@ def render_outstanding_line(df, total):
     <div style="
         font-size:11px;
         color:#cbd5e1;
-        margin-top:2px;
+        margin-top:4px;
+        text-align:center;
     ">
-        Status: <span style="color:{color}; font-weight:600;">{impact}</span>
+        TQ Outstanding: {tq_overdue} | RFI Outstanding: {rfi_overdue}
     </div>
     """, unsafe_allow_html=True)

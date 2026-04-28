@@ -59,8 +59,8 @@ def render_outstanding_line(df, total):
     }
 
     RFI = {
-        "open": "#93C5FD",
-        "closed": "#6EE7B7",
+        "open": "#C4B5FD",
+        "closed": "#7C3AED",
         "out": "#EF4444"
     }
 
@@ -72,25 +72,23 @@ def render_outstanding_line(df, total):
         fig = go.Figure()
 
         # =========================
-        # PIE
+        # PIE (3 SLICES NOW)
         # =========================
         fig.add_trace(go.Pie(
-            labels=["Open", "Closed"],
-            values=[open_c, closed_c],
+            labels=["Open", "Closed", "Outstanding"],
+            values=[open_c, closed_c, out_c],
 
             hole=0.12,
 
             marker=dict(
-                colors=[colors["open"], colors["closed"]],
-                line=dict(color="#0f172a", width=2)
+                colors=[colors["open"], colors["closed"], colors["out"]],
+                line=dict(color="#111827", width=2)
             ),
 
             textinfo="label+value",
             textposition="inside",
             insidetextorientation="radial",
-
-            automargin=False,
-            textfont=dict(color="white", size=14)
+            textfont=dict(color="white", size=11)
         ))
 
         # =========================
@@ -98,19 +96,19 @@ def render_outstanding_line(df, total):
         # =========================
         fig.add_annotation(
             text=f"<b>{title} Information</b>",
-            x=0.5, y=1.15,
+            x=0.5, y=1.08,
             showarrow=False,
-            font=dict(size=18, color="white")
+            font=dict(size=16, color="white")
         )
 
         # =========================
         # OPEN / CLOSED TEXT
         # =========================
         fig.add_annotation(
-            text=f"Open: {open_c}   |   Closed: {closed_c}",
-            x=0.5, y=-0.10,
+            text=f"Open: {open_c} | Closed: {closed_c}",
+            x=0.5, y=-0.06,
             showarrow=False,
-            font=dict(size=12, color="#cbd5e1")
+            font=dict(size=11, color="#cbd5e1")
         )
 
         # =========================
@@ -118,17 +116,17 @@ def render_outstanding_line(df, total):
         # =========================
         fig.add_annotation(
             text=f"Outstanding (>14 days): {out_c}",
-            x=0.5, y=-0.22,
+            x=0.5, y=-0.16,
             showarrow=False,
-            font=dict(size=14, color=colors["out"])
+            font=dict(size=12, color=colors["out"])
         )
 
         # =========================
-        # LAYOUT
+        # LAYOUT (REDUCED HEIGHT)
         # =========================
         fig.update_layout(
-            height=360,
-            margin=dict(l=10, r=10, t=50, b=70),
+            height=290,  # 🔥 reduced size
+            margin=dict(l=10, r=10, t=35, b=45),
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),

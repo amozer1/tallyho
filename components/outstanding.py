@@ -50,18 +50,18 @@ def render_outstanding_line(df, total):
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # COLOURS
+    # COLOURS (ONLY CHANGE MADE HERE)
     # =========================
     TQ = {
-        "open": "#60A5FA",
-        "closed": "#34D399",
-        "out": "#EF4444"
+        "open": "#3B82F6",        # blue
+        "closed": "#22C55E",      # green
+        "out": "#EF4444"          # red
     }
 
     RFI = {
-        "open": "#C4B5FD",
-        "closed": "#7C3AED",
-        "out": "#EF4444"
+        "open": "#A78BFA",        # light purple
+        "closed": "#6D28D9",      # deep purple
+        "out": "#EF4444"          # red
     }
 
     # =========================
@@ -72,7 +72,7 @@ def render_outstanding_line(df, total):
         fig = go.Figure()
 
         # =========================
-        # PIE (3 SLICES NOW)
+        # PIE
         # =========================
         fig.add_trace(go.Pie(
             labels=["Open", "Closed", "Outstanding"],
@@ -122,10 +122,10 @@ def render_outstanding_line(df, total):
         )
 
         # =========================
-        # LAYOUT (REDUCED HEIGHT)
+        # LAYOUT
         # =========================
         fig.update_layout(
-            height=290,  # 🔥 reduced size
+            height=290,
             margin=dict(l=10, r=10, t=35, b=45),
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",

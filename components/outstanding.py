@@ -38,48 +38,70 @@ def render_outstanding_line(df, total):
     def get_counts(sub_df):
         open_items = len(sub_df[sub_df[status_col] == "OPEN"])
         closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
-
         outstanding_items = len(
             sub_df[
                 (sub_df[status_col] == "OPEN") &
                 ((today - sub_df[date_col]).dt.days > 14)
             ]
         )
-
         return open_items, closed_items, outstanding_items
 
     tq_open, tq_closed, tq_out = get_counts(tq_df)
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # COLORS
+    # THEMES
     # =========================
     TQ = {"open": "#A855F7", "closed": "#3B82F6", "out": "#EF4444"}
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # PIE (NO HTML DEPENDENCY)
+    # FULL CARD BUILDER (100% INSIDE FIGURE)
     # =========================
-    def pie(open_c, closed_c, colors):
+    def card(title, open_c, closed_c, out_c, colors):
 
-        fig = go.Figure(data=[go.Pie(
+        fig = go.Figure()
+
+        # PIE
+        fig.add_trace(go.Pie(
             labels=["Open", "Closed"],
             values=[open_c, closed_c],
-            sort=False,
             hole=0.12,
             marker=dict(
                 colors=[colors["open"], colors["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
             textinfo="label+value",
-            textposition="inside",
-            texttemplate="%{label}<br>%{value}",
             textfont=dict(color="white", size=14)
-        )])
+        ))
+
+        # TITLE (inside card)
+        fig.add_annotation(
+            text=f"<b>{title}</b>",
+            x=0.5, y=1.15,
+            showarrow=False,
+            font=dict(size=18, color="white")
+        )
+
+        # OPEN / CLOSED TEXT (inside card)
+        fig.add_annotation(
+            text=f"Open: {open_c}   |   Closed: {closed_c}",
+            x=0.5, y=-0.10,
+            showarrow=False,
+            font=dict(size=12, color="#cbd5e1")
+        )
+
+        # OUTSTANDING (inside card bottom)
+        fig.add_annotation(
+            text=f"Outstanding (>14 days): {out_c}",
+            x=0.5, y=-0.22,
+            showarrow=False,
+            font=dict(size=14, color=colors["out"])
+        )
 
         fig.update_layout(
-            height=320,
-            margin=dict(l=10, r=10, t=10, b=10),
+            height=360,
+            margin=dict(l=10, r=10, t=50, b=70),
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),
@@ -89,38 +111,9 @@ def render_outstanding_line(df, total):
         return fig
 
     # =========================
-    # STREAMLIT CARD (PURE CONTAINER)
-    # =========================
-    def card(title, open_c, closed_c, out_c, colors):
-
-        with st.container():
-
-            st.markdown(f"### {title} DETAILS")
-
-            st.plotly_chart(
-                pie(open_c, closed_c, colors),
-                use_container_width=True
-            )
-
-            st.markdown(
-                f"""
-                **Open:** {open_c} &nbsp;&nbsp; | &nbsp;&nbsp;
-                **Closed:** {closed_c}
-                """,
-                unsafe_allow_html=False
-            )
-
-            st.markdown(
-                f"**Outstanding (>14 days): {out_c}**"
-            )
-
-            st.divider()
-
-    # =========================
     # DASHBOARD
     # =========================
-    st.markdown("## 📊 TQ & RFI Status Dashboard")
+    st.markdown("### 📊 TQ & RFI Status Dashboard")
 
-    card("TQ", tq_open, tq_closed, tq_out, TQ)
-    card("RFI", rfi_open, rfi_closed, rfi_out, RFI)
-
+    st.plotly_chart(card("TQ", tq_open, tq_closed, tq_out, TQ), use_container_width=True)
+    st.plotly_chart(card("RFI", rfi_open, rfi_closed, rfi_out, RFI), use_container_width=True)

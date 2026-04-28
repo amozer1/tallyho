@@ -1,28 +1,42 @@
 import streamlit as st
+import pandas as pd
 
-# import your modules
-from components.age_outstanding import render_age_outstanding
-from components.outstanding import render_outstanding
+from components.sidebar import render_sidebar
+from components.header import render_header
 from components.trend import render_trend
+from components.outstanding import render_outstanding_line
+from components.age_outstanding import render_age_outstanding
 
+st.set_page_config(page_title="TQ / RFI Dashboard", layout="wide")
 
-def render_dashboard(df):
+render_sidebar()
+render_header()
 
-    st.set_page_config(layout="wide")
+@st.cache_data
+def load_data():
+    return pd.read_excel("data/TQ_TH.xlsx")
 
-    # =========================
-    # 3 EQUAL PANELS
-    # =========================
-    col1, col2, col3 = st.columns(3, gap="large")
+df = load_data()
 
-    with col1:
-        st.markdown("### Age Outstanding")
-        render_age_outstanding(df)
+df = df.copy()
+df.columns = df.columns.str.strip().str.lower()
 
-    with col2:
-        st.markdown("### Outstanding")
-        render_outstanding(df)
+df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
+df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-    with col3:
-        st.markdown("### Trend Analysis")
-        render_trend(df)
+# =========================
+# 4 EQUAL DASHBOARD LAYOUT
+# =========================
+col1, col2, col3, col4 = st.columns(4, gap="large")
+
+with col1:
+    render_outstanding_line(df, total=len(df))
+
+with col2:
+    render_trend(df)
+
+with col3:
+    render_age_outstanding(df)
+
+with col4:
+    st.info("KPI / Summary Panel (Future Use)")

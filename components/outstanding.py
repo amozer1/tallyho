@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 def render_outstanding_line(df, total):
 
     if df is None or df.empty:
+        st.warning("No data available")
         return
 
     df = df.copy()
@@ -37,19 +38,21 @@ def render_outstanding_line(df, total):
     def get_counts(sub_df):
         open_items = len(sub_df[sub_df[status_col] == "OPEN"])
         closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
+
         outstanding_items = len(
             sub_df[
                 (sub_df[status_col] == "OPEN") &
                 ((today - sub_df[date_col]).dt.days > 14)
             ]
         )
+
         return open_items, closed_items, outstanding_items
 
     tq_open, tq_closed, tq_out = get_counts(tq_df)
     rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
 
     # =========================
-    # THEMES (DIFFERENT PER CARD)
+    # COLOURS
     # =========================
     TQ_COLORS = {
         "open": "#A855F7",
@@ -64,16 +67,18 @@ def render_outstanding_line(df, total):
     }
 
     # =========================
-    PIE FUNCTION
+    # PIE CHART (OPEN vs CLOSED ONLY)
     # =========================
     def pie(title, open_c, closed_c, colors):
+
         fig = go.Figure(data=[go.Pie(
             labels=["Open", "Closed"],
             values=[open_c, closed_c],
-            hole=0.10,
+            hole=0.08,
+            sort=False,
             marker=dict(
                 colors=[colors["open"], colors["closed"]],
-                line=dict(color="#111827", width=2)
+                line=dict(color="#0f172a", width=2)
             ),
             textinfo="label+value",
             textposition="inside",
@@ -81,27 +86,40 @@ def render_outstanding_line(df, total):
         )])
 
         fig.update_layout(
-            height=260,
-            margin=dict(l=10, r=10, t=30, b=10),
+            title=dict(text=title, font=dict(color="white", size=14)),
+            height=280,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
             font=dict(color="white"),
-            showlegend=False
+            showlegend=False,
+            margin=dict(l=10, r=10, t=30, b=10)
         )
+
         return fig
 
     # =========================
-    # OUTSTANDING KPI CARD (STREAMLIT ONLY)
+    # OUTSTANDING BLOCK (CLEAN KPI)
     # =========================
     def kpi(label, value, color):
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown(f"**{label}**")
-        with col2:
-            st.markdown(f"<span style='color:{color}; font-size:22px; font-weight:800;'>{value}</span>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="
+            background:#111827;
+            border:1px solid #1f2937;
+            border-radius:12px;
+            padding:14px;
+            text-align:center;
+        ">
+            <div style="font-size:13px; color:#E5E7EB;">
+                {label}
+            </div>
+            <div style="font-size:34px; font-weight:900; color:{color};">
+                {value}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # =========================
-    # MAIN DASHBOARD
+    # DASHBOARD TITLE
     # =========================
     st.markdown("### 📊 TQ & RFI Status Dashboard")
 
@@ -111,34 +129,17 @@ def render_outstanding_line(df, total):
     with st.container():
         st.subheader("TQ")
 
-        col1, col2 = st.columns(2)
+        st.plotly_chart(
+            pie(
+                "Open vs Closed",
+                tq_open,
+                tq_closed,
+                TQ_COLORS
+            ),
+            use_container_width=True
+        )
 
-        with col1:
-            st.plotly_chart(
-                pie("Open vs Closed", tq_open, tq_closed, TQ_COLORS),
-                use_container_width=True
-            )
-
-        with col2:
-            st.plotly_chart(
-                go.Figure(data=[go.Pie(
-                    labels=["Outstanding", "OK"],
-                    values=[tq_out, max(0, tq_open + tq_closed - tq_out)],
-                    hole=0.10,
-                    marker=dict(colors=[TQ_COLORS["outstanding"], "#22C55E"]),
-                    textinfo="label+value",
-                    textfont=dict(color="white")
-                )]).update_layout(
-                    height=260,
-                    paper_bgcolor="#0f172a",
-                    plot_bgcolor="#0f172a",
-                    font=dict(color="white"),
-                    showlegend=False
-                ),
-                use_container_width=True
-            )
-
-        kpi("TQ Outstanding (>14 days)", tq_out, TQ_COLORS["outstanding"])
+        kpi("Outstanding (>14 days)", tq_out, TQ_COLORS["outstanding"])
 
     st.divider()
 
@@ -148,31 +149,21 @@ def render_outstanding_line(df, total):
     with st.container():
         st.subheader("RFI")
 
-        col3, col4 = st.columns(2)
+        st.plotly_chart(
+            pie(
+                "Open vs Closed",
+                rfi_open,
+                rfi_closed,
+                RFI_COLORS
+            ),
+            use_container_width=True
+        )
 
-        with col3:
-            st.plotly_chart(
-                pie("Open vs Closed", rfi_open, rfi_closed, RFI_COLORS),
-                use_container_width=True
-            )
+        kpi("Outstanding (>14 days)", rfi_out, RFI_COLORS["outstanding"])
 
-        with col4:
-            st.plotly_chart(
-                go.Figure(data=[go.Pie(
-                    labels=["Outstanding", "OK"],
-                    values=[rfi_out, max(0, rfi_open + rfi_closed - rfi_out)],
-                    hole=0.10,
-                    marker=dict(colors=[RFI_COLORS["outstanding"], "#22C55E"]),
-                    textinfo="label+value",
-                    textfont=dict(color="white")
-                )]).update_layout(
-                    height=260,
-                    paper_bgcolor="#0f172a",
-                    plot_bgcolor="#0f172a",
-                    font=dict(color="white"),
-                    showlegend=False
-                ),
-                use_container_width=True
-            )
-
-        kpi("RFI Outstanding (>14 days)", rfi_out, RFI_COLORS["outstanding"])
+    # =========================
+    # FOOTER
+    # =========================
+    st.markdown(
+        f"**Totals → TQ:** {len(tq_df)} | **RFI:** {len(rfi_df)}"
+    )

@@ -58,70 +58,69 @@ def render_outstanding_line(df, total):
     RFI = {"open": "#14B8A6", "closed": "#FACC15", "out": "#EF4444"}
 
     # =========================
-    # SAFE VALUE FUNCTION (KEY FIX)
+    # PIE (FIXED TEXT INSIDE SLICES)
     # =========================
-    def safe(v):
-        return v if v > 0 else 0.0001
+    def pie(open_c, closed_c, colors):
+
+        fig = go.Figure(data=[go.Pie(
+            labels=["Open", "Closed"],
+            values=[open_c, closed_c],
+
+            sort=False,
+            hole=0.12,
+            pull=0,
+
+            marker=dict(
+                colors=[colors["open"], colors["closed"]],
+                line=dict(color="#0f172a", width=2)
+            ),
+
+            # 🔥 KEY FIX: text fully inside slice
+            textinfo="label+value",
+            textposition="inside",
+            insidetextorientation="radial",
+            texttemplate="%{label}<br>%{value}",
+            textfont=dict(color="white", size=14)
+        )])
+
+        fig.update_layout(
+            height=340,
+            margin=dict(l=10, r=10, t=10, b=10),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(color="white"),
+            showlegend=False,
+            automargin=True
+        )
+
+        return fig
 
     # =========================
     # CARD BUILDER
     # =========================
     def card(title, open_c, closed_c, out_c, colors):
 
-        fig = go.Figure()
+        st.markdown(f"### {title}")
 
-        # PIE (ZERO SAFE)
-        fig.add_trace(go.Pie(
-            labels=["Open", "Closed"],
-            values=[safe(open_c), safe(closed_c)],
-            hole=0.12,
-            marker=dict(
-                colors=[colors["open"], colors["closed"]],
-                line=dict(color="#0f172a", width=2)
-            ),
-            textinfo="label+value",
-            textfont=dict(color="white", size=14)
-        ))
-
-        # TITLE
-        fig.add_annotation(
-            text=f"<b>{title}</b>",
-            x=0.5, y=1.15,
-            showarrow=False,
-            font=dict(size=18, color="white")
+        st.plotly_chart(
+            pie(open_c, closed_c, colors),
+            use_container_width=True
         )
 
-        # OPEN/CLOSED TEXT (REAL VALUES)
-        fig.add_annotation(
-            text=f"Open: {open_c}   |   Closed: {closed_c}",
-            x=0.5, y=-0.10,
-            showarrow=False,
-            font=dict(size=12, color="#cbd5e1")
+        st.markdown(
+            f"""
+            **Outstanding (>14 days):**  
+            <span style="color:{colors['out']}; font-size:18px; font-weight:700;">
+            {out_c}
+            </span>
+            """,
+            unsafe_allow_html=True
         )
-
-        # OUTSTANDING
-        fig.add_annotation(
-            text=f"Outstanding (>14 days): {out_c}",
-            x=0.5, y=-0.22,
-            showarrow=False,
-            font=dict(size=14, color=colors["out"])
-        )
-
-        fig.update_layout(
-            height=360,
-            margin=dict(l=10, r=10, t=50, b=70),
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
-            font=dict(color="white"),
-            showlegend=False
-        )
-
-        return fig
 
     # =========================
     # DASHBOARD
     # =========================
     st.markdown("### 📊 TQ & RFI Status Dashboard")
 
-    st.plotly_chart(card("TQ", tq_open, tq_closed, tq_out, TQ), use_container_width=True)
-    st.plotly_chart(card("RFI", rfi_open, rfi_closed, rfi_out, RFI), use_container_width=True)
+    card("TQ", tq_open, tq_closed, tq_out, TQ)
+    card("RFI", rfi_open, rfi_closed, rfi_out, RFI)

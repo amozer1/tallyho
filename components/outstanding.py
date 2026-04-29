@@ -13,7 +13,7 @@ def render_outstanding_line(df, total=None):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # COLUMNS
+    # REQUIRED COLUMNS
     # =========================
     status_col = "status"
     doc_col = "doc type"
@@ -37,27 +37,24 @@ def render_outstanding_line(df, total=None):
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # COUNT LOGIC
+    # COUNTS
     # =========================
     def calc(sub):
-
         open_ = len(sub[sub[status_col] == "OPEN"])
         closed_ = len(sub[sub[status_col] == "CLOSED"])
-
         outstanding_ = len(
             sub[
                 (sub[status_col] == "OPEN") &
                 ((today - sub[date_col]).dt.days > 14)
             ]
         )
-
         return open_, outstanding_, closed_
 
     rfi_open, rfi_out, rfi_closed = calc(rfi)
     tq_open, tq_out, tq_closed = calc(tq)
 
     # =========================
-    # COLOURS (REQUIRED)
+    # COLOURS
     # =========================
     COLORS = {
         "open": "#EF4444",     # red
@@ -66,7 +63,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE BUILDER
+    # PIE
     # =========================
     def pie(o, out, c, title):
 
@@ -78,7 +75,7 @@ def render_outstanding_line(df, total=None):
             hole=0,
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
-                line=dict(color="#0f172a", width=2)
+                line=dict(color="white", width=2)
             ),
             textinfo="label+value",
             textposition="inside",
@@ -88,39 +85,59 @@ def render_outstanding_line(df, total=None):
         fig.update_layout(
             height=320,
             margin=dict(l=10, r=10, t=30, b=10),
-            paper_bgcolor="#0f172a",
-            font=dict(color="white"),
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+            font=dict(color="black"),
             showlegend=False,
-            title=dict(text=title, x=0.5, font=dict(size=16))
+            title=dict(text=title, x=0.5)
         )
 
         return fig
 
     # =========================
-    # CARD RENDERER
+    # WHITE CARD CONTAINER
     # =========================
     def render_card(title, o, out, c):
 
-        col_left, col_right = st.columns([1, 1.6])
+        st.markdown(
+            """
+            <style>
+            .card {
+                background-color: white;
+                padding: 15px;
+                border-radius: 12px;
+                box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+                margin-bottom: 15px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
-        with col_left:
-            st.markdown(f"### {title}")
+        with st.container():
+            st.markdown('<div class="card">', unsafe_allow_html=True)
 
-            st.markdown(f"🔴 Open: **{o}**")
-            st.markdown(f"🟡 Outstanding: **{out}**")
-            st.markdown(f"🟢 Closed: **{c}**")
+            col1, col2 = st.columns([1, 1.6])
 
-        with col_right:
-            st.plotly_chart(
-                pie(o, out, c, title),
-                use_container_width=True
-            )
+            with col1:
+                st.markdown(f"### {title}")
+
+                st.markdown(f"🔴 Open: **{o}**")
+                st.markdown(f"🟡 Outstanding: **{out}**")
+                st.markdown(f"🟢 Closed: **{c}**")
+
+            with col2:
+                st.plotly_chart(
+                    pie(o, out, c, title),
+                    use_container_width=True
+                )
+
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================
-    # UI LAYOUT (TWO CARDS)
+    # RENDER
     # =========================
     st.subheader("Document Status Overview")
 
     render_card("RFI", rfi_open, rfi_out, rfi_closed)
-    st.markdown("---")
     render_card("TQ", tq_open, tq_out, tq_closed)

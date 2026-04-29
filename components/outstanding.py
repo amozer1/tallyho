@@ -31,7 +31,7 @@ def render_outstanding_line(df, total=None):
     today = pd.Timestamp.today()
 
     # =========================
-    # SPLIT
+    # SPLIT DATA
     # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
@@ -42,13 +42,13 @@ def render_outstanding_line(df, total=None):
     def calc(sub):
         open_ = len(sub[sub[status_col] == "OPEN"])
         closed_ = len(sub[sub[status_col] == "CLOSED"])
-        outstanding_ = len(
+        out_ = len(
             sub[
                 (sub[status_col] == "OPEN") &
                 ((today - sub[date_col]).dt.days > 14)
             ]
         )
-        return open_, outstanding_, closed_
+        return open_, out_, closed_
 
     rfi_open, rfi_out, rfi_closed = calc(rfi)
     tq_open, tq_out, tq_closed = calc(tq)
@@ -57,13 +57,13 @@ def render_outstanding_line(df, total=None):
     # COLOURS
     # =========================
     COLORS = {
-        "open": "#EF4444",     # red
-        "out": "#F59E0B",      # gold
-        "closed": "#22C55E"    # green
+        "open": "#EF4444",
+        "out": "#F59E0B",
+        "closed": "#22C55E"
     }
 
     # =========================
-    # PIE
+    # PIE CHART
     # =========================
     def pie(o, out, c, title):
 
@@ -95,33 +95,36 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # WHITE CARD CONTAINER
+    # CARD STYLE (STREAMLIT ONLY)
+    # =========================
+    st.markdown(
+        """
+        <style>
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 14px;
+            box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 18px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # =========================
+    # CARD RENDERER
     # =========================
     def render_card(title, o, out, c):
-
-        st.markdown(
-            """
-            <style>
-            .card {
-                background-color: white;
-                padding: 15px;
-                border-radius: 12px;
-                box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
-                margin-bottom: 15px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
 
         with st.container():
             st.markdown('<div class="card">', unsafe_allow_html=True)
 
-            col1, col2 = st.columns([1, 1.6])
+            st.markdown(f"## {title}")
+
+            col1, col2 = st.columns([1, 1.5])
 
             with col1:
-                st.markdown(f"### {title}")
-
                 st.markdown(f"🔴 Open: **{o}**")
                 st.markdown(f"🟡 Outstanding: **{out}**")
                 st.markdown(f"🟢 Closed: **{c}**")
@@ -135,9 +138,7 @@ def render_outstanding_line(df, total=None):
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================
-    # RENDER
+    # OUTPUT
     # =========================
-    st.subheader("Document Status Overview")
-
     render_card("RFI", rfi_open, rfi_out, rfi_closed)
     render_card("TQ", tq_open, tq_out, tq_closed)

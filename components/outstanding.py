@@ -39,9 +39,15 @@ def render_outstanding_line(df, total):
     # PROJECT TITLE
     # =========================
     project_name = df["project id"].dropna().iloc[0]
-    st.markdown(f"""
-        <h1 style='text-align:center;'>Project {project_name} – RFI / TQ Overview</h1>
-    """, unsafe_allow_html=True)
+
+    st.markdown(
+        f"""
+        <h1 style='text-align:center; margin-bottom:20px;'>
+            Project {project_name} – RFI / TQ Overview
+        </h1>
+        """,
+        unsafe_allow_html=True
+    )
 
     # =========================
     # FILTER
@@ -103,20 +109,34 @@ def render_outstanding_line(df, total):
     st.markdown("<br>", unsafe_allow_html=True)
 
     # =========================
-    # PIE
+    # PIE CHARTS
     # =========================
     def pie(title, open_v, out_v, closed_v):
         fig = go.Figure()
+
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[open_v, out_v, closed_v],
-            hole=0.45,
-            marker=dict(colors=["#EF4444", "#EAB308", "#22C55E"]),
-            textinfo="percent"
+            hole=0,
+            marker=dict(
+                colors=["#EF4444", "#EAB308", "#22C55E"],
+                line=dict(color="white", width=2)
+            ),
+            textinfo="percent",
+            textfont=dict(size=18, color="white"),
+            sort=False
         ))
+
         fig.update_layout(
-            title=title,
-            height=320
+            title=f"<b>{title}</b>",
+            height=330,
+            margin=dict(l=10, r=10, t=50, b=10),
+            showlegend=True,
+            legend=dict(
+                orientation="v",
+                x=0,
+                y=0.8
+            )
         )
         return fig
 
@@ -126,14 +146,16 @@ def render_outstanding_line(df, total):
         if doc_view in ["RFIs", "Both"]:
             st.plotly_chart(
                 pie("RFI", rfi_open, rfi_out, rfi_closed),
-                use_container_width=True
+                use_container_width=True,
+                key="rfi_pie"
             )
 
     with c2:
         if doc_view in ["TQs", "Both"]:
             st.plotly_chart(
                 pie("TQ", tq_open, tq_out, tq_closed),
-                use_container_width=True
+                use_container_width=True,
+                key="tq_pie"
             )
 
     # =========================

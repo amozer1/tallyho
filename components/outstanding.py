@@ -37,18 +37,18 @@ def render_outstanding_line(df, total=None):
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # COUNTS
+    # LOGIC
     # =========================
     def calc(sub):
         open_ = len(sub[sub[status_col] == "OPEN"])
         closed_ = len(sub[sub[status_col] == "CLOSED"])
-        out_ = len(
+        outstanding_ = len(
             sub[
                 (sub[status_col] == "OPEN") &
                 ((today - sub[date_col]).dt.days > 14)
             ]
         )
-        return open_, out_, closed_
+        return open_, outstanding_, closed_
 
     rfi_open, rfi_out, rfi_closed = calc(rfi)
     tq_open, tq_out, tq_closed = calc(tq)
@@ -63,7 +63,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE CHART
+    # PIE (SOLID)
     # =========================
     def pie(o, out, c, title):
 
@@ -95,34 +95,17 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # CARD STYLE (STREAMLIT ONLY)
-    # =========================
-    st.markdown(
-        """
-        <style>
-        .card {
-            background: white;
-            padding: 15px;
-            border-radius: 14px;
-            box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
-            margin-bottom: 18px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # =========================
-    # CARD RENDERER
+    # TRUE STREAMLIT CARD
     # =========================
     def render_card(title, o, out, c):
 
-        with st.container():
-            st.markdown('<div class="card">', unsafe_allow_html=True)
+        with st.container(border=True):
 
-            st.markdown(f"## {title}")
+            # TITLE INSIDE CARD
+            st.markdown(f"### {title}")
 
-            col1, col2 = st.columns([1, 1.5])
+            # FULL CONTENT INSIDE SAME CARD
+            col1, col2 = st.columns([1, 1.7])
 
             with col1:
                 st.markdown(f"🔴 Open: **{o}**")
@@ -134,8 +117,6 @@ def render_outstanding_line(df, total=None):
                     pie(o, out, c, title),
                     use_container_width=True
                 )
-
-            st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================
     # OUTPUT

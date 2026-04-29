@@ -3,25 +3,24 @@ import streamlit as st
 import plotly.graph_objects as go
 
 
-def render_rfi_tq_pies(df):
+# MUST MATCH APP.PY SIGNATURE
+def render_outstanding_line(df, total=None):
 
     if df is None or df.empty:
         st.warning("No data available")
         return
 
     df = df.copy()
-    df.columns = df.columns.str.strip()
+    df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # YOUR EXACT COLUMNS
+    # REQUIRED COLUMNS (LOWERCASE BECAUSE YOU NORMALISE IN APP.PY)
     # =========================
-    status_col = "Status"
-    doc_col = "Doc Type"
-    date_col = "Date Sent"
+    status_col = "status"
+    doc_col = "doc type"
+    date_col = "date sent"
 
-    # safety check
-    required = [status_col, doc_col, date_col]
-    for c in required:
+    for c in [status_col, doc_col, date_col]:
         if c not in df.columns:
             st.error(f"Missing column: {c}")
             return
@@ -29,72 +28,69 @@ def render_rfi_tq_pies(df):
     # =========================
     # CLEAN DATA
     # =========================
-    df[status_col] = df[status_col].astype(str).str.strip().str.upper()
-    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
+    df[status_col] = df[status_col].astype(str).str.upper().str.strip()
+    df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     today = pd.Timestamp.today()
 
     # =========================
-    # SPLIT RFI / TQ
+    # SPLIT DATA
     # =========================
-    rfi_df = df[df[doc_col] == "RFI"]
-    tq_df = df[df[doc_col] == "TQ"]
+    rfi = df[df[doc_col] == "RFI"]
+    tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # LOGIC FUNCTION
+    # COUNTS FUNCTION
     # =========================
-    def get_counts(sub_df):
+    def calc(sub):
 
-        open_items = len(sub_df[sub_df[status_col] == "OPEN"])
-        closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
+        open_ = len(sub[sub[status_col] == "OPEN"])
+        closed_ = len(sub[sub[status_col] == "CLOSED"])
 
-        outstanding_items = len(
-            sub_df[
-                (sub_df[status_col] == "OPEN") &
-                ((today - sub_df[date_col]).dt.days > 14)
+        outstanding_ = len(
+            sub[
+                (sub[status_col] == "OPEN") &
+                ((today - sub[date_col]).dt.days > 14)
             ]
         )
 
-        return open_items, outstanding_items, closed_items
+        return open_, outstanding_, closed_
 
-    rfi_open, rfi_out, rfi_closed = get_counts(rfi_df)
-    tq_open, tq_out, tq_closed = get_counts(tq_df)
+    rfi_open, rfi_out, rfi_closed = calc(rfi)
+    tq_open, tq_out, tq_closed = calc(tq)
 
     # =========================
-    # COLOURS
+    # COLOURS (STRICT)
     # =========================
-    COLORS = {
-        "open": "#EF4444",     # red
-        "out": "#F59E0B",      # amber
-        "closed": "#22C55E"    # green
+    colors = {
+        "open": "#EF4444",
+        "out": "#F59E0B",
+        "closed": "#22C55E"
     }
 
     # =========================
-    # SOLID PIE BUILDER
+    # PIE BUILDER (SOLID)
     # =========================
-    def build_pie(title, open_c, out_c, closed_c):
+    def pie(title, o, out, c):
 
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
-            values=[open_c, out_c, closed_c],
-
-            hole=0,  # SOLID PIE (NO DONUT)
-
+            values=[o, out, c],
+            hole=0,
             marker=dict(
-                colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
+                colors=[colors["open"], colors["out"], colors["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
-
             textinfo="label+percent",
             textposition="inside",
             sort=False
         ))
 
         fig.update_layout(
-            title=dict(text=f"{title}", x=0.5),
+            title=dict(text=title, x=0.5),
             height=380,
             margin=dict(l=10, r=10, t=40, b=10),
             paper_bgcolor="#0f172a",
@@ -106,36 +102,31 @@ def render_rfi_tq_pies(df):
         return fig
 
     # =========================
-    # LAYOUT (CLEAN CARDS)
+    # TOP KPI (USES YOUR TOTAL ARG)
+    # =========================
+    if total is not None:
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("Total Items", total)
+
+        with col2:
+            st.metric("RFI Items", len(rfi))
+
+        with col3:
+            st.metric("TQ Items", len(tq))
+
+    st.markdown("---")
+
+    # =========================
+    # PIES (MATCH YOUR APP LAYOUT)
     # =========================
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("RFI Status")
-        st.plotly_chart(
-            build_pie("RFI", rfi_open, rfi_out, rfi_closed),
-            use_container_width=True
-        )
+        st.plotly_chart(pie("RFI", rfi_open, rfi_out, rfi_closed), use_container_width=True)
 
     with col2:
         st.subheader("TQ Status")
-        st.plotly_chart(
-            build_pie("TQ", tq_open, tq_out, tq_closed),
-            use_container_width=True
-        )
-
-    # =========================
-    # OPTIONAL: QUICK KPI STRIP (BASED ON YOUR DATA)
-    # =========================
-    st.markdown("---")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("Open", rfi_open + tq_open)
-
-    with col2:
-        st.metric("Outstanding", rfi_out + tq_out)
-
-    with col3:
-        st.metric("Closed", rfi_closed + tq_closed)
+        st.plotly_chart(pie("TQ", tq_open, tq_out, tq_closed), use_container_width=True)

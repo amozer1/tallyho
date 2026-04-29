@@ -1,5 +1,5 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
 import plotly.graph_objects as go
 
 
@@ -10,135 +10,182 @@ def render_outstanding_line(df, total):
         return
 
     df = df.copy()
-    df.columns = df.columns.str.strip()
+    df.columns = df.columns.str.strip().str.lower()
 
-    # =========================
-    # COLUMNS
-    # =========================
-    status_col = next((c for c in df.columns if c.lower() == "status"), None)
-    doc_col = next((c for c in df.columns if c.lower() == "doc type"), None)
-    date_col = next((c for c in df.columns if c.lower() == "date sent"), None)
+    required = ["doc type", "status", "date sent"]
+    for col in required:
+        if col not in df.columns:
+            st.error(f"Missing required column: {col}")
+            return
 
-    if not status_col or not doc_col or not date_col:
-        st.error("Missing required columns")
-        return
-
-    # =========================
-    # CLEAN DATA
-    # =========================
-    df[status_col] = df[status_col].astype(str).str.strip().str.upper()
-    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df["doc type"] = df["doc type"].astype(str).str.upper().str.strip()
+    df["status"] = df["status"].astype(str).str.upper().str.strip()
+    df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 
     today = pd.Timestamp.today()
 
-    tq_df = df[df[doc_col] == "TQ"]
-    rfi_df = df[df[doc_col] == "RFI"]
+    # =========================
+    # FILTER TOGGLE
+    # =========================
+    doc_view = st.radio(
+        "",
+        ["RFIs", "TQs", "Both"],
+        horizontal=True
+    )
 
+    # =========================
+    # COUNTS
+    # =========================
     def get_counts(sub_df):
-        open_items = len(sub_df[sub_df[status_col] == "OPEN"])
-        closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
-        outstanding_items = len(
+        open_count = len(sub_df[sub_df["status"] == "OPEN"])
+        closed_count = len(sub_df[sub_df["status"] == "CLOSED"])
+        outstanding_count = len(
             sub_df[
-                (sub_df[status_col] == "OPEN") &
-                ((today - sub_df[date_col]).dt.days > 14)
+                (sub_df["status"] == "OPEN") &
+                ((today - sub_df["date sent"]).dt.days > 14)
             ]
         )
-        return open_items, closed_items, outstanding_items
+        return open_count, outstanding_count, closed_count
 
-    tq_open, tq_closed, tq_out = get_counts(tq_df)
-    rfi_open, rfi_closed, rfi_out = get_counts(rfi_df)
+    rfi_df = df[df["doc type"] == "RFI"]
+    tq_df = df[df["doc type"] == "TQ"]
 
-    # =========================
-    # COLOURS (ONLY TQ UPDATED - GREEN BRIDGE THEME)
-    # =========================
-    TQ = {
-        "open": "#22C55E",      # bridge green
-        "closed": "#16A34A",    # darker structural green
-        "out": "#EF4444"        # risk red (kept consistent)
-    }
+    rfi_open, rfi_out, rfi_closed = get_counts(rfi_df)
+    tq_open, tq_out, tq_closed = get_counts(tq_df)
 
-    RFI = {
-        "open": "#A78BFA",      # light purple (UNCHANGED)
-        "closed": "#6D28D9",    # deep purple (UNCHANGED)
-        "out": "#EF4444"        # red (UNCHANGED)
-    }
+    # KPI totals
+    if doc_view == "RFIs":
+        k_open, k_out, k_closed = rfi_open, rfi_out, rfi_closed
+    elif doc_view == "TQs":
+        k_open, k_out, k_closed = tq_open, tq_out, tq_closed
+    else:
+        k_open = rfi_open + tq_open
+        k_out = rfi_out + tq_out
+        k_closed = rfi_closed + tq_closed
 
     # =========================
-    # CARD BUILDER
+    # KPI CARDS
     # =========================
-    def card(title, open_c, closed_c, out_c, colors):
+    c1, c2, c3 = st.columns(3)
 
+    def card(col, title, value, color):
+        with col:
+            st.markdown(f"""
+            <div style="
+                background:white;
+                border-radius:12px;
+                padding:18px;
+                text-align:center;
+                border:1px solid #e5e7eb;">
+                <h3 style="margin:0;color:{color};">{title}</h3>
+                <h1 style="margin:0;color:#111827;">{value}</h1>
+            </div>
+            """, unsafe_allow_html=True)
+
+    card(c1, "Open", k_open, "#EF4444")
+    card(c2, "Outstanding", k_out, "#EAB308")
+    card(c3, "Closed", k_closed, "#22C55E")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # =========================
+    # PIE CHART
+    # =========================
+    def make_pie(title, open_v, out_v, closed_v):
         fig = go.Figure()
 
-        # =========================
-        # PIE
-        # =========================
         fig.add_trace(go.Pie(
-            labels=["Open", "Closed"],
-            values=[open_c, closed_c],
-
-            hole=0.12,
-
+            labels=["Open", "Outstanding", "Closed"],
+            values=[open_v, out_v, closed_v],
+            hole=0.45,
             marker=dict(
-                colors=[colors["open"], colors["closed"]],
-                line=dict(color="#0f172a", width=2)
+                colors=["#EF4444", "#F59E0B", "#16A34A"],
+                line=dict(color="white", width=2)
             ),
-
-            textinfo="label+value",
-            textposition="inside",
-            insidetextorientation="radial",
-
-            automargin=False,
-            textfont=dict(color="white", size=14)
+            textinfo="percent",
+            textfont=dict(size=20, color="white"),
+            sort=False
         ))
 
-        # =========================
-        # TITLE
-        # =========================
-        fig.add_annotation(
-            text=f"<b>{title} Information</b>",
-            x=0.5, y=1.15,
-            showarrow=False,
-            font=dict(size=18, color="white")
-        )
-
-        # =========================
-        # OPEN / CLOSED TEXT
-        # =========================
-        fig.add_annotation(
-            text=f"Open: {open_c}   |   Closed: {closed_c}",
-            x=0.5, y=-0.10,
-            showarrow=False,
-            font=dict(size=12, color="#cbd5e1")
-        )
-
-        # =========================
-        # OUTSTANDING
-        # =========================
-        fig.add_annotation(
-            text=f"Outstanding (>14 days): {out_c}",
-            x=0.5, y=-0.22,
-            showarrow=False,
-            font=dict(size=14, color=colors["out"])
-        )
-
-        # =========================
-        # LAYOUT
-        # =========================
         fig.update_layout(
-            height=360,
-            margin=dict(l=10, r=10, t=50, b=70),
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
-            font=dict(color="white"),
-            showlegend=False
+            title=f"<b>{title}</b>",
+            height=320,
+            margin=dict(l=10, r=10, t=50, b=10),
+            showlegend=True,
+            legend=dict(
+                orientation="v",
+                x=0,
+                y=0.8,
+                font=dict(size=16)
+            )
         )
 
         return fig
 
     # =========================
-    # OUTPUT
+    # MIDDLE ROW
     # =========================
-    st.plotly_chart(card("TQ", tq_open, tq_closed, tq_out, TQ), use_container_width=True)
-    st.plotly_chart(card("RFI", rfi_open, rfi_closed, rfi_out, RFI), use_container_width=True)
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if doc_view in ["RFIs", "Both"]:
+            st.plotly_chart(
+                make_pie("RFI", rfi_open, rfi_out, rfi_closed),
+                use_container_width=True,
+                key="rfi_pie"
+            )
+
+    with col2:
+        if doc_view in ["TQs", "Both"]:
+            st.plotly_chart(
+                make_pie("TQ", tq_open, tq_out, tq_closed),
+                use_container_width=True,
+                key="tq_pie"
+            )
+
+    # =========================
+    # NOTES SECTION
+    # =========================
+    n1, n2 = st.columns(2)
+
+    with n1:
+        st.markdown("""
+        <div style="
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            border:1px solid #e5e7eb;
+            min-height:260px;">
+            <h2>RFI</h2>
+            <hr>
+            <b>Key Issues</b><br>
+            Outstanding RFIs mainly relate to design coordination and interface queries.<br><br>
+
+            <b>Actions / Owners</b><br>
+            Consultant review underway, contractor consolidating responses.<br><br>
+
+            <b>Outlook / Risk</b><br>
+            Likely to reduce next week if revised drawings are issued.
+        </div>
+        """, unsafe_allow_html=True)
+
+    with n2:
+        st.markdown("""
+        <div style="
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            border:1px solid #e5e7eb;
+            min-height:260px;">
+            <h2>TQ</h2>
+            <hr>
+            <b>Key Issues</b><br>
+            TQs driven by façade details and procurement clarifications.<br><br>
+
+            <b>Actions / Owners</b><br>
+            Design manager reviewing batches this week.<br><br>
+
+            <b>Outlook / Risk</b><br>
+            Stable unless new package release creates additional queries.
+        </div>
+        """, unsafe_allow_html=True)

@@ -13,7 +13,7 @@ def render_outstanding_line(df, total=None):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # REQUIRED COLUMNS
+    # COLUMNS
     # =========================
     status_col = "status"
     doc_col = "doc type"
@@ -31,7 +31,7 @@ def render_outstanding_line(df, total=None):
     today = pd.Timestamp.today()
 
     # =========================
-    # SPLIT DATA
+    # SPLIT
     # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
@@ -63,7 +63,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE (SOLID)
+    # PIE
     # =========================
     def pie(o, out, c, title):
 
@@ -83,7 +83,7 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=320,
+            height=350,
             margin=dict(l=10, r=10, t=30, b=10),
             paper_bgcolor="white",
             plot_bgcolor="white",
@@ -95,28 +95,31 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # TRUE STREAMLIT CARD
+    # PURE VISUAL CARD (STACKED CONTENT)
     # =========================
     def render_card(title, o, out, c):
 
+        st.markdown("")
+
         with st.container(border=True):
 
-            # TITLE INSIDE CARD
+            # TITLE
             st.markdown(f"### {title}")
 
-            # FULL CONTENT INSIDE SAME CARD
-            col1, col2 = st.columns([1, 1.7])
+            # KPI TEXT (FULL WIDTH, NO SPLIT FEEL)
+            st.markdown(f"""
+            🔴 Open: **{o}**  
+            🟡 Outstanding: **{out}**  
+            🟢 Closed: **{c}**
+            """)
 
-            with col1:
-                st.markdown(f"🔴 Open: **{o}**")
-                st.markdown(f"🟡 Outstanding: **{out}**")
-                st.markdown(f"🟢 Closed: **{c}**")
+            st.markdown("---")  # visual separation inside SAME card
 
-            with col2:
-                st.plotly_chart(
-                    pie(o, out, c, title),
-                    use_container_width=True
-                )
+            # PIE BELOW TEXT (SAME CARD, SAME FLOW)
+            st.plotly_chart(
+                pie(o, out, c, title),
+                use_container_width=True
+            )
 
     # =========================
     # OUTPUT

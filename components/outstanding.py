@@ -13,14 +13,14 @@ def render_rfi_tq_pies(df):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # COLUMNS
+    # REQUIRED COLUMNS
     # =========================
     status_col = next((c for c in df.columns if c.lower() == "status"), None)
     doc_col = next((c for c in df.columns if c.lower() == "doc type"), None)
     date_col = next((c for c in df.columns if c.lower() == "date sent"), None)
 
     if not status_col or not doc_col or not date_col:
-        st.error("Missing required columns")
+        st.error("Missing required columns: Status / Doc Type / Date Sent")
         return
 
     # =========================
@@ -32,9 +32,15 @@ def render_rfi_tq_pies(df):
 
     today = pd.Timestamp.today()
 
-    tq_df = df[df[doc_col] == "TQ"]
+    # =========================
+    # SPLIT DATA
+    # =========================
     rfi_df = df[df[doc_col] == "RFI"]
+    tq_df = df[df[doc_col] == "TQ"]
 
+    # =========================
+    # COUNT LOGIC
+    # =========================
     def get_counts(sub_df):
         open_items = len(sub_df[sub_df[status_col] == "OPEN"])
         closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
@@ -48,8 +54,8 @@ def render_rfi_tq_pies(df):
 
         return open_items, outstanding_items, closed_items
 
-    tq_open, tq_out, tq_closed = get_counts(tq_df)
     rfi_open, rfi_out, rfi_closed = get_counts(rfi_df)
+    tq_open, tq_out, tq_closed = get_counts(tq_df)
 
     # =========================
     # COLOURS
@@ -61,7 +67,7 @@ def render_rfi_tq_pies(df):
     }
 
     # =========================
-    # SOLID PIE CHART
+    # SOLID PIE BUILDER
     # =========================
     def build_pie(title, open_c, out_c, closed_c):
 
@@ -96,7 +102,7 @@ def render_rfi_tq_pies(df):
         return fig
 
     # =========================
-    # STREAMLIT CARD LAYOUT
+    # STREAMLIT LAYOUT (SIDE BY SIDE CARDS)
     # =========================
     col1, col2 = st.columns(2)
 

@@ -13,7 +13,7 @@ def render_outstanding_line(df, total=None):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # COLUMNS
+    # REQUIRED COLUMNS
     # =========================
     status_col = "status"
     doc_col = "doc type"
@@ -24,6 +24,9 @@ def render_outstanding_line(df, total=None):
             st.error(f"Missing column: {c}")
             return
 
+    # =========================
+    # CLEAN DATA
+    # =========================
     df[status_col] = df[status_col].astype(str).str.upper().str.strip()
     df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
@@ -37,7 +40,7 @@ def render_outstanding_line(df, total=None):
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # LOGIC
+    # COUNTS
     # =========================
     def calc(sub):
         open_ = len(sub[sub[status_col] == "OPEN"])
@@ -54,16 +57,16 @@ def render_outstanding_line(df, total=None):
     tq_open, tq_out, tq_closed = calc(tq)
 
     # =========================
-    # COLOURS
+    # COLOURS (STRICT SYSTEM)
     # =========================
     COLORS = {
-        "open": "#EF4444",
-        "out": "#F59E0B",
-        "closed": "#22C55E"
+        "open": "#ef4444",     # red
+        "out": "#f59e0b",      # gold
+        "closed": "#22c55e"    # green
     }
 
     # =========================
-    # PIE
+    # PIE CHART
     # =========================
     def pie(o, out, c, title):
 
@@ -75,7 +78,7 @@ def render_outstanding_line(df, total=None):
             hole=0,
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
-                line=dict(color="white", width=2)
+                line=dict(color="#0f172a", width=2)
             ),
             textinfo="label+value",
             textposition="inside",
@@ -83,46 +86,80 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=350,
-            margin=dict(l=10, r=10, t=30, b=10),
-            paper_bgcolor="white",
-            plot_bgcolor="white",
-            font=dict(color="black"),
-            showlegend=False,
-            title=dict(text=title, x=0.5)
+            height=320,
+            margin=dict(l=10, r=10, t=10, b=10),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(color="white"),
+            showlegend=False
         )
 
         return fig
 
     # =========================
-    # PURE VISUAL CARD (STACKED CONTENT)
+    # CARD STYLE (NO HTML)
     # =========================
     def render_card(title, o, out, c):
 
-        st.markdown("")
+        # CARD HEADER (matches age module style)
+        st.markdown(f"""
+        <div style="
+            background:#0f172a;
+            border:1px solid #1f2937;
+            border-radius:12px;
+            padding:8px 10px;
+            margin-bottom:10px;
+            text-align:center;
+            font-size:13px;
+            font-weight:800;
+            color:white;
+        ">
+            {title}
+        </div>
+        """, unsafe_allow_html=True)
 
-        with st.container(border=True):
+        # =========================
+        # CARD BODY (LEFT TEXT + RIGHT PIE)
+        # =========================
+        col_left, col_right = st.columns([1, 1.6])
 
-            # TITLE
-            st.markdown(f"### {title}")
+        with col_left:
+            st.markdown(
+                f"""
+🔴 Open: **{o}**  
+🟡 Outstanding: **{out}**  
+🟢 Closed: **{c}**
+"""
+            )
 
-            # KPI TEXT (FULL WIDTH, NO SPLIT FEEL)
-            st.markdown(f"""
-            🔴 Open: **{o}**  
-            🟡 Outstanding: **{out}**  
-            🟢 Closed: **{c}**
-            """)
-
-            st.markdown("---")  # visual separation inside SAME card
-
-            # PIE BELOW TEXT (SAME CARD, SAME FLOW)
+        with col_right:
             st.plotly_chart(
                 pie(o, out, c, title),
                 use_container_width=True
             )
 
+        # spacing between cards
+        st.markdown("")
+
     # =========================
-    # OUTPUT
+    # OPTIONAL KPI TOP BAR
+    # =========================
+    if total is not None:
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("Total", total)
+
+        with col2:
+            st.metric("RFI Items", len(rfi))
+
+        with col3:
+            st.metric("TQ Items", len(tq))
+
+        st.markdown("---")
+
+    # =========================
+    # OUTPUT CARDS
     # =========================
     render_card("RFI", rfi_open, rfi_out, rfi_closed)
     render_card("TQ", tq_open, tq_out, tq_closed)

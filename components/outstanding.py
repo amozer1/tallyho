@@ -55,7 +55,7 @@ def render_outstanding_line(df, total=None):
             hole=0,
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
-                line=dict(color="#0f172a", width=2)
+                line=dict(color="white", width=2)
             ),
             textinfo="label+value",
             textposition="inside",
@@ -65,59 +65,41 @@ def render_outstanding_line(df, total=None):
         fig.update_layout(
             height=320,
             margin=dict(l=10, r=10, t=10, b=10),
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
-            font=dict(color="white"),
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+            font=dict(color="black"),
             showlegend=False
         )
 
         return fig
 
     # =========================
-    # TRUE CARD (ALL CONTENT INSIDE ONE CONTAINER)
+    # SINGLE CARD BLOCK (NO HTML, NO BORDERS)
     # =========================
     def card(title, o, out, c):
 
-        with st.container():
+        st.markdown(f"### {title}")
 
-            # FULL CARD BLOCK BACKGROUND FEEL
-            st.markdown(f"""
-            <div style="
-                background:#0f172a;
-                border:1px solid #1f2937;
-                border-radius:14px;
-                padding:12px;
-                margin-bottom:14px;
-            ">
-                <div style="
-                    text-align:center;
-                    font-size:14px;
-                    font-weight:800;
-                    color:white;
-                    margin-bottom:10px;
-                ">
-                    {title}
-                </div>
-            """, unsafe_allow_html=True)
-
-            # KPI TEXT (inside SAME block visually)
-            st.markdown(
-                f"""
+        st.markdown(
+            f"""
 🔴 Open: **{o}**  
 🟡 Outstanding: **{out}**  
 🟢 Closed: **{c}**
 """
-            )
+        )
 
-            # PIE INSIDE SAME BLOCK
-            st.plotly_chart(
-                pie(o, out, c),
-                use_container_width=True
-            )
+        st.plotly_chart(
+            pie(o, out, c),
+            use_container_width=True
+        )
 
-            # CLOSE DIV
-            st.markdown("</div>", unsafe_allow_html=True)
+    # =========================
+    # SIDE BY SIDE LAYOUT
+    # =========================
+    col1, col2 = st.columns(2, gap="large")
 
-    # OUTPUT
-    card("RFI", rfi_open, rfi_out, rfi_closed)
-    card("TQ", tq_open, tq_out, tq_closed)
+    with col1:
+        card("RFI", rfi_open, rfi_out, rfi_closed)
+
+    with col2:
+        card("TQ", tq_open, tq_out, tq_closed)

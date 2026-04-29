@@ -74,24 +74,30 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # SINGLE CARD BLOCK (NO HTML, NO BORDERS)
+    # LIFTED CARD STYLE (KEY CHANGE)
     # =========================
     def card(title, o, out, c):
 
-        st.markdown(f"### {title}")
+        # THIS is what creates the "raised card" effect
+        with st.container(border=True):
 
-        st.markdown(
-            f"""
+            # spacing inside card
+            st.markdown(f"### {title}")
+
+            st.markdown(
+                f"""
 🔴 Open: **{o}**  
 🟡 Outstanding: **{out}**  
 🟢 Closed: **{c}**
 """
-        )
+            )
 
-        st.plotly_chart(
-            pie(o, out, c),
-            use_container_width=True
-        )
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.plotly_chart(
+                pie(o, out, c),
+                use_container_width=True
+            )
 
     # =========================
     # SIDE BY SIDE LAYOUT

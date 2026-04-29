@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.graph_objects as go
 
 
-def render_outstanding_line(df):
+def render_rfi_tq_pies(df):
 
     if df is None or df.empty:
         st.warning("No data available")
@@ -13,15 +13,18 @@ def render_outstanding_line(df):
     df.columns = df.columns.str.strip()
 
     # =========================
-    # REQUIRED COLUMNS
+    # YOUR EXACT COLUMNS
     # =========================
-    status_col = next((c for c in df.columns if c.lower() == "status"), None)
-    doc_col = next((c for c in df.columns if c.lower() == "doc type"), None)
-    date_col = next((c for c in df.columns if c.lower() == "date sent"), None)
+    status_col = "Status"
+    doc_col = "Doc Type"
+    date_col = "Date Sent"
 
-    if not status_col or not doc_col or not date_col:
-        st.error("Missing required columns: Status / Doc Type / Date Sent")
-        return
+    # safety check
+    required = [status_col, doc_col, date_col]
+    for c in required:
+        if c not in df.columns:
+            st.error(f"Missing column: {c}")
+            return
 
     # =========================
     # CLEAN DATA
@@ -33,15 +36,16 @@ def render_outstanding_line(df):
     today = pd.Timestamp.today()
 
     # =========================
-    # SPLIT
+    # SPLIT RFI / TQ
     # =========================
     rfi_df = df[df[doc_col] == "RFI"]
     tq_df = df[df[doc_col] == "TQ"]
 
     # =========================
-    # COUNTS
+    # LOGIC FUNCTION
     # =========================
     def get_counts(sub_df):
+
         open_items = len(sub_df[sub_df[status_col] == "OPEN"])
         closed_items = len(sub_df[sub_df[status_col] == "CLOSED"])
 
@@ -61,13 +65,13 @@ def render_outstanding_line(df):
     # COLOURS
     # =========================
     COLORS = {
-        "open": "#EF4444",
-        "out": "#F59E0B",
-        "closed": "#22C55E"
+        "open": "#EF4444",     # red
+        "out": "#F59E0B",      # amber
+        "closed": "#22C55E"    # green
     }
 
     # =========================
-    # PIE BUILDER (SOLID)
+    # SOLID PIE BUILDER
     # =========================
     def build_pie(title, open_c, out_c, closed_c):
 
@@ -76,18 +80,21 @@ def render_outstanding_line(df):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[open_c, out_c, closed_c],
-            hole=0,
+
+            hole=0,  # SOLID PIE (NO DONUT)
+
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
+
             textinfo="label+percent",
             textposition="inside",
             sort=False
         ))
 
         fig.update_layout(
-            title=dict(text=title, x=0.5),
+            title=dict(text=f"{title}", x=0.5),
             height=380,
             margin=dict(l=10, r=10, t=40, b=10),
             paper_bgcolor="#0f172a",
@@ -99,7 +106,7 @@ def render_outstanding_line(df):
         return fig
 
     # =========================
-    # LAYOUT (SIDE BY SIDE)
+    # LAYOUT (CLEAN CARDS)
     # =========================
     col1, col2 = st.columns(2)
 
@@ -116,3 +123,19 @@ def render_outstanding_line(df):
             build_pie("TQ", tq_open, tq_out, tq_closed),
             use_container_width=True
         )
+
+    # =========================
+    # OPTIONAL: QUICK KPI STRIP (BASED ON YOUR DATA)
+    # =========================
+    st.markdown("---")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric("Open", rfi_open + tq_open)
+
+    with col2:
+        st.metric("Outstanding", rfi_out + tq_out)
+
+    with col3:
+        st.metric("Closed", rfi_closed + tq_closed)

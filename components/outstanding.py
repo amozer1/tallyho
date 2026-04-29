@@ -3,7 +3,6 @@ import streamlit as st
 import plotly.graph_objects as go
 
 
-# MUST MATCH APP.PY SIGNATURE
 def render_outstanding_line(df, total=None):
 
     if df is None or df.empty:
@@ -14,7 +13,7 @@ def render_outstanding_line(df, total=None):
     df.columns = df.columns.str.strip().str.lower()
 
     # =========================
-    # REQUIRED COLUMNS (LOWERCASE BECAUSE YOU NORMALISE IN APP.PY)
+    # COLUMNS
     # =========================
     status_col = "status"
     doc_col = "doc type"
@@ -25,9 +24,6 @@ def render_outstanding_line(df, total=None):
             st.error(f"Missing column: {c}")
             return
 
-    # =========================
-    # CLEAN DATA
-    # =========================
     df[status_col] = df[status_col].astype(str).str.upper().str.strip()
     df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
@@ -35,13 +31,13 @@ def render_outstanding_line(df, total=None):
     today = pd.Timestamp.today()
 
     # =========================
-    # SPLIT DATA
+    # SPLIT
     # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # COUNTS FUNCTION
+    # COUNT LOGIC
     # =========================
     def calc(sub):
 
@@ -61,18 +57,18 @@ def render_outstanding_line(df, total=None):
     tq_open, tq_out, tq_closed = calc(tq)
 
     # =========================
-    # COLOURS (STRICT)
+    # COLOURS (REQUIRED)
     # =========================
-    colors = {
-        "open": "#EF4444",
-        "out": "#F59E0B",
-        "closed": "#22C55E"
+    COLORS = {
+        "open": "#EF4444",     # red
+        "out": "#F59E0B",      # gold
+        "closed": "#22C55E"    # green
     }
 
     # =========================
-    # PIE BUILDER (SOLID)
+    # PIE BUILDER
     # =========================
-    def pie(title, o, out, c):
+    def pie(o, out, c, title):
 
         fig = go.Figure()
 
@@ -81,52 +77,50 @@ def render_outstanding_line(df, total=None):
             values=[o, out, c],
             hole=0,
             marker=dict(
-                colors=[colors["open"], colors["out"], colors["closed"]],
+                colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
-            textinfo="label+percent",
+            textinfo="label+value",
             textposition="inside",
             sort=False
         ))
 
         fig.update_layout(
-            title=dict(text=title, x=0.5),
-            height=380,
-            margin=dict(l=10, r=10, t=40, b=10),
+            height=320,
+            margin=dict(l=10, r=10, t=30, b=10),
             paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
             font=dict(color="white"),
-            showlegend=False
+            showlegend=False,
+            title=dict(text=title, x=0.5, font=dict(size=16))
         )
 
         return fig
 
     # =========================
-    # TOP KPI (USES YOUR TOTAL ARG)
+    # CARD RENDERER
     # =========================
-    if total is not None:
-        col1, col2, col3 = st.columns(3)
+    def render_card(title, o, out, c):
 
-        with col1:
-            st.metric("Total Items", total)
+        col_left, col_right = st.columns([1, 1.6])
 
-        with col2:
-            st.metric("RFI Items", len(rfi))
+        with col_left:
+            st.markdown(f"### {title}")
 
-        with col3:
-            st.metric("TQ Items", len(tq))
+            st.markdown(f"🔴 Open: **{o}**")
+            st.markdown(f"🟡 Outstanding: **{out}**")
+            st.markdown(f"🟢 Closed: **{c}**")
 
+        with col_right:
+            st.plotly_chart(
+                pie(o, out, c, title),
+                use_container_width=True
+            )
+
+    # =========================
+    # UI LAYOUT (TWO CARDS)
+    # =========================
+    st.subheader("Document Status Overview")
+
+    render_card("RFI", rfi_open, rfi_out, rfi_closed)
     st.markdown("---")
-
-    # =========================
-    # PIES (MATCH YOUR APP LAYOUT)
-    # =========================
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("RFI Status")
-        st.plotly_chart(pie("RFI", rfi_open, rfi_out, rfi_closed), use_container_width=True)
-
-    with col2:
-        st.subheader("TQ Status")
-        st.plotly_chart(pie("TQ", tq_open, tq_out, tq_closed), use_container_width=True)
+    render_card("TQ", tq_open, tq_out, tq_closed)

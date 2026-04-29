@@ -36,26 +36,27 @@ def render_outstanding_line(df, total):
     today = pd.Timestamp.today()
 
     # =========================
-    # PROJECT TITLE
+    # SINGLE BUILDING CONTEXT
     # =========================
     project_name = df["project id"].dropna().iloc[0]
 
-    st.markdown(
-        f"""
-        <h1 style='text-align:center; margin-bottom:20px;'>
-            Project {project_name} – RFI / TQ Overview
+    st.markdown(f"""
+        <h1 style='text-align:center; margin-bottom:10px;'>
+            {project_name} – RFI / TQ Overview
         </h1>
-        """,
-        unsafe_allow_html=True
+    """, unsafe_allow_html=True)
+
+    # =========================
+    # RFIs / TQs SELECTOR
+    # =========================
+    doc_view = st.radio(
+        "",
+        ["RFIs", "TQs", "Both"],
+        horizontal=True
     )
 
     # =========================
-    # FILTER
-    # =========================
-    doc_view = st.radio("", ["RFIs", "TQs", "Both"], horizontal=True)
-
-    # =========================
-    # COUNTS
+    # COUNTS LOGIC
     # =========================
     def get_counts(sub_df):
         open_count = len(sub_df[sub_df["status"] == "OPEN"])
@@ -86,7 +87,7 @@ def render_outstanding_line(df, total):
     # =========================
     # KPI CARDS
     # =========================
-    cols = st.columns(3)
+    c1, c2, c3 = st.columns(3)
 
     def card(col, title, value, color):
         with col:
@@ -96,22 +97,22 @@ def render_outstanding_line(df, total):
                 border-radius:12px;
                 padding:18px;
                 text-align:center;
-                border:1px solid #ddd;">
+                border:1px solid #e5e7eb;">
                 <h3 style="margin:0;color:{color};">{title}</h3>
-                <h1 style="margin:0;color:black;">{value}</h1>
+                <h1 style="margin:0;color:#111827;">{value}</h1>
             </div>
             """, unsafe_allow_html=True)
 
-    card(cols[0], "Open", k_open, "#EF4444")
-    card(cols[1], "Outstanding", k_out, "#EAB308")
-    card(cols[2], "Closed", k_closed, "#22C55E")
+    card(c1, "Open", k_open, "#EF4444")
+    card(c2, "Outstanding", k_out, "#EAB308")
+    card(c3, "Closed", k_closed, "#22C55E")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # =========================
     # PIE CHARTS
     # =========================
-    def pie(title, open_v, out_v, closed_v):
+    def make_pie(title, open_v, out_v, closed_v):
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
@@ -135,34 +136,34 @@ def render_outstanding_line(df, total):
             legend=dict(
                 orientation="v",
                 x=0,
-                y=0.8
+                y=0.85
             )
         )
+
         return fig
 
-    c1, c2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-    with c1:
+    with col1:
         if doc_view in ["RFIs", "Both"]:
             st.plotly_chart(
-                pie("RFI", rfi_open, rfi_out, rfi_closed),
+                make_pie("RFI", rfi_open, rfi_out, rfi_closed),
                 use_container_width=True,
                 key="rfi_pie"
             )
 
-    with c2:
+    with col2:
         if doc_view in ["TQs", "Both"]:
             st.plotly_chart(
-                pie("TQ", tq_open, tq_out, tq_closed),
+                make_pie("TQ", tq_open, tq_out, tq_closed),
                 use_container_width=True,
                 key="tq_pie"
             )
 
     # =========================
-    # NOTES GENERATOR
+    # NOTES LOGIC
     # =========================
     def generate_notes(sub_df):
-
         open_df = sub_df[sub_df["status"] == "OPEN"]
 
         # KEY ISSUES
@@ -171,16 +172,17 @@ def render_outstanding_line(df, total):
             words += re.findall(r"\b[A-Za-z]{4,}\b", s.lower())
 
         stopwords = {
-            "mae", "rfi", "tq", "confirm", "outline",
-            "design", "solution", "existing"
+            "mae", "rfi", "tq", "confirm",
+            "outline", "design", "solution",
+            "existing"
         }
 
         words = [w for w in words if w not in stopwords]
-        common_words = [w[0] for w in Counter(words).most_common(3)]
-        key_issues = ", ".join(common_words).title() if common_words else "No clear issue trend"
+        common_words = [w[0] for w in Counter(words).most_common(4)]
+        key_issues = ", ".join(common_words).title() if common_words else "No clear trend"
 
         # ACTIONS / OWNERS
-        top_owner = (
+        owner = (
             open_df["recipient"].mode().iloc[0]
             if not open_df["recipient"].mode().empty
             else "Unassigned"
@@ -190,19 +192,19 @@ def render_outstanding_line(df, total):
         overdue = len(open_df[open_df["required date"] < today])
 
         if overdue > 10:
-            outlook = "High risk of further increase"
+            outlook = "High overdue risk / likely increase"
         elif overdue > 5:
             outlook = "Moderate risk / monitor closely"
         else:
             outlook = "Stable / manageable"
 
-        return key_issues, top_owner, outlook
+        return key_issues, owner, outlook
 
     rfi_issues, rfi_owner, rfi_outlook = generate_notes(rfi_df)
     tq_issues, tq_owner, tq_outlook = generate_notes(tq_df)
 
     # =========================
-    # NOTES DISPLAY
+    # BOTTOM STRUCTURED NOTES
     # =========================
     n1, n2 = st.columns(2)
 
@@ -213,15 +215,21 @@ def render_outstanding_line(df, total):
                 background:white;
                 border-radius:12px;
                 padding:20px;
-                border:1px solid #ddd;
+                border:1px solid #e5e7eb;
                 min-height:260px;">
                 <h2>{title}</h2>
                 <hr>
-                <b>Key Issues</b><br>{issues}<br><br>
-                <b>Actions / Owners</b><br>{owner}<br><br>
-                <b>Outlook / Risk</b><br>{outlook}
+
+                <b>Key Issues</b><br>
+                {issues}<br><br>
+
+                <b>Actions / Owners</b><br>
+                {owner}<br><br>
+
+                <b>Outlook / Risk</b><br>
+                {outlook}
             </div>
             """, unsafe_allow_html=True)
 
-    note_card(n1, "RFI", rfi_issues, rfi_owner, rfi_outlook)
-    note_card(n2, "TQ", tq_issues, tq_owner, tq_outlook)
+    note_card(n1, "RFI Notes", rfi_issues, rfi_owner, rfi_outlook)
+    note_card(n2, "TQ Notes", tq_issues, tq_owner, tq_outlook)

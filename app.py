@@ -31,22 +31,23 @@ df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 # =========================
-# LAYOUT
-# LEFT = Outstanding (full focus)
-# RIGHT = Age (top) + Trend (bottom)
+# LAYOUT STRUCTURE
 # =========================
-col_left, col_right = st.columns([1.4, 1], gap="large")
 
 # =========================
-# LEFT COLUMN
+# TOP: OUTSTANDING (FULL WIDTH)
 # =========================
+render_outstanding_line(df, total=len(df))
+
+st.markdown("---")
+
+# =========================
+# BOTTOM ROW: AGE + TREND
+# =========================
+col_left, col_right = st.columns(2, gap="large")
+
 with col_left:
-    render_outstanding_line(df, total=len(df))
-
-# =========================
-# RIGHT COLUMN (STACKED)
-# =========================
-with col_right:
     render_age_outstanding(df)
-    st.markdown("---")  # visual separator
+
+with col_right:
     render_trend(df)

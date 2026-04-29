@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.graph_objects as go
 
 
-def render_rfi_tq_pies(df):
+def render_outstanding_line(df):
 
     if df is None or df.empty:
         st.warning("No data available")
@@ -33,13 +33,13 @@ def render_rfi_tq_pies(df):
     today = pd.Timestamp.today()
 
     # =========================
-    # SPLIT DATA
+    # SPLIT
     # =========================
     rfi_df = df[df[doc_col] == "RFI"]
     tq_df = df[df[doc_col] == "TQ"]
 
     # =========================
-    # COUNT LOGIC
+    # COUNTS
     # =========================
     def get_counts(sub_df):
         open_items = len(sub_df[sub_df[status_col] == "OPEN"])
@@ -61,13 +61,13 @@ def render_rfi_tq_pies(df):
     # COLOURS
     # =========================
     COLORS = {
-        "open": "#EF4444",     # red
-        "out": "#F59E0B",      # amber
-        "closed": "#22C55E"    # green
+        "open": "#EF4444",
+        "out": "#F59E0B",
+        "closed": "#22C55E"
     }
 
     # =========================
-    # SOLID PIE BUILDER
+    # PIE BUILDER (SOLID)
     # =========================
     def build_pie(title, open_c, out_c, closed_c):
 
@@ -76,14 +76,11 @@ def render_rfi_tq_pies(df):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[open_c, out_c, closed_c],
-
-            hole=0,  # SOLID PIE
-
+            hole=0,
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="#0f172a", width=2)
             ),
-
             textinfo="label+percent",
             textposition="inside",
             sort=False
@@ -102,7 +99,7 @@ def render_rfi_tq_pies(df):
         return fig
 
     # =========================
-    # STREAMLIT LAYOUT (SIDE BY SIDE CARDS)
+    # LAYOUT (SIDE BY SIDE)
     # =========================
     col1, col2 = st.columns(2)
 

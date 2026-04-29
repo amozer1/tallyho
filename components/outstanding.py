@@ -12,36 +12,19 @@ def render_outstanding_line(df, total=None):
     df = df.copy()
     df.columns = df.columns.str.strip().str.lower()
 
-    # =========================
-    # REQUIRED COLUMNS
-    # =========================
     status_col = "status"
     doc_col = "doc type"
     date_col = "date sent"
 
-    for c in [status_col, doc_col, date_col]:
-        if c not in df.columns:
-            st.error(f"Missing column: {c}")
-            return
-
-    # =========================
-    # CLEAN DATA
-    # =========================
     df[status_col] = df[status_col].astype(str).str.upper().str.strip()
     df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     today = pd.Timestamp.today()
 
-    # =========================
-    # SPLIT
-    # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
 
-    # =========================
-    # COUNTS
-    # =========================
     def calc(sub):
         open_ = len(sub[sub[status_col] == "OPEN"])
         closed_ = len(sub[sub[status_col] == "CLOSED"])
@@ -56,19 +39,13 @@ def render_outstanding_line(df, total=None):
     rfi_open, rfi_out, rfi_closed = calc(rfi)
     tq_open, tq_out, tq_closed = calc(tq)
 
-    # =========================
-    # COLOURS (STRICT SYSTEM)
-    # =========================
     COLORS = {
-        "open": "#ef4444",     # red
-        "out": "#f59e0b",      # gold
-        "closed": "#22c55e"    # green
+        "open": "#ef4444",
+        "out": "#f59e0b",
+        "closed": "#22c55e"
     }
 
-    # =========================
-    # PIE CHART
-    # =========================
-    def pie(o, out, c, title):
+    def pie(o, out, c):
 
         fig = go.Figure()
 
@@ -97,33 +74,33 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # CARD STYLE (NO HTML)
+    # TRUE CARD (ALL CONTENT INSIDE ONE CONTAINER)
     # =========================
-    def render_card(title, o, out, c):
+    def card(title, o, out, c):
 
-        # CARD HEADER (matches age module style)
-        st.markdown(f"""
-        <div style="
-            background:#0f172a;
-            border:1px solid #1f2937;
-            border-radius:12px;
-            padding:8px 10px;
-            margin-bottom:10px;
-            text-align:center;
-            font-size:13px;
-            font-weight:800;
-            color:white;
-        ">
-            {title}
-        </div>
-        """, unsafe_allow_html=True)
+        with st.container():
 
-        # =========================
-        # CARD BODY (LEFT TEXT + RIGHT PIE)
-        # =========================
-        col_left, col_right = st.columns([1, 1.6])
+            # FULL CARD BLOCK BACKGROUND FEEL
+            st.markdown(f"""
+            <div style="
+                background:#0f172a;
+                border:1px solid #1f2937;
+                border-radius:14px;
+                padding:12px;
+                margin-bottom:14px;
+            ">
+                <div style="
+                    text-align:center;
+                    font-size:14px;
+                    font-weight:800;
+                    color:white;
+                    margin-bottom:10px;
+                ">
+                    {title}
+                </div>
+            """, unsafe_allow_html=True)
 
-        with col_left:
+            # KPI TEXT (inside SAME block visually)
             st.markdown(
                 f"""
 🔴 Open: **{o}**  
@@ -132,34 +109,15 @@ def render_outstanding_line(df, total=None):
 """
             )
 
-        with col_right:
+            # PIE INSIDE SAME BLOCK
             st.plotly_chart(
-                pie(o, out, c, title),
+                pie(o, out, c),
                 use_container_width=True
             )
 
-        # spacing between cards
-        st.markdown("")
+            # CLOSE DIV
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    # =========================
-    # OPTIONAL KPI TOP BAR
-    # =========================
-    if total is not None:
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.metric("Total", total)
-
-        with col2:
-            st.metric("RFI Items", len(rfi))
-
-        with col3:
-            st.metric("TQ Items", len(tq))
-
-        st.markdown("---")
-
-    # =========================
-    # OUTPUT CARDS
-    # =========================
-    render_card("RFI", rfi_open, rfi_out, rfi_closed)
-    render_card("TQ", tq_open, tq_out, tq_closed)
+    # OUTPUT
+    card("RFI", rfi_open, rfi_out, rfi_closed)
+    card("TQ", tq_open, tq_out, tq_closed)

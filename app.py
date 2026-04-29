@@ -8,10 +8,25 @@ from components.outstanding import render_outstanding_line
 from components.age_outstanding import render_age_outstanding
 
 # =========================
-# PAGE CONFIG
+# PAGE CONFIG + WHITE THEME
 # =========================
 st.set_page_config(page_title="TQ / RFI Dashboard", layout="wide")
 
+# Force white background for entire app
+st.markdown(
+    """
+    <style>
+        .stApp {
+            background-color: white;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# =========================
+# HEADER / SIDEBAR
+# =========================
 render_sidebar()
 render_header()
 
@@ -31,18 +46,16 @@ df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 # =========================
-# LAYOUT STRUCTURE
-# =========================
-
-# =========================
 # TOP: OUTSTANDING (FULL WIDTH)
 # =========================
 render_outstanding_line(df, total=len(df))
 
+st.markdown("<br>", unsafe_allow_html=True)
+
 st.markdown("---")
 
 # =========================
-# BOTTOM ROW: AGE + TREND
+# BOTTOM: AGE + TREND
 # =========================
 col_left, col_right = st.columns(2, gap="large")
 

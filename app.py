@@ -3,9 +3,10 @@ import pandas as pd
 
 from components.sidebar import render_sidebar
 from components.header import render_header
-from components.tracker import render_tracker
+from components.trend import render_trend
 from components.outstanding import render_outstanding_line
 from components.age_outstanding import render_age_outstanding
+
 
 # =========================
 # PAGE CONFIG
@@ -15,14 +16,11 @@ st.set_page_config(
     layout="wide"
 )
 
-# =========================
-# UI FRAMEWORK
-# =========================
 render_sidebar()
 render_header()
 
 # =========================
-# DATA LOADING
+# LOAD DATA
 # =========================
 @st.cache_data
 def load_data():
@@ -31,50 +29,34 @@ def load_data():
 
 df = load_data()
 
-# =========================
-# CLEAN DATA (GLOBAL)
-# =========================
 df = df.copy()
-df.columns = [c.strip().lower() for c in df.columns]
+df.columns = df.columns.str.strip().str.lower()
 
 df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-today = pd.Timestamp.today().normalize()
-df["age"] = (today - df["date sent"]).dt.days
-
-total = len(df)
 
 # =========================
-# KPI CALCULATIONS
+# TITLE
 # =========================
-tq = df[df["doc type"].str.lower() == "tq"]
-rfi = df[df["doc type"].str.lower() == "rfi"]
+st.markdown("## 📊 TQ / RFI Control Dashboard")
 
-tq_total = len(tq)
-rfi_total = len(rfi)
-
-tq_not = len(tq[tq["reply date"].isna()])
-rfi_not = len(rfi[rfi["reply date"].isna()])
-total_not = len(df[df["reply date"].isna()])
-
-tq_not_pct = round((tq_not / tq_total) * 100, 1) if tq_total else 0
-rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
-
-overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
 # =========================
-# TOP ROW (SIDE BY SIDE)
+# 2×2 GRID
 # =========================
-col1, col2 = st.columns([1, 1], gap="small")
+row1_col1, row1_col2 = st.columns(2, gap="large")
+row2_col1, row2_col2 = st.columns(2, gap="large")
 
-with col1:
-    render_outstanding_line(df, total)
 
-with col2:
+with row1_col1:
+    render_trend(df)
+
+with row1_col2:
+    render_outstanding_line(df, total=len(df))
+
+with row2_col1:
     render_age_outstanding(df)
 
-# =========================
-# MAIN TRACKER DASHBOARD
-# =========================
-render_tracker(df)
+with row2_col2:
+    st.empty()  # 👈 placeholder (keeps layout clean)

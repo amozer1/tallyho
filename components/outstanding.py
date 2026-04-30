@@ -52,7 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE (SAME STYLE AS TREND)
+    # PIE (NUMBERS NOT %)
     # =========================
     def pie(o, out, c, color):
 
@@ -61,7 +61,10 @@ def render_outstanding_line(df, total=None):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[o, out, c],
-            textinfo="value",   # numbers (your requirement)
+
+            # 🔥 SHOW NUMBERS INSTEAD OF %
+            textinfo="value",
+
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="white", width=2)
@@ -81,13 +84,13 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # HEADER (IDENTICAL STYLE)
+    # CARD HEADER (COLOUR CODED)
     # =========================
     def header(title, color):
         st.markdown(f"""
         <div style="
             background:#0f172a;
-            border:1px solid #1f2937;
+            border:1px solid {color};
             border-radius:10px;
             padding:6px 10px;
             margin-bottom:6px;
@@ -107,24 +110,28 @@ def render_outstanding_line(df, total=None):
 
         total = o + out + c
 
-        # color logic like trend
-        color = "#60a5fa" if title == "RFI" else "#f59e0b"
-        if o > total * 0.6:
-            color = "#ef4444"
+        # 🔥 DYNAMIC COLOR LOGIC
+        if title == "RFI":
+            color = "#60a5fa"   # blue
+        else:
+            color = "#f59e0b"   # amber
+
+        # severity override (optional smart touch)
+        if o > (0.6 * total):
+            color = "#ef4444"  # red alert
 
         header(f"{title} Outstanding Overview", color)
 
-        # ✅ SAME AS TREND.PY (NO HTML FLEX)
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric("Open", o)
+            st.metric("🔴 Open", o)
 
         with col2:
-            st.metric("Outstanding", out)
+            st.metric("🟡 Outstanding", out)
 
         with col3:
-            st.metric("Closed", c)
+            st.metric("🟢 Closed", c)
 
         st.plotly_chart(
             pie(o, out, c, color),

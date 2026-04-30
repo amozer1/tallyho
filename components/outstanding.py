@@ -61,10 +61,7 @@ def render_outstanding_line(df, total=None):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[o, out, c],
-
-            # 🔥 SHOW NUMBERS INSTEAD OF %
             textinfo="value",
-
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="white", width=2)
@@ -110,28 +107,44 @@ def render_outstanding_line(df, total=None):
 
         total = o + out + c
 
-        # 🔥 DYNAMIC COLOR LOGIC
+        # colour logic (kept exactly yours)
         if title == "RFI":
-            color = "#60a5fa"   # blue
+            color = "#60a5fa"
         else:
-            color = "#f59e0b"   # amber
+            color = "#f59e0b"
 
-        # severity override (optional smart touch)
         if o > (0.6 * total):
-            color = "#ef4444"  # red alert
+            color = "#ef4444"
 
         header(f"{title} Outstanding Overview", color)
 
-        col1, col2, col3 = st.columns(3)
+        # =========================
+        # FIXED KPI ROW (ONLY CHANGE)
+        # =========================
+        st.markdown(f"""
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:8px;
+            flex-wrap:wrap;
+            font-size:12px;
+            padding:4px 2px;
+        ">
 
-        with col1:
-            st.metric("🔴 Open", o)
+            <div style="color:#ff0000; font-weight:600;">
+                🔴 Open: {o}
+            </div>
 
-        with col2:
-            st.metric("🟡 Outstanding", out)
+            <div style="color:#d4af37; font-weight:600;">
+                🟡 Outstanding: {out}
+            </div>
 
-        with col3:
-            st.metric("🟢 Closed", c)
+            <div style="color:#00a651; font-weight:600;">
+                🟢 Closed: {c}
+            </div>
+
+        </div>
+        """, unsafe_allow_html=True)
 
         st.plotly_chart(
             pie(o, out, c, color),

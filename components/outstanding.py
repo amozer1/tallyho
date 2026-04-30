@@ -10,6 +10,20 @@ def render_outstanding_line(df, total=None):
         return
 
     # =========================
+    # CARD STYLE (same idea as trend.py)
+    # =========================
+    st.markdown("""
+        <style>
+        .card {
+            background-color: #1f2937;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # =========================
     # CLEAN DATA
     # =========================
     df = df.copy()
@@ -70,23 +84,25 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=250,
+            height=240,
             margin=dict(l=0, r=0, t=0, b=0),
-            showlegend=False
+            showlegend=False,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)"
         )
 
         return fig
 
     # =========================
-    # CARD (THIS IS THE KEY FIX)
+    # CARD FUNCTION (trend-style)
     # =========================
     def card(title, o, out, c, key):
 
-        with st.container(border=True):
+        with st.container():
+            st.markdown('<div class="card">', unsafe_allow_html=True)
 
             st.markdown(f"### {title}")
 
-            # COUNTS INSIDE CARD (like your design)
             st.markdown(f"""
 🔴 **Open:** {o}  
 🟡 **Outstanding:** {out}  
@@ -95,12 +111,13 @@ def render_outstanding_line(df, total=None):
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # PIE INSIDE SAME CARD
             st.plotly_chart(
                 pie(o, out, c),
                 use_container_width=True,
                 key=key
             )
+
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================
     # SIDE BY SIDE CARDS

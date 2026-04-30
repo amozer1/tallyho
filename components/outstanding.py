@@ -10,20 +10,6 @@ def render_outstanding_line(df, total=None):
         return
 
     # =========================
-    # CARD STYLE (same idea as trend.py)
-    # =========================
-    st.markdown("""
-        <style>
-        .card {
-            background-color: #1f2937;
-            padding: 18px;
-            border-radius: 12px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # =========================
     # CLEAN DATA
     # =========================
     df = df.copy()
@@ -66,7 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE FUNCTION
+    # PIE
     # =========================
     def pie(o, out, c):
 
@@ -86,30 +72,30 @@ def render_outstanding_line(df, total=None):
         fig.update_layout(
             height=240,
             margin=dict(l=0, r=0, t=0, b=0),
-            showlegend=False,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)"
+            showlegend=False
         )
 
         return fig
 
     # =========================
-    # CARD FUNCTION (trend-style)
+    # SAFE CARD (NO HTML)
     # =========================
     def card(title, o, out, c, key):
 
         with st.container():
-            st.markdown('<div class="card">', unsafe_allow_html=True)
 
             st.markdown(f"### {title}")
 
-            st.markdown(f"""
-🔴 **Open:** {o}  
-🟡 **Outstanding:** {out}  
-🟢 **Closed:** {c}
-""")
+            col_a, col_b, col_c = st.columns(3)
 
-            st.markdown("<br>", unsafe_allow_html=True)
+            with col_a:
+                st.metric("Open", o, delta=None)
+
+            with col_b:
+                st.metric("Outstanding", out, delta=None)
+
+            with col_c:
+                st.metric("Closed", c, delta=None)
 
             st.plotly_chart(
                 pie(o, out, c),
@@ -117,10 +103,8 @@ def render_outstanding_line(df, total=None):
                 key=key
             )
 
-            st.markdown('</div>', unsafe_allow_html=True)
-
     # =========================
-    # SIDE BY SIDE CARDS
+    # LAYOUT
     # =========================
     col1, col2 = st.columns(2, gap="large")
 

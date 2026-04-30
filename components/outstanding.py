@@ -81,7 +81,7 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # CARD HEADER (COLOUR CODED)
+    # HEADER (COLOUR CODED)
     # =========================
     def header(title, color):
         st.markdown(f"""
@@ -119,18 +119,18 @@ def render_outstanding_line(df, total=None):
         header(f"{title} Outstanding Overview", color)
 
         # =========================
-        # KPI ROW (FIXED - NO HTML)
+        # KPI ROW (SAFE FIX — NO HTML)
         # =========================
         k1, k2, k3 = st.columns(3)
 
         with k1:
-            st.markdown(f"🔴 **Open:**  \n<span style='color:#ff0000; font-weight:700'>{o}</span>", unsafe_allow_html=True)
+            st.markdown(f"🔴 Open  \n**{o}**")
 
         with k2:
-            st.markdown(f"🟡 **Outstanding:**  \n<span style='color:#d4af37; font-weight:700'>{out}</span>", unsafe_allow_html=True)
+            st.markdown(f"🟡 Outstanding  \n**{out}**")
 
         with k3:
-            st.markdown(f"🟢 **Closed:**  \n<span style='color:#00a651; font-weight:700'>{c}</span>", unsafe_allow_html=True)
+            st.markdown(f"🟢 Closed  \n**{c}**")
 
         st.plotly_chart(
             pie(o, out, c, color),

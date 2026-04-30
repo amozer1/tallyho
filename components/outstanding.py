@@ -119,18 +119,27 @@ def render_outstanding_line(df, total=None):
         header(f"{title} Outstanding Overview", color)
 
         # =========================
-        # KPI ROW (SAFE FIX — NO HTML)
+        # FIXED KPI ROW (SHRINK SAFE)
         # =========================
-        k1, k2, k3 = st.columns(3)
+        k1, k2, k3 = st.columns(3, gap="small")
 
         with k1:
-            st.markdown(f"🔴 Open  \n**{o}**")
+            st.markdown(
+                f"🔴 Open<br><span style='font-size:12px; font-weight:700'>{o}</span>",
+                unsafe_allow_html=True
+            )
 
         with k2:
-            st.markdown(f"🟡 Outstanding  \n**{out}**")
+            st.markdown(
+                f"🟡 Outstanding<br><span style='font-size:12px; font-weight:700'>{out}</span>",
+                unsafe_allow_html=True
+            )
 
         with k3:
-            st.markdown(f"🟢 Closed  \n**{c}**")
+            st.markdown(
+                f"🟢 Closed<br><span style='font-size:12px; font-weight:700'>{c}</span>",
+                unsafe_allow_html=True
+            )
 
         st.plotly_chart(
             pie(o, out, c, color),

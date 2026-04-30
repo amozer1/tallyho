@@ -45,6 +45,51 @@ def render_outstanding_line(df, total=None):
         "closed": "#22c55e"
     }
 
+    # =========================
+    # HEADER + TOGGLE
+    # =========================
+    st.markdown("<h1 style='text-align:center;'>Building A – RFI / TQ Overview</h1>", unsafe_allow_html=True)
+
+    _, toggle_col, _ = st.columns([3, 2, 3])
+    with toggle_col:
+        view = st.radio("", ["RFI", "TQ"], horizontal=True)
+
+    # =========================
+    # KPI VALUES BASED ON TOGGLE
+    # =========================
+    if view == "RFI":
+        open_, out_, closed_ = rfi_open, rfi_out, rfi_closed
+    else:
+        open_, out_, closed_ = tq_open, tq_out, tq_closed
+
+    # =========================
+    # KPI CARDS
+    # =========================
+    def kpi_card(title, value):
+        st.markdown(f"""
+        <div style="
+            padding:18px;
+            border-radius:10px;
+            border:1px solid #e5e7eb;
+            background:white;
+            text-align:center;
+        ">
+            <h4 style="margin-bottom:5px;">{title}</h4>
+            <h1 style="margin:0;">{value}</h1>
+        </div>
+        """, unsafe_allow_html=True)
+
+    k1, k2, k3 = st.columns(3)
+    with k1:
+        kpi_card("Open", open_)
+    with k2:
+        kpi_card("Outstanding", out_)
+    with k3:
+        kpi_card("Closed", closed_)
+
+    # =========================
+    # PIE FUNCTION
+    # =========================
     def pie(o, out, c):
 
         fig = go.Figure()
@@ -52,60 +97,54 @@ def render_outstanding_line(df, total=None):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[o, out, c],
-            hole=0,
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="white", width=2)
             ),
-            textinfo="label+value",
-            textposition="inside",
+            textinfo="percent",
             sort=False
         ))
 
         fig.update_layout(
-            height=320,
-            margin=dict(l=10, r=10, t=10, b=10),
-            paper_bgcolor="white",
-            plot_bgcolor="white",
-            font=dict(color="black"),
+            height=280,
+            margin=dict(l=0, r=0, t=0, b=0),
             showlegend=False
         )
 
         return fig
 
     # =========================
-    # LIFTED CARD STYLE (KEY CHANGE)
+    # CARD WRAPPER (CLEAN)
     # =========================
-    def card(title, o, out, c):
-
-        # THIS is what creates the "raised card" effect
+    def chart_card(title, fig, key):
         with st.container(border=True):
-
-            # spacing inside card
             st.markdown(f"### {title}")
-
-            st.markdown(
-                f"""
-🔴 Open: **{o}**  
-🟡 Outstanding: **{out}**  
-🟢 Closed: **{c}**
-"""
-            )
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            st.plotly_chart(
-                pie(o, out, c),
-                use_container_width=True
-            )
+            st.plotly_chart(fig, use_container_width=True, key=key)
 
     # =========================
-    # SIDE BY SIDE LAYOUT
+    # PIE ROW (SIDE BY SIDE)
     # =========================
-    col1, col2 = st.columns(2, gap="large")
+    c1, c2 = st.columns(2, gap="large")
 
-    with col1:
-        card("RFI", rfi_open, rfi_out, rfi_closed)
+    with c1:
+        chart_card("RFI", pie(rfi_open, rfi_out, rfi_closed), "rfi_pie")
 
-    with col2:
-        card("TQ", tq_open, tq_out, tq_closed)
+    with c2:
+        chart_card("TQ", pie(tq_open, tq_out, tq_closed), "tq_pie")
+
+    # =========================
+    # TEXT CARDS (BOTTOM)
+    # =========================
+    b1, b2 = st.columns(2)
+
+    with b1:
+        with st.container(border=True):
+            st.markdown("### Key Issues")
+            st.write("Outstanding RFIs mainly relate to fire strategy and stair pressurisation queries.")
+            st.write("**Actions / Owners:** Fire consultant review underway, workshop booked.")
+
+    with b2:
+        with st.container(border=True):
+            st.markdown("### Notes")
+            st.write("Increase driven by façade and interface queries following IFC issue.")
+            st.write("**Actions:** Responses due this week, contractor batching queries.")

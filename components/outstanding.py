@@ -26,7 +26,7 @@ def render_outstanding_line(df, total=None):
     today = pd.Timestamp.today()
 
     # =========================
-    # SPLIT DATA
+    # SPLIT
     # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
@@ -54,7 +54,7 @@ def render_outstanding_line(df, total=None):
     # =========================
     # PIE
     # =========================
-    def pie(o, out, c):
+    def pie(o, out, c, color):
 
         fig = go.Figure()
 
@@ -70,38 +70,72 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=240,
+            height=170,
             margin=dict(l=0, r=0, t=0, b=0),
-            showlegend=False
+            showlegend=False,
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(color="white", size=11)
         )
 
         return fig
 
     # =========================
-    # SAFE CARD (NO HTML)
+    # CARD HEADER STYLE (same as trend.py)
     # =========================
-    def card(title, o, out, c, key):
+    def header(title, color):
+        st.markdown(f"""
+        <div style="
+            background:#0f172a;
+            border:1px solid #1f2937;
+            border-radius:10px;
+            padding:6px 10px;
+            margin-bottom:6px;
+            text-align:center;
+            font-size:12px;
+            font-weight:700;
+            color:{color};
+        ">
+            📊 {title}
+        </div>
+        """, unsafe_allow_html=True)
 
-        with st.container():
+    # =========================
+    # CARD
+    # =========================
+    def card(title, o, out, c):
 
-            st.markdown(f"### {title}")
+        color = "#f97316" if o > c else "#22c55e"
 
-            col_a, col_b, col_c = st.columns(3)
+        header(f"{title} Outstanding Overview", color)
 
-            with col_a:
-                st.metric("Open", o, delta=None)
+        col1, col2, col3 = st.columns(3)
 
-            with col_b:
-                st.metric("Outstanding", out, delta=None)
+        with col1:
+            st.metric("Open", o)
 
-            with col_c:
-                st.metric("Closed", c, delta=None)
+        with col2:
+            st.metric("Outstanding", out)
 
-            st.plotly_chart(
-                pie(o, out, c),
-                use_container_width=True,
-                key=key
-            )
+        with col3:
+            st.metric("Closed", c)
+
+        st.plotly_chart(
+            pie(o, out, c, color),
+            use_container_width=True
+        )
+
+        pct = round((o / (o + c)) * 100, 1) if (o + c) else 0
+
+        st.markdown(f"""
+        <div style="
+            font-size:11px;
+            color:#cbd5e1;
+            margin-top:2px;
+        ">
+            Open backlog at <span style="color:{color}; font-weight:600;">{pct}%</span> of total workload
+        </div>
+        """, unsafe_allow_html=True)
 
     # =========================
     # LAYOUT
@@ -109,7 +143,7 @@ def render_outstanding_line(df, total=None):
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        card("RFI", rfi_open, rfi_out, rfi_closed, "rfi_pie")
+        card("RFI", rfi_open, rfi_out, rfi_closed)
 
     with col2:
-        card("TQ", tq_open, tq_out, tq_closed, "tq_pie")
+        card("TQ", tq_open, tq_out, tq_closed)

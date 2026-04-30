@@ -1,132 +1,80 @@
-import pandas as pd
 import streamlit as st
-import plotly.graph_objects as go
+import pandas as pd
+
+from components.sidebar import render_sidebar
+from components.header import render_header
+from components.tracker import render_tracker
+from components.outstanding import render_outstanding_line
+from components.age_outstanding import render_age_outstanding
+
+# =========================
+# PAGE CONFIG
+# =========================
+st.set_page_config(
+    page_title="TQ / RFI Intelligence Hub",
+    layout="wide"
+)
+
+# =========================
+# UI FRAMEWORK
+# =========================
+render_sidebar()
+render_header()
+
+# =========================
+# DATA LOADING
+# =========================
+@st.cache_data
+def load_data():
+    return pd.read_excel("data/TQ_TH.xlsx")
 
 
-def render_outstanding_line(df, total=None):
+df = load_data()
 
-    if df is None or df.empty:
-        st.warning("No data available")
-        return
+# =========================
+# CLEAN DATA (GLOBAL)
+# =========================
+df = df.copy()
+df.columns = [c.strip().lower() for c in df.columns]
 
-    # =========================
-    # GLOBAL SAFE STYLING
-    # =========================
-    st.markdown("""
-        <style>
-        /* Card look */
-        div[data-testid="stVerticalBlock"] > div {
-            background-color: #1f2937;
-            padding: 18px;
-            border-radius: 12px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-        }
+df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
+df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-        /* Reduce spacing inside cards */
-        h3 {
-            margin-bottom: 5px;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+today = pd.Timestamp.today().normalize()
+df["age"] = (today - df["date sent"]).dt.days
 
-    # =========================
-    # CLEAN DATA
-    # =========================
-    df = df.copy()
-    df.columns = df.columns.str.strip().str.lower()
+total = len(df)
 
-    status_col = "status"
-    doc_col = "doc type"
-    date_col = "date sent"
+# =========================
+# KPI CALCULATIONS
+# =========================
+tq = df[df["doc type"].str.lower() == "tq"]
+rfi = df[df["doc type"].str.lower() == "rfi"]
 
-    df[status_col] = df[status_col].astype(str).str.upper().str.strip()
-    df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+tq_total = len(tq)
+rfi_total = len(rfi)
 
-    today = pd.Timestamp.today()
+tq_not = len(tq[tq["reply date"].isna()])
+rfi_not = len(rfi[rfi["reply date"].isna()])
+total_not = len(df[df["reply date"].isna()])
 
-    # =========================
-    # SPLIT DATA
-    # =========================
-    rfi = df[df[doc_col] == "RFI"]
-    tq = df[df[doc_col] == "TQ"]
+tq_not_pct = round((tq_not / tq_total) * 100, 1) if tq_total else 0
+rfi_not_pct = round((rfi_not / rfi_total) * 100, 1) if rfi_total else 0
 
-    def calc(sub):
-        open_ = len(sub[sub[status_col] == "OPEN"])
-        closed_ = len(sub[sub[status_col] == "CLOSED"])
-        outstanding_ = len(
-            sub[
-                (sub[status_col] == "OPEN") &
-                ((today - sub[date_col]).dt.days > 14)
-            ]
-        )
-        return open_, outstanding_, closed_
+overdue = len(df[(df["reply date"].isna()) & (df["age"] > 7)])
 
-    rfi_open, rfi_out, rfi_closed = calc(rfi)
-    tq_open, tq_out, tq_closed = calc(tq)
+# =========================
+# TOP ROW (SIDE BY SIDE)
+# =========================
+col1, col2 = st.columns([1, 1], gap="small")
 
-    COLORS = {
-        "open": "#ef4444",
-        "out": "#f59e0b",
-        "closed": "#22c55e"
-    }
+with col1:
+    render_outstanding_line(df, total)
 
-    # =========================
-    # PIE FUNCTION
-    # =========================
-    def pie(o, out, c):
+with col2:
+    render_age_outstanding(df)
 
-        fig = go.Figure()
-
-        fig.add_trace(go.Pie(
-            labels=["Open", "Outstanding", "Closed"],
-            values=[o, out, c],
-            marker=dict(
-                colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
-                line=dict(color="white", width=2)
-            ),
-            textinfo="percent",
-            sort=False
-        ))
-
-        fig.update_layout(
-            height=240,
-            margin=dict(l=0, r=0, t=0, b=0),
-            showlegend=False
-        )
-
-        return fig
-
-    # =========================
-    # CARD FUNCTION (SAFE)
-    # =========================
-    def card(title, o, out, c, key):
-
-        with st.container():
-
-            st.markdown(f"### {title}")
-
-            st.markdown(f"""
-🔴 **Open:** {o}  
-🟡 **Outstanding:** {out}  
-🟢 **Closed:** {c}
-""")
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            st.plotly_chart(
-                pie(o, out, c),
-                use_container_width=True,
-                key=key
-            )
-
-    # =========================
-    # SIDE BY SIDE
-    # =========================
-    col1, col2 = st.columns(2, gap="large")
-
-    with col1:
-        card("RFI", rfi_open, rfi_out, rfi_closed, "rfi_pie")
-
-    with col2:
-        card("TQ", tq_open, tq_out, tq_closed, "tq_pie")
+# =========================
+# MAIN TRACKER DASHBOARD
+# =========================
+render_tracker(df)

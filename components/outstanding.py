@@ -52,7 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE
+    # PIE (NUMBERS NOT %)
     # =========================
     def pie(o, out, c, color):
 
@@ -61,11 +61,14 @@ def render_outstanding_line(df, total=None):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[o, out, c],
+
+            # 🔥 SHOW NUMBERS INSTEAD OF %
+            textinfo="value",
+
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="white", width=2)
             ),
-            textinfo="percent",
             sort=False
         ))
 
@@ -81,13 +84,13 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # CARD HEADER STYLE (same as trend.py)
+    # CARD HEADER (COLOUR CODED)
     # =========================
     def header(title, color):
         st.markdown(f"""
         <div style="
             background:#0f172a;
-            border:1px solid #1f2937;
+            border:1px solid {color};
             border-radius:10px;
             padding:6px 10px;
             margin-bottom:6px;
@@ -105,27 +108,35 @@ def render_outstanding_line(df, total=None):
     # =========================
     def card(title, o, out, c):
 
-        color = "#f97316" if o > c else "#22c55e"
+        total = o + out + c
+
+        # 🔥 DYNAMIC COLOR LOGIC
+        if title == "RFI":
+            color = "#60a5fa"   # blue
+        else:
+            color = "#f59e0b"   # amber
+
+        # severity override (optional smart touch)
+        if o > (0.6 * total):
+            color = "#ef4444"  # red alert
 
         header(f"{title} Outstanding Overview", color)
 
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric("Open", o)
+            st.metric("🔴 Open", o)
 
         with col2:
-            st.metric("Outstanding", out)
+            st.metric("🟡 Outstanding", out)
 
         with col3:
-            st.metric("Closed", c)
+            st.metric("🟢 Closed", c)
 
         st.plotly_chart(
             pie(o, out, c, color),
             use_container_width=True
         )
-
-        pct = round((o / (o + c)) * 100, 1) if (o + c) else 0
 
         st.markdown(f"""
         <div style="
@@ -133,7 +144,7 @@ def render_outstanding_line(df, total=None):
             color:#cbd5e1;
             margin-top:2px;
         ">
-            Open backlog at <span style="color:{color}; font-weight:600;">{pct}%</span> of total workload
+            Total items: <b>{total}</b>
         </div>
         """, unsafe_allow_html=True)
 

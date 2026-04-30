@@ -107,7 +107,7 @@ def render_outstanding_line(df, total=None):
 
         total = o + out + c
 
-        # colour logic (kept exactly yours)
+        # colour logic (unchanged)
         if title == "RFI":
             color = "#60a5fa"
         else:
@@ -119,32 +119,18 @@ def render_outstanding_line(df, total=None):
         header(f"{title} Outstanding Overview", color)
 
         # =========================
-        # FIXED KPI ROW (ONLY CHANGE)
+        # KPI ROW (FIXED - NO HTML)
         # =========================
-        st.markdown(f"""
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            gap:8px;
-            flex-wrap:wrap;
-            font-size:12px;
-            padding:4px 2px;
-        ">
+        k1, k2, k3 = st.columns(3)
 
-            <div style="color:#ff0000; font-weight:600;">
-                🔴 Open: {o}
-            </div>
+        with k1:
+            st.markdown(f"🔴 **Open:**  \n<span style='color:#ff0000; font-weight:700'>{o}</span>", unsafe_allow_html=True)
 
-            <div style="color:#d4af37; font-weight:600;">
-                🟡 Outstanding: {out}
-            </div>
+        with k2:
+            st.markdown(f"🟡 **Outstanding:**  \n<span style='color:#d4af37; font-weight:700'>{out}</span>", unsafe_allow_html=True)
 
-            <div style="color:#00a651; font-weight:600;">
-                🟢 Closed: {c}
-            </div>
-
-        </div>
-        """, unsafe_allow_html=True)
+        with k3:
+            st.markdown(f"🟢 **Closed:**  \n<span style='color:#00a651; font-weight:700'>{c}</span>", unsafe_allow_html=True)
 
         st.plotly_chart(
             pie(o, out, c, color),

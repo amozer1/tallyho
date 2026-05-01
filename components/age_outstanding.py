@@ -84,7 +84,7 @@ def render_age_outstanding(df):
     ))
 
     fig.update_layout(
-        height=200,
+        height=320,  # 🔥 FIXED: MATCH TREND.PY HEIGHT
         margin=dict(l=25, r=25, t=10, b=10),
         paper_bgcolor="#0f172a",
         plot_bgcolor="#0f172a",

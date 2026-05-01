@@ -25,9 +25,6 @@ def render_outstanding_line(df, total=None):
 
     today = pd.Timestamp.today()
 
-    # =========================
-    # FILTERS
-    # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
 
@@ -52,7 +49,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE CHART (FIXED SIZE)
+    # PIE CHART
     # =========================
     def pie(o, out, c):
         fig = go.Figure()
@@ -80,25 +77,43 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # CARD FUNCTION (STREAMLIT ONLY)
+    # KPI CARD STYLE
     # =========================
-    def card(title, o, out, c):
+    def kpi_card(label, value, color):
+        st.markdown(f"""
+        <div style="
+            background:#0f172a;
+            border:1px solid {color};
+            padding:12px;
+            border-radius:12px;
+            text-align:center;
+        ">
+            <div style="font-size:13px; color:#cbd5e1;">{label}</div>
+            <div style="font-size:22px; font-weight:700; color:white;">
+                {value}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        st.markdown(f"## {title} Overview")
+    # =========================
+    # SECTION CARD
+    # =========================
+    def section(title, o, out, c):
 
-        # KPI ROW (SAFE + STABLE)
+        st.markdown(f"### {title}")
+
+        # KPI ROW (CLEAN BLOCKS)
         k1, k2, k3 = st.columns(3)
 
         with k1:
-            st.metric("Open", o)
+            kpi_card("Open", o, COLORS["open"])
 
         with k2:
-            st.metric("Outstanding", out)
+            kpi_card("Outstanding (>14 days)", out, COLORS["out"])
 
         with k3:
-            st.metric("Closed", c)
+            kpi_card("Closed", c, COLORS["closed"])
 
-        # PIE (ALWAYS INSIDE STREAMLIT FLOW)
         st.plotly_chart(
             pie(o, out, c),
             use_container_width=True
@@ -107,14 +122,12 @@ def render_outstanding_line(df, total=None):
         st.divider()
 
     # =========================
-    # DASHBOARD LAYOUT
+    # LAYOUT
     # =========================
-    st.markdown("## 📊 Outstanding Dashboard")
-
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        card("RFI", rfi_open, rfi_out, rfi_closed)
+        section("RFI", rfi_open, rfi_out, rfi_closed)
 
     with col2:
-        card("TQ", tq_open, tq_out, tq_closed)
+        section("TQ", tq_open, tq_out, tq_closed)

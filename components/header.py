@@ -1,80 +1,80 @@
 import streamlit as st
 from datetime import datetime
 
-
 def render_header():
 
     st.markdown("""
     <style>
 
-    .block-container {
-        padding-top: 0rem !important;
+    .header-wrapper {
+        display: flex;
+        width: 100%;
+        gap: 0px;
+        margin-bottom: 10px;
     }
 
-    /* ===============================
-       MAIN CONTINUOUS HEADER BAR
-    =============================== */
-    .header-bar {
+    .card {
+        flex: 1;
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.18);
-        border-radius: 18px;
-
-        padding: 16px 20px;
-        margin-bottom: 12px;
-
+        padding: 18px 20px;
+        min-height: 95px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
     }
 
-    /* ===============================
-       INNER "CARD" SECTIONS
-    =============================== */
-    .card-section {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 14px;
-
-        padding: 12px 14px;
+    .left {
+        border-top-left-radius: 16px;
+        border-bottom-left-radius: 16px;
     }
 
-    /* TITLE */
+    .right {
+        border-top-right-radius: 16px;
+        border-bottom-right-radius: 16px;
+    }
+
     .title {
+        color: white;
         font-size: 26px;
         font-weight: 900;
-        color: white;
         line-height: 1.1;
+        margin-bottom: 6px;
     }
 
     .subtitle {
-        font-size: 12px;
         color: #94a3b8;
-        margin-top: 4px;
+        font-size: 12px;
     }
 
-    /* STATUS PILL */
     .status {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        gap: 6px;
-
-        padding: 8px 12px;
-        border-radius: 10px;
-
-        background: rgba(122, 60, 255, 0.12);
-        border: 1px solid rgba(122, 60, 255, 0.25);
-
+        justify-content: center;
+        gap: 10px;
         color: white;
         font-size: 13px;
         font-weight: 700;
-
-        white-space: nowrap;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(122, 60, 255, 0.12);
+        border: 1px solid rgba(122, 60, 255, 0.25);
+        width: fit-content;
+        margin: auto;
     }
 
     .dot {
         color: #22c55e;
-        font-size: 16px;
+        animation: pulse 1.5s infinite;
     }
 
-    /* DATE */
+    @keyframes pulse {
+        0% {opacity: 1;}
+        50% {opacity: 0.4;}
+        100% {opacity: 1;}
+    }
+
     .date {
         color: white;
         font-size: 14px;
@@ -82,32 +82,45 @@ def render_header():
         text-align: right;
     }
 
+    .btn {
+        margin-top: 10px;
+        background: linear-gradient(135deg, #7a3cff, #8b5cf6);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 800;
+        text-align: center;
+        cursor: pointer;
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
-    # ================= HEADER BAR =================
-    with st.container():
-        st.markdown('<div class="header-bar">', unsafe_allow_html=True)
+    date_today = datetime.today().strftime('%d %b %Y')
 
-        col1, col2, col3 = st.columns([5, 2, 2], vertical_alignment="center")
+    st.markdown(f"""
+    <div class="header-wrapper">
 
-        # LEFT (CARD INSIDE HEADER)
-        with col1:
-            st.markdown('<div class="card-section">', unsafe_allow_html=True)
-            st.markdown('<div class="title">Tally Ho TQ & RFI Tracker</div>', unsafe_allow_html=True)
-            st.markdown('<div class="subtitle">TQs • RFIs • Outstanding Responses</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+        <!-- LEFT CARD -->
+        <div class="card left">
+            <div class="title">Tally Ho TQ & RFI Tracker</div>
+            <div class="subtitle">TQs • RFIs • Outstanding Responses</div>
+        </div>
 
-        # CENTER (STATUS CARD)
-        with col2:
-            st.markdown('<div class="card-section" style="text-align:center;">', unsafe_allow_html=True)
-            st.markdown('<div class="status"><span class="dot">●</span>Live System Status: Active</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+        <!-- MIDDLE CARD -->
+        <div class="card" style="align-items:center;">
+            <div class="status">
+                <span class="dot">●</span>
+                Live System Status: Active
+            </div>
+        </div>
 
-        # RIGHT (DATE CARD)
-        with col3:
-            st.markdown('<div class="card-section" style="text-align:right;">', unsafe_allow_html=True)
-            st.markdown(f'<div class="date">{datetime.today().strftime("%d %b %Y")}</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+        <!-- RIGHT CARD -->
+        <div class="card right">
+            <div class="date">{date_today}</div>
+            <div class="btn">⬇ Export Report</div>
+        </div>
 
-        st.markdown('</div>', unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)

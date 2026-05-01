@@ -70,7 +70,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE (INCREASED SIZE HERE)
+    # PIE CHART
     # =========================
     def pie(open_count, outstanding, closed):
 
@@ -92,7 +92,7 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=420,   # 🔥 INCREASED SIZE (was 260)
+            height=420,   # 🔥 increased size
             margin=dict(l=10, r=10, t=10, b=10),
             showlegend=False,
             paper_bgcolor="#0f172a",
@@ -116,6 +116,18 @@ def render_outstanding_line(df, total=None):
             🟢 **Closed:** {closed}
             """
         )
+
+        # NOTE (IMPORTANT CLARITY)
+        st.markdown("""
+        <div style="
+            font-size:12px;
+            color:#94a3b8;
+            margin-top:6px;
+            line-height:1.4;
+        ">
+        <b>Note:</b> Outstanding items are OPEN items older than 7 days.
+        </div>
+        """, unsafe_allow_html=True)
 
         st.plotly_chart(
             pie(open_count, outstanding, closed),

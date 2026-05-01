@@ -49,35 +49,30 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # GLOBAL STYLE (CARD THEME)
+    # SAFE CSS (NO GLOBAL OVERWRITE)
     # =========================
     st.markdown("""
     <style>
 
-    /* KEEP COLUMNS STABLE */
+    /* ONLY LIMIT WIDTH (SAFE) */
     [data-testid="column"] {
         min-width: 420px !important;
         flex: 0 0 420px !important;
     }
 
-    /* CARD BACKGROUND (APPLIES TO EACH BLOCK) */
-    div[data-testid="stVerticalBlock"] {
+    /* CUSTOM CARD STYLE ONLY */
+    .rfi-card, .tq-card {
         background-color: #0f172a;
+        border: 1px solid #334155;
         padding: 16px;
         border-radius: 14px;
-        border: 1px solid #334155;
-    }
-
-    /* PREVENT PLOTLY SHRINKING */
-    div[data-testid="stPlotlyChart"] {
-        min-width: 380px !important;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
     # =========================
-    # PIE CHART
+    # PIE
     # =========================
     def pie(o, out, c):
         fig = go.Figure()
@@ -107,24 +102,24 @@ def render_outstanding_line(df, total=None):
     # =========================
     # CARD
     # =========================
-    def card(title, o, out, c):
+    def card(title, o, out, c, cls):
 
-        st.markdown(f"### {title} Overview")
+        st.markdown(f"""
+        <div class="{cls}">
+            <h4 style="color:white; margin-bottom:10px;">{title} Overview</h4>
 
-        st.markdown(
-            f"""
-            🔴 **Open:** {o}  
-            🟡 **Outstanding:** {out}  
-            🟢 **Closed:** {c}
-            """
-        )
+            <p style="color:white;">
+            🔴 <b>Open:</b> {o}<br>
+            🟡 <b>Outstanding:</b> {out}<br>
+            🟢 <b>Closed:</b> {c}
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
         st.plotly_chart(
             pie(o, out, c),
             use_container_width=True
         )
-
-        st.divider()
 
     # =========================
     # LAYOUT
@@ -132,7 +127,7 @@ def render_outstanding_line(df, total=None):
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        card("RFI", rfi_open, rfi_out, rfi_closed)
+        card("RFI", rfi_open, rfi_out, rfi_closed, "rfi-card")
 
     with col2:
-        card("TQ", tq_open, tq_out, tq_closed)
+        card("TQ", tq_open, tq_out, tq_closed, "tq-card")

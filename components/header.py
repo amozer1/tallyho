@@ -7,33 +7,36 @@ def render_header():
     st.markdown("""
     <style>
 
-    /* ===== FIXED STICKY HEADER WRAPPER ===== */
-    .sticky-header {
-        position: fixed;
+    /* ===== STICKY WRAPPER (TARGET STREAMLIT CONTAINER) ===== */
+    header[data-testid="stHeader"] {
+        display: none;
+    }
+
+    div[data-testid="stAppViewContainer"] > div:first-child {
+        padding-top: 0rem;
+    }
+
+    /* Custom sticky bar */
+    .sticky-bar {
+        position: sticky;
         top: 0;
-        left: 0;
-        width: 100%;
-        z-index: 9999;
+        z-index: 999;
 
         background: linear-gradient(135deg, #0b1a2f 0%, #0f2440 100%);
-        border-bottom: 1px solid rgba(122, 60, 255, 0.18);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+        border-bottom: 1px solid rgba(122, 60, 255, 0.2);
 
-        padding: 12px 18px;
+        padding: 12px 16px;
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 16px;
+
+        box-shadow: 0 4px 18px rgba(0,0,0,0.25);
     }
 
-    /* Push page content below sticky header */
-    .main .block-container {
-        padding-top: 110px;
-    }
-
-    /* Title block */
+    /* Title */
     .title {
         color: white;
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 800;
         line-height: 1.2;
     }
@@ -43,13 +46,13 @@ def render_header():
         font-size: 12px;
     }
 
-    /* Status pill */
+    /* Status */
     .status {
         margin-left: auto;
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
+        padding: 6px 10px;
         border-radius: 999px;
         background: rgba(34, 197, 94, 0.12);
         border: 1px solid rgba(34, 197, 94, 0.25);
@@ -64,9 +67,9 @@ def render_header():
     }
 
     @keyframes pulse {
-        0% {opacity:1;}
-        50% {opacity:0.3;}
-        100% {opacity:1;}
+        0% {opacity: 1;}
+        50% {opacity: 0.3;}
+        100% {opacity: 1;}
     }
 
     .date {
@@ -74,14 +77,13 @@ def render_header():
         font-size: 13px;
         font-weight: 700;
         margin-left: 20px;
-        white-space: nowrap;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown(f"""
-    <div class="sticky-header">
+    <div class="sticky-bar">
 
         <div>
             <div class="title">Tally Ho TQ & RFI Tracker</div>

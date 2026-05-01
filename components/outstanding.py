@@ -38,7 +38,7 @@ def render_outstanding_line(df, total=None):
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # LOGIC
+    # LOGIC (MUTUALLY EXCLUSIVE FOR PIE)
     # =========================
     def calc(sub):
 
@@ -46,16 +46,16 @@ def render_outstanding_line(df, total=None):
 
         closed = len(sub[sub[status_col] == "CLOSED"])
 
-        outstanding = open_items[
-            (open_items[date_col].notna()) &
-            ((today - open_items[date_col]).dt.days > 7)
-        ]
+        outstanding = len(
+            open_items[
+                (open_items[date_col].notna()) &
+                ((today - open_items[date_col]).dt.days > 7)
+            ]
+        )
 
-        outstanding_count = len(outstanding)
+        open_fresh = len(open_items) - outstanding
 
-        open_fresh = len(open_items) - outstanding_count
-
-        return open_fresh, outstanding_count, closed
+        return open_fresh, outstanding, closed
 
     rfi_open, rfi_out, rfi_closed = calc(rfi)
     tq_open, tq_out, tq_closed = calc(tq)

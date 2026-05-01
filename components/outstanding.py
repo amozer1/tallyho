@@ -52,7 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE
+    # PIE (INCREASE HEIGHT)
     # =========================
     def pie(o, out, c):
 
@@ -70,7 +70,7 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=170,
+            height=220,  # 🔥 INCREASED
             margin=dict(l=0, r=0, t=0, b=0),
             showlegend=False,
             paper_bgcolor="#0f172a",
@@ -81,7 +81,7 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # HEADER
+    # HEADER (SLIGHTLY BIGGER SPACE)
     # =========================
     def header(title, color):
         st.markdown(f"""
@@ -89,33 +89,14 @@ def render_outstanding_line(df, total=None):
             background:#0f172a;
             border:1px solid {color};
             border-radius:10px;
-            padding:6px 10px;
-            margin-bottom:6px;
+            padding:8px 10px;
+            margin-bottom:8px;
             text-align:center;
             font-size:13px;
             font-weight:700;
             color:{color};
         ">
             📊 {title}
-        </div>
-        """, unsafe_allow_html=True)
-
-    # =========================
-    # KPI (FIXED WIDTH BOXES — NO SHRINK)
-    # =========================
-    def kpi_box(label, value, color):
-        st.markdown(f"""
-        <div style="
-            background:#111827;
-            border:1px solid #1f2937;
-            border-radius:8px;
-            padding:6px;
-            text-align:center;
-            white-space:nowrap;
-            min-width:110px;
-        ">
-            <div style="color:{color}; font-weight:600;">{label}</div>
-            <div style="color:white; font-size:14px; font-weight:700;">{value}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -133,23 +114,35 @@ def render_outstanding_line(df, total=None):
         header(f"{title} Outstanding Overview", color)
 
         # =========================
-        # KPI ROW (STABLE FIX)
+        # KPI ROW (PREVENT OVERLAP)
         # =========================
-        c1, c2, c3 = st.columns([1,1,1], gap="small")
+        k1, k2, k3 = st.columns(3, gap="small")
 
-        with c1:
-            kpi_box("Open", o, "#ef4444")
+        with k1:
+            st.markdown(f"🔴 Open<br><b>{o}</b>", unsafe_allow_html=True)
 
-        with c2:
-            kpi_box("Outstanding", out, "#f59e0b")
+        with k2:
+            st.markdown(f"🟡 Outstanding<br><b>{out}</b>", unsafe_allow_html=True)
 
-        with c3:
-            kpi_box("Closed", c, "#22c55e")
+        with k3:
+            st.markdown(f"🟢 Closed<br><b>{c}</b>", unsafe_allow_html=True)
 
-        st.plotly_chart(pie(o, out, c), use_container_width=True)
+        # =========================
+        # EXTRA SPACE BEFORE CHART
+        # =========================
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+        st.plotly_chart(
+            pie(o, out, c),
+            use_container_width=True
+        )
 
         st.markdown(f"""
-        <div style="font-size:12px; color:#cbd5e1;">
+        <div style="
+            font-size:12px;
+            color:#cbd5e1;
+            margin-top:6px;
+        ">
             Total items: <b>{total}</b>
         </div>
         """, unsafe_allow_html=True)

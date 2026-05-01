@@ -52,7 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE (NO LAYOUT SHIFT)
+    # PIE
     # =========================
     def pie(o, out, c):
 
@@ -81,7 +81,7 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # HEADER (STABLE)
+    # HEADER
     # =========================
     def header(title, color):
         st.markdown(f"""
@@ -101,44 +101,55 @@ def render_outstanding_line(df, total=None):
         """, unsafe_allow_html=True)
 
     # =========================
+    # KPI (FIXED WIDTH BOXES — NO SHRINK)
+    # =========================
+    def kpi_box(label, value, color):
+        st.markdown(f"""
+        <div style="
+            background:#111827;
+            border:1px solid #1f2937;
+            border-radius:8px;
+            padding:6px;
+            text-align:center;
+            white-space:nowrap;
+            min-width:110px;
+        ">
+            <div style="color:{color}; font-weight:600;">{label}</div>
+            <div style="color:white; font-size:14px; font-weight:700;">{value}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # =========================
     # CARD
     # =========================
     def card(title, o, out, c):
 
         total = o + out + c
 
-        if title == "RFI":
-            color = "#60a5fa"
-        else:
-            color = "#f59e0b"
-
+        color = "#60a5fa" if title == "RFI" else "#f59e0b"
         if o > (0.6 * total):
             color = "#ef4444"
 
         header(f"{title} Outstanding Overview", color)
 
         # =========================
-        # KPI ROW (NO SHRINKING EFFECT)
+        # KPI ROW (STABLE FIX)
         # =========================
-        k1, k2, k3 = st.columns(3, gap="small")
+        c1, c2, c3 = st.columns([1,1,1], gap="small")
 
-        with k1:
-            st.markdown(f"<div style='white-space:nowrap'>🔴 Open: <b>{o}</b></div>", unsafe_allow_html=True)
+        with c1:
+            kpi_box("Open", o, "#ef4444")
 
-        with k2:
-            st.markdown(f"<div style='white-space:nowrap'>🟡 Outstanding: <b>{out}</b></div>", unsafe_allow_html=True)
+        with c2:
+            kpi_box("Outstanding", out, "#f59e0b")
 
-        with k3:
-            st.markdown(f"<div style='white-space:nowrap'>🟢 Closed: <b>{c}</b></div>", unsafe_allow_html=True)
+        with c3:
+            kpi_box("Closed", c, "#22c55e")
 
         st.plotly_chart(pie(o, out, c), use_container_width=True)
 
         st.markdown(f"""
-        <div style="
-            font-size:12px;
-            color:#cbd5e1;
-            margin-top:2px;
-        ">
+        <div style="font-size:12px; color:#cbd5e1;">
             Total items: <b>{total}</b>
         </div>
         """, unsafe_allow_html=True)

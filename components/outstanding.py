@@ -6,20 +6,18 @@ import plotly.graph_objects as go
 def render_outstanding_line(df, total=None):
 
     # =========================
-    # 🔒 FIX: PREVENT SHRINKING
+    # 🔒 FIX: LOCK MIN WIDTH
     # =========================
     st.markdown("""
     <style>
-    div[data-testid="column"] > div {
-        width: 100% !important;
+    /* Prevent cards from shrinking too much */
+    div[data-testid="column"] {
+        min-width: 420px !important;
     }
 
-    div[data-testid="stMarkdownContainer"] {
+    /* Keep text readable */
+    div[data-testid="stMarkdownContainer"] p {
         font-size: 14px !important;
-    }
-
-    div[data-testid="stPlotlyChart"] {
-        width: 100% !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -136,9 +134,7 @@ def render_outstanding_line(df, total=None):
 
         header(f"{title} Outstanding Overview", color)
 
-        # =========================
-        # KPI ROW (STABLE)
-        # =========================
+        # KPI
         k1, k2, k3 = st.columns(3)
 
         with k1:
@@ -150,23 +146,12 @@ def render_outstanding_line(df, total=None):
         with k3:
             st.write(f"🟢 Closed: {c}")
 
-        # =========================
         # PIE
-        # =========================
-        st.plotly_chart(
-            pie(o, out, c),
-            use_container_width=True
-        )
+        st.plotly_chart(pie(o, out, c), use_container_width=True)
 
-        # =========================
         # FOOTER
-        # =========================
         st.markdown(f"""
-        <div style="
-            font-size:12px;
-            color:#cbd5e1;
-            margin-top:2px;
-        ">
+        <div style="font-size:12px; color:#cbd5e1;">
             Total items: <b>{total}</b>
         </div>
         """, unsafe_allow_html=True)

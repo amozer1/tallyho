@@ -42,56 +42,36 @@ def render_outstanding_line(df, total=None):
     rfi_open, rfi_out, rfi_closed = calc(rfi)
     tq_open, tq_out, tq_closed = calc(tq)
 
-    # =========================
-    # THEME COLORS
-    # =========================
     COLORS = {
-        "bg": "#0b1220",
-        "card": "#0f172a",
-        "border": "#334155",
         "open": "#ef4444",
         "out": "#f59e0b",
         "closed": "#22c55e"
     }
 
     # =========================
-    # GLOBAL STYLE (CLEAN + SAFE)
+    # GLOBAL STYLE (CARD THEME)
     # =========================
-    st.markdown(f"""
+    st.markdown("""
     <style>
 
-    /* APP BACKGROUND */
-    .stApp {{
-        background-color: {COLORS["bg"]};
-        color: white;
-    }}
-
-    /* FIX COLUMN WIDTH */
-    [data-testid="column"] {{
+    /* KEEP COLUMNS STABLE */
+    [data-testid="column"] {
         min-width: 420px !important;
         flex: 0 0 420px !important;
-    }}
+    }
 
-    /* CARD LOOK */
-    div[data-testid="stVerticalBlock"] {{
-        background-color: {COLORS["card"]};
-        border: 1px solid {COLORS["border"]};
-        border-radius: 14px;
+    /* CARD BACKGROUND (APPLIES TO EACH BLOCK) */
+    div[data-testid="stVerticalBlock"] {
+        background-color: #0f172a;
         padding: 16px;
-    }}
+        border-radius: 14px;
+        border: 1px solid #334155;
+    }
 
-    /* KPI METRICS TEXT */
-    div[data-testid="metric-container"] {{
-        background-color: {COLORS["card"]};
-        border: 1px solid {COLORS["border"]};
-        padding: 12px;
-        border-radius: 12px;
-    }}
-
-    /* PLOTLY FIX */
-    div[data-testid="stPlotlyChart"] {{
+    /* PREVENT PLOTLY SHRINKING */
+    div[data-testid="stPlotlyChart"] {
         min-width: 380px !important;
-    }}
+    }
 
     </style>
     """, unsafe_allow_html=True)
@@ -114,49 +94,22 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=280,
+            height=260,
             margin=dict(l=10, r=10, t=10, b=10),
             showlegend=False,
-            paper_bgcolor=COLORS["card"],
-            plot_bgcolor=COLORS["card"],
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
             font=dict(color="white", size=12)
         )
 
         return fig
 
     # =========================
-    # KPI CALC (TOTALS)
+    # CARD
     # =========================
-    def total_metrics():
-        return {
-            "RFI Open": rfi_open,
-            "RFI Outstanding": rfi_out,
-            "RFI Closed": rfi_closed,
-            "TQ Open": tq_open,
-            "TQ Outstanding": tq_out,
-            "TQ Closed": tq_closed,
-        }
+    def card(title, o, out, c):
 
-    metrics = total_metrics()
-
-
-    k1, k2, k3, k4, k5, k6 = st.columns(6)
-
-    k1.metric("RFI Open", metrics["RFI Open"])
-    k2.metric("RFI Outstanding", metrics["RFI Outstanding"])
-    k3.metric("RFI Closed", metrics["RFI Closed"])
-    k4.metric("TQ Open", metrics["TQ Open"])
-    k5.metric("TQ Outstanding", metrics["TQ Outstanding"])
-    k6.metric("TQ Closed", metrics["TQ Closed"])
-
-    st.markdown("---")
-
-    # =========================
-    # CARD FUNCTION
-    # =========================
-    def card(title, o, out, c, accent):
-
-        st.markdown(f"### {title} Summary")
+        st.markdown(f"### {title} Overview")
 
         st.markdown(
             f"""
@@ -171,13 +124,15 @@ def render_outstanding_line(df, total=None):
             use_container_width=True
         )
 
+        st.divider()
+
     # =========================
-    # MAIN GRID
+    # LAYOUT
     # =========================
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        card("RFI", rfi_open, rfi_out, rfi_closed, COLORS["open"])
+        card("RFI", rfi_open, rfi_out, rfi_closed)
 
     with col2:
-        card("TQ", tq_open, tq_out, tq_closed, COLORS["out"])
+        card("TQ", tq_open, tq_out, tq_closed)

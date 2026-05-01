@@ -7,7 +7,29 @@ def render_header():
     st.markdown("""
     <style>
 
-    /* ===== HEADER BOX ===== */
+    /* =========================
+       FIX STREAMLIT DEFAULT HEADER
+    ========================= */
+    header[data-testid="stHeader"] {
+        display: none;
+    }
+
+    /* =========================
+       MAKE TOP APP CONTAINER STICKY
+       (REAL STREAMLIT SAFE METHOD)
+    ========================= */
+    div[data-testid="stAppViewContainer"] > div:first-child {
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+        background: #0b1a2f;
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    /* =========================
+       HEADER BOX STYLE (UNCHANGED DESIGN)
+    ========================= */
     .header-box {
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.18);
@@ -30,17 +52,9 @@ def render_header():
         border-bottom-right-radius: 16px;
     }
 
-    /* ===== STICKY HEADER ===== */
-    div[data-testid="stHorizontalBlock"] {
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        background: #0b1a2f;
-        padding-top: 6px;
-        padding-bottom: 6px;
-    }
-
-    /* ===== TEXT ===== */
+    /* =========================
+       TEXT STYLES
+    ========================= */
     .title {
         color: white;
         font-size: 26px;
@@ -79,7 +93,9 @@ def render_header():
         100% {opacity:1;}
     }
 
-    /* ===== CENTER DATE (NEW FIX) ===== */
+    /* =========================
+       CENTER DATE
+    ========================= */
     .date-center {
         color: white;
         font-size: 15px;
@@ -91,7 +107,9 @@ def render_header():
     </style>
     """, unsafe_allow_html=True)
 
-    # ===== HEADER LAYOUT =====
+    # =========================
+    # HEADER LAYOUT
+    # =========================
     col1, col2, col3 = st.columns([5, 3, 2], gap="small")
 
     with col1:

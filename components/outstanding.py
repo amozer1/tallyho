@@ -5,6 +5,25 @@ import plotly.graph_objects as go
 
 def render_outstanding_line(df, total=None):
 
+    # =========================
+    # 🔒 FIX: PREVENT SHRINKING
+    # =========================
+    st.markdown("""
+    <style>
+    div[data-testid="column"] > div {
+        width: 100% !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] {
+        font-size: 14px !important;
+    }
+
+    div[data-testid="stPlotlyChart"] {
+        width: 100% !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     if df is None or df.empty:
         st.warning("No data available")
         return
@@ -75,7 +94,7 @@ def render_outstanding_line(df, total=None):
             showlegend=False,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
-            font=dict(color="white", size=11)
+            font=dict(color="white", size=12)
         )
 
         return fig
@@ -92,44 +111,13 @@ def render_outstanding_line(df, total=None):
             padding:6px 10px;
             margin-bottom:6px;
             text-align:center;
-            font-size:12px;
+            font-size:13px;
             font-weight:700;
             color:{color};
         ">
             📊 {title}
         </div>
         """, unsafe_allow_html=True)
-
-    # =========================
-    # KPI ROW (PLOTLY FIX - NO SHRINK)
-    # =========================
-    def kpi_row(o, out, c):
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=[0, 1, 2],
-            y=[0, 0, 0],
-            mode="text",
-            text=[
-                f"🔴 Open: {o}",
-                f"🟡 Outstanding: {out}",
-                f"🟢 Closed: {c}"
-            ],
-            textfont=dict(size=14),  # 🔒 fixed size
-            hoverinfo="skip"
-        ))
-
-        fig.update_layout(
-            height=50,
-            margin=dict(l=0, r=0, t=0, b=0),
-            xaxis=dict(visible=False),
-            yaxis=dict(visible=False),
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a"
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
 
     # =========================
     # CARD
@@ -148,17 +136,34 @@ def render_outstanding_line(df, total=None):
 
         header(f"{title} Outstanding Overview", color)
 
-        # 🔥 FIXED KPI ROW
-        kpi_row(o, out, c)
+        # =========================
+        # KPI ROW (STABLE)
+        # =========================
+        k1, k2, k3 = st.columns(3)
 
+        with k1:
+            st.write(f"🔴 Open: {o}")
+
+        with k2:
+            st.write(f"🟡 Outstanding: {out}")
+
+        with k3:
+            st.write(f"🟢 Closed: {c}")
+
+        # =========================
+        # PIE
+        # =========================
         st.plotly_chart(
             pie(o, out, c),
             use_container_width=True
         )
 
+        # =========================
+        # FOOTER
+        # =========================
         st.markdown(f"""
         <div style="
-            font-size:11px;
+            font-size:12px;
             color:#cbd5e1;
             margin-top:2px;
         ">

@@ -12,7 +12,7 @@ from components.age_outstanding import render_age_outstanding
 # PAGE CONFIG
 # =========================
 st.set_page_config(
-    page_title="TQ / RFI Intelligence Hub",
+    page_title="Tally Ho TQ & RFI Tracker",
     layout="wide"
 )
 
@@ -29,25 +29,20 @@ def load_data():
 
 df = load_data()
 
+# =========================
+# CLEAN DATA ONCE (IMPORTANT FIX)
+# =========================
 df = df.copy()
 df.columns = df.columns.str.strip().str.lower()
 
 df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
-
 # =========================
-# TITLE
-# =========================
-st.markdown("## 📊 TQ / RFI Control Dashboard")
-
-
-# =========================
-# 2×2 GRID
+# FIXED GRID LAYOUT
 # =========================
 row1_col1, row1_col2 = st.columns(2, gap="large")
 row2_col1, row2_col2 = st.columns(2, gap="large")
-
 
 with row1_col1:
     render_trend(df)
@@ -59,4 +54,4 @@ with row2_col1:
     render_age_outstanding(df)
 
 with row2_col2:
-    st.empty()  # 👈 placeholder (keeps layout clean)
+    st.empty()

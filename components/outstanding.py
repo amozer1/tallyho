@@ -33,21 +33,21 @@ def render_outstanding_line(df, total=None):
     today = pd.Timestamp.today()
 
     # =========================
-    # SPLIT BY TYPE
+    # SPLIT DATA
     # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # LOGIC (CORRECT SLA MODEL)
+    # LOGIC
     # =========================
     def calc(sub):
 
-        closed = len(sub[sub[status_col] == "CLOSED"])
-
         open_items = sub[sub[status_col] == "OPEN"]
+        closed_items = sub[sub[status_col] == "CLOSED"]
 
         open_total = len(open_items)
+        closed = len(closed_items)
 
         outstanding = len(
             open_items[
@@ -56,12 +56,10 @@ def render_outstanding_line(df, total=None):
             ]
         )
 
-        fresh_open = open_total - outstanding
+        return open_total, outstanding, closed
 
-        return open_total, fresh_open, outstanding, closed
-
-    rfi_open, rfi_fresh, rfi_out, rfi_closed = calc(rfi)
-    tq_open, tq_fresh, tq_out, tq_closed = calc(tq)
+    rfi_open, rfi_out, rfi_closed = calc(rfi)
+    tq_open, tq_out, tq_closed = calc(tq)
 
     # =========================
     # COLOURS
@@ -73,15 +71,17 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE CHART (NO DOUBLE COUNTING)
+    # PIE CHART (3 SLICES, NO DOUBLE COUNTING)
     # =========================
-    def pie(fresh_open, out, closed):
+    def pie(open_total, outstanding, closed):
+
+        fresh_open = open_total - outstanding
 
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding (>7d)", "Closed"],
-            values=[fresh_open, out, closed],
+            values=[fresh_open, outstanding, closed],
             textinfo="label+value",
             marker=dict(
                 colors=[
@@ -106,9 +106,9 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # CARD
+    # CARD UI
     # =========================
-    def card(title, open_total, fresh_open, outstanding, closed):
+    def card(title, open_total, outstanding, closed):
 
         st.markdown(f"### {title} Overview")
 
@@ -121,7 +121,7 @@ def render_outstanding_line(df, total=None):
         )
 
         st.plotly_chart(
-            pie(fresh_open, outstanding, closed),
+            pie(open_total, outstanding, closed),
             use_container_width=True
         )
 
@@ -133,7 +133,7 @@ def render_outstanding_line(df, total=None):
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        card("RFI", rfi_open, rfi_fresh, rfi_out, rfi_closed)
+        card("RFI", rfi_open, rfi_out, rfi_closed)
 
     with col2:
-        card("TQ", tq_open, tq_fresh, tq_out, tq_closed)
+        card("TQ", tq_open, tq_out, tq_closed)

@@ -49,7 +49,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE CHART
+    # PIE CHART (FIXED)
     # =========================
     def pie(o, out, c):
         fig = go.Figure()
@@ -77,49 +77,20 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # KPI CARD STYLE
-    # =========================
-    def kpi_card(label, value, color):
-        st.markdown(f"""
-        <div style="
-            background:#0f172a;
-            border:1px solid {color};
-            padding:12px;
-            border-radius:12px;
-            text-align:center;
-        ">
-            <div style="font-size:13px; color:#cbd5e1;">{label}</div>
-            <div style="font-size:22px; font-weight:700; color:white;">
-                {value}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # =========================
-    # SECTION CARD
+    # CLEAN SECTION (NO CUSTOM HTML)
     # =========================
     def section(title, o, out, c):
 
-        st.markdown(f"### {title}")
+        st.subheader(title)
 
-        # KPI ROW (CLEAN BLOCKS)
+        # KPI ROW (THIS IS THE KEY FIX)
         k1, k2, k3 = st.columns(3)
 
-        with k1:
-            kpi_card("Open", o, COLORS["open"])
+        k1.metric("Open", o)
+        k2.metric("Outstanding (>7d)", out)
+        k3.metric("Closed", c)
 
-        with k2:
-            kpi_card("Outstanding (>14 days)", out, COLORS["out"])
-
-        with k3:
-            kpi_card("Closed", c, COLORS["closed"])
-
-        st.plotly_chart(
-            pie(o, out, c),
-            use_container_width=True
-        )
-
-        st.divider()
+        st.plotly_chart(pie(o, out, c), use_container_width=True)
 
     # =========================
     # LAYOUT

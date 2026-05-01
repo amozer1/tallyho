@@ -6,38 +6,56 @@ def render_header():
 
     st.markdown("""
     <style>
+
+    /* REMOVE STREAMLIT DEFAULT SPACING THAT BREAKS FLEX */
+    .block-container {
+        padding-top: 0rem !important;
+    }
+
+    /* MAIN HEADER */
     .header-box {
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.18);
-        min-height: 95px;
         border-radius: 16px;
-        padding: 18px 22px;
+        padding: 16px 22px;
 
         display: flex;
+        flex-direction: row;
         align-items: center;
         justify-content: space-between;
+
+        flex-wrap: nowrap;   /* CRITICAL: prevents stacking */
+        gap: 20px;
+
+        width: 100%;
+        box-sizing: border-box;
     }
 
+    /* LEFT */
     .left {
         display: flex;
         flex-direction: column;
+        min-width: 300px;
     }
 
     .title {
         color: white;
-        font-size: 26px;
+        font-size: 24px;
         font-weight: 900;
         line-height: 1.1;
+        white-space: nowrap;
     }
 
     .subtitle {
         color: #94a3b8;
         font-size: 12px;
         margin-top: 4px;
+        white-space: nowrap;
     }
 
+    /* CENTER STATUS */
     .status-box {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 8px;
 
@@ -50,7 +68,9 @@ def render_header():
         color: white;
         font-size: 13px;
         font-weight: 700;
+
         white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .dot {
@@ -64,33 +84,32 @@ def render_header():
         100% {opacity:1;}
     }
 
+    /* RIGHT */
     .date-text {
         color: white;
         font-size: 14px;
         font-weight: 700;
+
         white-space: nowrap;
+        flex-shrink: 0;
     }
+
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class="header-box">
 
-        <!-- LEFT -->
         <div class="left">
             <div class="title">Tally Ho TQ & RFI Tracker</div>
-            <div class="subtitle">
-                TQs • RFIs • Outstanding Responses
-            </div>
+            <div class="subtitle">TQs • RFIs • Outstanding Responses</div>
         </div>
 
-        <!-- MIDDLE -->
         <div class="status-box">
             <span class="dot">●</span>
             Live System Status: Active
         </div>
 
-        <!-- RIGHT -->
         <div class="date-text">
             {datetime.today().strftime('%d %b %Y')}
         </div>

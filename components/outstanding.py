@@ -52,9 +52,9 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE (NUMBERS NOT %)
+    # PIE
     # =========================
-    def pie(o, out, c, color):
+    def pie(o, out, c):
 
         fig = go.Figure()
 
@@ -81,7 +81,7 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # HEADER (COLOUR CODED)
+    # HEADER
     # =========================
     def header(title, color):
         st.markdown(f"""
@@ -101,13 +101,43 @@ def render_outstanding_line(df, total=None):
         """, unsafe_allow_html=True)
 
     # =========================
+    # KPI ROW (PLOTLY FIX - NO SHRINK)
+    # =========================
+    def kpi_row(o, out, c):
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=[0, 1, 2],
+            y=[0, 0, 0],
+            mode="text",
+            text=[
+                f"🔴 Open: {o}",
+                f"🟡 Outstanding: {out}",
+                f"🟢 Closed: {c}"
+            ],
+            textfont=dict(size=14),  # 🔒 fixed size
+            hoverinfo="skip"
+        ))
+
+        fig.update_layout(
+            height=50,
+            margin=dict(l=0, r=0, t=0, b=0),
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
     # CARD
     # =========================
     def card(title, o, out, c):
 
         total = o + out + c
 
-        # colour logic (unchanged)
         if title == "RFI":
             color = "#60a5fa"
         else:
@@ -118,22 +148,11 @@ def render_outstanding_line(df, total=None):
 
         header(f"{title} Outstanding Overview", color)
 
-        # =========================
-        # KPI ROW (FIXED - NO SHRINK / NO WRAP ISSUES)
-        # =========================
-        k1, k2, k3 = st.columns(3, gap="small")
-
-        with k1:
-            st.markdown(f"🔴 Open: **{o}**")
-
-        with k2:
-            st.markdown(f"🟡 Outstanding: **{out}**")
-
-        with k3:
-            st.markdown(f"🟢 Closed: **{c}**")
+        # 🔥 FIXED KPI ROW
+        kpi_row(o, out, c)
 
         st.plotly_chart(
-            pie(o, out, c, color),
+            pie(o, out, c),
             use_container_width=True
         )
 

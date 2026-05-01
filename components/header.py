@@ -10,34 +10,32 @@ def render_header():
             padding-top: 0rem !important;
         }
 
-        /* HEADER CARD */
-        .header-card {
+        .card {
             background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
             border: 1px solid rgba(122, 60, 255, 0.18);
             border-radius: 16px;
-            padding: 18px 22px;
-
-            box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
+            padding: 18px 20px;
+            margin-bottom: 10px;
         }
 
-        /* TITLE */
-        .header-title {
+        .title {
             font-size: 26px;
             font-weight: 900;
             color: white;
-            margin-bottom: 4px;
             line-height: 1.1;
         }
 
-        /* SUBTITLE */
-        .header-subtitle {
+        .subtitle {
             font-size: 12px;
             color: #94a3b8;
+            margin-top: 4px;
         }
 
-        /* STATUS PILL */
-        .status-pill {
-            display: inline-block;
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+
             padding: 8px 12px;
             border-radius: 10px;
 
@@ -47,15 +45,14 @@ def render_header():
             color: white;
             font-size: 13px;
             font-weight: 700;
+            white-space: nowrap;
         }
 
         .dot {
             color: #22c55e;
-            margin-right: 6px;
         }
 
-        /* DATE */
-        .date-text {
+        .date {
             color: white;
             font-size: 14px;
             font-weight: 700;
@@ -64,26 +61,21 @@ def render_header():
         </style>
     """, unsafe_allow_html=True)
 
-    # CARD
     with st.container():
+        st.markdown('<div class="card">', unsafe_allow_html=True)
 
-        st.markdown('<div class="header-card">', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([5, 2, 2], vertical_alignment="center")
 
-        col1, col2, col3 = st.columns([5, 2, 2])
-
-        # LEFT
         with col1:
-            st.markdown('<div class="header-title">Tally Ho TQ & RFI Tracker</div>', unsafe_allow_html=True)
-            st.markdown('<div class="header-subtitle">TQs • RFIs • Outstanding Responses</div>', unsafe_allow_html=True)
+            st.markdown('<div class="title">Tally Ho TQ & RFI Tracker</div>', unsafe_allow_html=True)
+            st.markdown('<div class="subtitle">TQs • RFIs • Outstanding Responses</div>', unsafe_allow_html=True)
 
-        # CENTER
         with col2:
-            st.markdown('<div class="status-pill"><span class="dot">●</span>Live System Status: Active</div>', unsafe_allow_html=True)
+            st.markdown('<div class="status"><span class="dot">●</span>Live System Status: Active</div>', unsafe_allow_html=True)
 
-        # RIGHT
         with col3:
             st.markdown(
-                f'<div class="date-text">{datetime.today().strftime("%d %b %Y")}</div>',
+                f'<div class="date">{datetime.today().strftime("%d %b %Y")}</div>',
                 unsafe_allow_html=True
             )
 

@@ -5,26 +5,6 @@ import plotly.graph_objects as go
 
 def render_outstanding_line(df, total=None):
 
-    # =========================
-    # GLOBAL CSS (SAFE ONLY)
-    # =========================
-    st.markdown("""
-    <style>
-
-    /* FIX COLUMN WIDTH */
-    [data-testid="column"] {
-        min-width: 420px !important;
-        flex: 0 0 420px !important;
-    }
-
-    /* PREVENT PLOTLY SHRINKING */
-    div[data-testid="stPlotlyChart"] {
-        min-width: 380px !important;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
     if df is None or df.empty:
         st.warning("No data available")
         return
@@ -45,9 +25,6 @@ def render_outstanding_line(df, total=None):
 
     today = pd.Timestamp.today()
 
-    # =========================
-    # SPLIT
-    # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
 
@@ -75,13 +52,12 @@ def render_outstanding_line(df, total=None):
     # PIE (FIXED SIZE)
     # =========================
     def pie(o, out, c):
-
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[o, out, c],
-            textinfo="value",
+            textinfo="value+label",
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="white", width=2)
@@ -90,68 +66,41 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=240,
-            width=380,
-            margin=dict(l=0, r=0, t=0, b=0),
+            height=260,
+            margin=dict(l=10, r=10, t=10, b=10),
             showlegend=False,
-            paper_bgcolor="#0f172a",
-            plot_bgcolor="#0f172a",
-            font=dict(color="white", size=12)
+            paper_bgcolor="white",
+            plot_bgcolor="white"
         )
 
         return fig
 
     # =========================
-    # CARD (STREAMLIT ONLY)
+    # SIMPLE CARD (NO HTML)
     # =========================
     def card(title, o, out, c):
 
-        total = o + out + c
-        color = "#60a5fa" if title == "RFI" else "#f59e0b"
+        st.markdown(f"## {title} Overview")
 
-        if o > (0.6 * total):
-            color = "#ef4444"
+        st.markdown(f"""
+        🔴 **Open:** {o}  
 
-        # REAL STREAMLIT CARD
-        with st.container():
+        🟡 **Outstanding:** {out}  
 
-            st.markdown(f"""
-            <div style="
-                border:1px solid {color};
-                border-radius:14px;
-                padding:12px;
-                background:#0f172a;
-            ">
-            """, unsafe_allow_html=True)
+        🟢 **Closed:** {c}
+        """)
 
-            st.markdown(f"### 📊 {title} Outstanding Overview")
+        st.plotly_chart(
+            pie(o, out, c),
+            use_container_width=True
+        )
 
-            # KPI ROW
-            k1, k2, k3 = st.columns(3)
-
-            with k1:
-                st.markdown(f"🔴 Open: **{o}**")
-
-            with k2:
-                st.markdown(f"🟡 Outstanding: **{out}**")
-
-            with k3:
-                st.markdown(f"🟢 Closed: **{c}**")
-
-            # PIE (NOW ALWAYS INSIDE STREAMLIT FLOW)
-            st.plotly_chart(
-                pie(o, out, c),
-                use_container_width=False
-            )
-
-            st.markdown(f"**Total items:** {total}")
-
-            st.markdown("</div>", unsafe_allow_html=True)
+        st.divider()
 
     # =========================
-    # LAYOUT
+    # LAYOUT (STABLE)
     # =========================
-    col1, col2 = st.columns(2, gap="large")
+    col1, col2 = st.columns(2)
 
     with col1:
         card("RFI", rfi_open, rfi_out, rfi_closed)

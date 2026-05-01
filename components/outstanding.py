@@ -5,18 +5,6 @@ import plotly.graph_objects as go
 
 def render_outstanding_line(df, total=None):
 
-    # =========================
-    # 🔒 FIX: LOCK CARD WIDTH (NOT COLUMN)
-    # =========================
-    st.markdown("""
-    <style>
-    /* Target Streamlit container blocks (your cards) */
-    div[data-testid="stVerticalBlock"] > div {
-        min-width: 420px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
     if df is None or df.empty:
         st.warning("No data available")
         return
@@ -64,7 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE
+    # PIE (NO LAYOUT SHIFT)
     # =========================
     def pie(o, out, c):
 
@@ -87,13 +75,13 @@ def render_outstanding_line(df, total=None):
             showlegend=False,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
-            font=dict(color="white", size=12)
+            font=dict(color="white", size=11)
         )
 
         return fig
 
     # =========================
-    # HEADER
+    # HEADER (STABLE)
     # =========================
     def header(title, color):
         st.markdown(f"""
@@ -129,24 +117,28 @@ def render_outstanding_line(df, total=None):
 
         header(f"{title} Outstanding Overview", color)
 
-        # KPI
-        k1, k2, k3 = st.columns(3)
+        # =========================
+        # KPI ROW (NO SHRINKING EFFECT)
+        # =========================
+        k1, k2, k3 = st.columns(3, gap="small")
 
         with k1:
-            st.write(f"🔴 Open: {o}")
+            st.markdown(f"<div style='white-space:nowrap'>🔴 Open: <b>{o}</b></div>", unsafe_allow_html=True)
 
         with k2:
-            st.write(f"🟡 Outstanding: {out}")
+            st.markdown(f"<div style='white-space:nowrap'>🟡 Outstanding: <b>{out}</b></div>", unsafe_allow_html=True)
 
         with k3:
-            st.write(f"🟢 Closed: {c}")
+            st.markdown(f"<div style='white-space:nowrap'>🟢 Closed: <b>{c}</b></div>", unsafe_allow_html=True)
 
-        # PIE
         st.plotly_chart(pie(o, out, c), use_container_width=True)
 
-        # FOOTER
         st.markdown(f"""
-        <div style="font-size:12px; color:#cbd5e1;">
+        <div style="
+            font-size:12px;
+            color:#cbd5e1;
+            margin-top:2px;
+        ">
             Total items: <b>{total}</b>
         </div>
         """, unsafe_allow_html=True)

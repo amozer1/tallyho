@@ -7,38 +7,46 @@ def render_header():
     st.markdown("""
     <style>
 
-    /* ===== STICKY WRAPPER (TARGET STREAMLIT CONTAINER) ===== */
-    header[data-testid="stHeader"] {
-        display: none;
+    /* ===== HEADER LAYOUT (your original design preserved) ===== */
+    .header-box {
+        background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
+        border: 1px solid rgba(122, 60, 255, 0.18);
+        min-height: 95px;
+        border-radius: 0px;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
     }
 
-    div[data-testid="stAppViewContainer"] > div:first-child {
-        padding-top: 0rem;
+    .left-box {
+        border-top-left-radius: 16px;
+        border-bottom-left-radius: 16px;
     }
 
-    /* Custom sticky bar */
-    .sticky-bar {
+    .right-box {
+        border-top-right-radius: 16px;
+        border-bottom-right-radius: 16px;
+    }
+
+    /* ===== STICKY FIX (SAFE STREAMLIT METHOD) ===== */
+    div[data-testid="stHorizontalBlock"] {
         position: sticky;
         top: 0;
         z-index: 999;
-
-        background: linear-gradient(135deg, #0b1a2f 0%, #0f2440 100%);
-        border-bottom: 1px solid rgba(122, 60, 255, 0.2);
-
-        padding: 12px 16px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-
-        box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+        background: #0b1a2f;
+        padding-top: 6px;
+        padding-bottom: 6px;
     }
 
-    /* Title */
+    /* ===== TEXT STYLES ===== */
     .title {
         color: white;
-        font-size: 18px;
-        font-weight: 800;
-        line-height: 1.2;
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 1.1;
+        margin-bottom: 4px;
     }
 
     .subtitle {
@@ -46,18 +54,17 @@ def render_header():
         font-size: 12px;
     }
 
-    /* Status */
-    .status {
-        margin-left: auto;
-        display: flex;
+    .status-box {
+        display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(34, 197, 94, 0.12);
-        border: 1px solid rgba(34, 197, 94, 0.25);
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: rgba(122, 60, 255, 0.12);
+        border: 1px solid rgba(122, 60, 255, 0.25);
         color: white;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 700;
     }
 
@@ -67,37 +74,45 @@ def render_header():
     }
 
     @keyframes pulse {
-        0% {opacity: 1;}
-        50% {opacity: 0.3;}
-        100% {opacity: 1;}
+        0% {opacity:1;}
+        50% {opacity:0.4;}
+        100% {opacity:1;}
     }
 
-    .date {
+    .date-text {
         color: white;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 700;
-        margin-left: 20px;
+        text-align:right;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown(f"""
-    <div class="sticky-bar">
+    # ===== HEADER LAYOUT =====
+    col1, col2, col3 = st.columns([5, 3, 2], gap="small")
 
-        <div>
+    with col1:
+        st.markdown("""
+        <div class="header-box left-box">
             <div class="title">Tally Ho TQ & RFI Tracker</div>
             <div class="subtitle">TQs • RFIs • Outstanding Responses</div>
         </div>
+        """, unsafe_allow_html=True)
 
-        <div class="status">
-            <span class="dot">●</span>
-            Live System Active
+    with col2:
+        st.markdown("""
+        <div class="header-box" style="align-items:center; text-align:center;">
+            <div class="status-box">
+                <span class="dot">●</span>
+                Live System Status: Active
+            </div>
         </div>
+        """, unsafe_allow_html=True)
 
-        <div class="date">
-            {datetime.today().strftime('%d %b %Y')}
+    with col3:
+        st.markdown(f"""
+        <div class="header-box right-box">
+            <div class="date-text">{datetime.today().strftime('%d %b %Y')}</div>
         </div>
-
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)

@@ -30,7 +30,7 @@ def load_data():
 df = load_data()
 
 # =========================
-# CLEAN DATA ONCE (IMPORTANT FIX)
+# CLEAN DATA ONCE
 # =========================
 df = df.copy()
 df.columns = df.columns.str.strip().str.lower()
@@ -39,19 +39,20 @@ df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 # =========================
-# FIXED GRID LAYOUT
+# ROW 1: OUTSTANDING (FULL WIDTH)
 # =========================
-row1_col1, row1_col2 = st.columns(2, gap="large")
-row2_col1, row2_col2 = st.columns(2, gap="large")
+render_outstanding_line(df, total=len(df))
 
-with row1_col1:
+st.markdown("---")
+
+# =========================
+# ROW 2: TREND + AGE OUTSTANDING
+# =========================
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
     render_trend(df)
 
-with row1_col2:
-    render_outstanding_line(df, total=len(df))
-
-with row2_col1:
+with col2:
     render_age_outstanding(df)
-
-with row2_col2:
-    st.empty()
+    

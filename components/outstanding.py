@@ -6,18 +6,13 @@ import plotly.graph_objects as go
 def render_outstanding_line(df, total=None):
 
     # =========================
-    # 🔒 FIX: LOCK MIN WIDTH
+    # 🔒 FIX: LOCK CARD WIDTH (NOT COLUMN)
     # =========================
     st.markdown("""
     <style>
-    /* Prevent cards from shrinking too much */
-    div[data-testid="column"] {
-        min-width: 420px !important;
-    }
-
-    /* Keep text readable */
-    div[data-testid="stMarkdownContainer"] p {
-        font-size: 14px !important;
+    /* Target Streamlit container blocks (your cards) */
+    div[data-testid="stVerticalBlock"] > div {
+        min-width: 420px;
     }
     </style>
     """, unsafe_allow_html=True)

@@ -52,7 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE (UNCHANGED)
+    # PIE
     # =========================
     def pie(o, out, c):
 
@@ -89,10 +89,10 @@ def render_outstanding_line(df, total=None):
             background:#0f172a;
             border:1px solid {color};
             border-radius:10px;
-            padding:8px 10px;
-            margin-bottom:8px;
+            padding:6px 10px;
+            margin-bottom:6px;
             text-align:center;
-            font-size:13px;
+            font-size:12px;
             font-weight:700;
             color:{color};
         ">
@@ -101,47 +101,66 @@ def render_outstanding_line(df, total=None):
         """, unsafe_allow_html=True)
 
     # =========================
-    # CARD (🔥 HEIGHT FIX HERE)
+    # KPI ROW (PLOTLY FIX - NO SHRINK)
+    # =========================
+    def kpi_row(o, out, c):
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=[0, 1, 2],
+            y=[0, 0, 0],
+            mode="text",
+            text=[
+                f"🔴 Open: {o}",
+                f"🟡 Outstanding: {out}",
+                f"🟢 Closed: {c}"
+            ],
+            textfont=dict(size=14),  # 🔒 fixed size
+            hoverinfo="skip"
+        ))
+
+        fig.update_layout(
+            height=50,
+            margin=dict(l=0, r=0, t=0, b=0),
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # CARD
     # =========================
     def card(title, o, out, c):
 
         total = o + out + c
 
-        color = "#60a5fa" if title == "RFI" else "#f59e0b"
+        if title == "RFI":
+            color = "#60a5fa"
+        else:
+            color = "#f59e0b"
+
         if o > (0.6 * total):
             color = "#ef4444"
 
         header(f"{title} Outstanding Overview", color)
 
-        # 🔥 CARD HEIGHT SPACER (THIS IS THE FIX)
-        st.markdown("""
-        <div style="
-            height: 140px;
-            padding: 10px 0;
-        "></div>
-        """, unsafe_allow_html=True)
+        # 🔥 FIXED KPI ROW
+        kpi_row(o, out, c)
 
-        # =========================
-        # KPI ROW (FIX OVERLAP)
-        # =========================
-        k1, k2, k3 = st.columns(3, gap="small")
-
-        with k1:
-            st.markdown(f"🔴 Open<br><b>{o}</b>", unsafe_allow_html=True)
-
-        with k2:
-            st.markdown(f"🟡 Outstanding<br><b>{out}</b>", unsafe_allow_html=True)
-
-        with k3:
-            st.markdown(f"🟢 Closed<br><b>{c}</b>", unsafe_allow_html=True)
-
-        st.plotly_chart(pie(o, out, c), use_container_width=True)
+        st.plotly_chart(
+            pie(o, out, c),
+            use_container_width=True
+        )
 
         st.markdown(f"""
         <div style="
-            font-size:12px;
+            font-size:11px;
             color:#cbd5e1;
-            margin-top:6px;
+            margin-top:2px;
         ">
             Total items: <b>{total}</b>
         </div>

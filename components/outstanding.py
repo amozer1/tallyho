@@ -52,7 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE (INCREASE HEIGHT)
+    # PIE (UNCHANGED)
     # =========================
     def pie(o, out, c):
 
@@ -70,7 +70,7 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=220,  # 🔥 INCREASED
+            height=170,
             margin=dict(l=0, r=0, t=0, b=0),
             showlegend=False,
             paper_bgcolor="#0f172a",
@@ -81,7 +81,7 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # HEADER (SLIGHTLY BIGGER SPACE)
+    # HEADER
     # =========================
     def header(title, color):
         st.markdown(f"""
@@ -101,7 +101,7 @@ def render_outstanding_line(df, total=None):
         """, unsafe_allow_html=True)
 
     # =========================
-    # CARD
+    # CARD (🔥 HEIGHT FIX HERE)
     # =========================
     def card(title, o, out, c):
 
@@ -113,8 +113,16 @@ def render_outstanding_line(df, total=None):
 
         header(f"{title} Outstanding Overview", color)
 
+        # 🔥 CARD HEIGHT SPACER (THIS IS THE FIX)
+        st.markdown("""
+        <div style="
+            height: 140px;
+            padding: 10px 0;
+        "></div>
+        """, unsafe_allow_html=True)
+
         # =========================
-        # KPI ROW (PREVENT OVERLAP)
+        # KPI ROW (FIX OVERLAP)
         # =========================
         k1, k2, k3 = st.columns(3, gap="small")
 
@@ -127,15 +135,7 @@ def render_outstanding_line(df, total=None):
         with k3:
             st.markdown(f"🟢 Closed<br><b>{c}</b>", unsafe_allow_html=True)
 
-        # =========================
-        # EXTRA SPACE BEFORE CHART
-        # =========================
-        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-
-        st.plotly_chart(
-            pie(o, out, c),
-            use_container_width=True
-        )
+        st.plotly_chart(pie(o, out, c), use_container_width=True)
 
         st.markdown(f"""
         <div style="

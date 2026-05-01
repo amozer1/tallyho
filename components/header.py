@@ -7,35 +7,36 @@ def render_header():
     st.markdown("""
     <style>
 
-    /* REMOVE STREAMLIT DEFAULT SPACING THAT BREAKS FLEX */
+    /* REMOVE STREAMLIT TOP SPACING */
     .block-container {
         padding-top: 0rem !important;
     }
 
-    /* MAIN HEADER */
+    /* MAIN HEADER CONTAINER */
     .header-box {
-        background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
-        border: 1px solid rgba(122, 60, 255, 0.18);
-        border-radius: 16px;
-        padding: 16px 22px;
-
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
 
-        flex-wrap: nowrap;   /* CRITICAL: prevents stacking */
-        gap: 20px;
+        flex-wrap: nowrap;
 
+        background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
+        border: 1px solid rgba(122, 60, 255, 0.18);
+        border-radius: 16px;
+
+        padding: 16px 22px;
         width: 100%;
         box-sizing: border-box;
+
+        gap: 20px;
     }
 
-    /* LEFT */
+    /* LEFT SECTION */
     .left {
         display: flex;
         flex-direction: column;
-        min-width: 300px;
+        min-width: 320px;
     }
 
     .title {
@@ -53,7 +54,7 @@ def render_header():
         white-space: nowrap;
     }
 
-    /* CENTER STATUS */
+    /* STATUS CENTER */
     .status-box {
         display: flex;
         align-items: center;
@@ -84,7 +85,7 @@ def render_header():
         100% {opacity:1;}
     }
 
-    /* RIGHT */
+    /* RIGHT DATE */
     .date-text {
         color: white;
         font-size: 14px;
@@ -100,16 +101,19 @@ def render_header():
     st.markdown(f"""
     <div class="header-box">
 
+        <!-- LEFT -->
         <div class="left">
             <div class="title">Tally Ho TQ & RFI Tracker</div>
             <div class="subtitle">TQs • RFIs • Outstanding Responses</div>
         </div>
 
+        <!-- CENTER -->
         <div class="status-box">
             <span class="dot">●</span>
             Live System Status: Active
         </div>
 
+        <!-- RIGHT -->
         <div class="date-text">
             {datetime.today().strftime('%d %b %Y')}
         </div>

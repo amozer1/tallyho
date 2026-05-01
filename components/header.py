@@ -4,35 +4,49 @@ from datetime import datetime
 
 def render_header():
 
-    # Page spacing control
+    # spacing control
     st.markdown("")
 
     # =========================
-    # HEADER ROW (3 COLUMNS)
+    # MAIN HEADER CARD CONTAINER
     # =========================
-    col1, col2, col3 = st.columns([5, 3, 2], gap="small")
+    with st.container():
+
+        # top row = title + status + date/export
+        col1, col2, col3 = st.columns([6, 3, 2], gap="small")
+
+        # ================= LEFT =================
+        with col1:
+            st.markdown("### 🏗️ Tally Ho TQ & RFI Tracker")
+            st.caption("TQs • RFIs • Outstanding Responses")
+
+        # ================= MIDDLE =================
+        with col2:
+            st.metric(
+                label="System Status",
+                value="Active",
+                delta="Live"
+            )
+
+        # ================= RIGHT =================
+        with col3:
+            st.markdown(f"**📅 {datetime.today().strftime('%d %b %Y')}**")
+            st.button("⬇ Export Report", use_container_width=True)
 
     # =========================
-    # LEFT: TITLE BLOCK
+    # KPI STRIP (makes it look like a dashboard)
     # =========================
-    with col1:
-        st.markdown("## 🏗️ Tally Ho TQ & RFI Tracker")
-        st.caption("TQs • RFIs • Outstanding Responses")
+    st.markdown("---")
 
-    # =========================
-    # MIDDLE: STATUS BLOCK
-    # =========================
-    with col2:
-        st.success("● Live System Status: Active")
+    k1, k2, k3 = st.columns(3)
 
-    # =========================
-    # RIGHT: DATE + EXPORT
-    # =========================
-    with col3:
-        st.markdown(f"**📅 {datetime.today().strftime('%d %b %Y')}**")
-        st.button("⬇ Export Report")
+    with k1:
+        st.metric("Open", "15", "⬆ 2")
 
-    # =========================
-    # DIVIDER (CARD FEEL)
-    # =========================
-    st.divider()
+    with k2:
+        st.metric("Outstanding", "13", "⬆ 1")
+
+    with k3:
+        st.metric("Closed", "1", "⬇ 3")
+
+    st.markdown("---")

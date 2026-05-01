@@ -28,66 +28,60 @@ def render_outstanding_line(df, total=None):
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
 
+    # =========================
+    # SLA LOGIC (UPDATED)
+    # =========================
     def calc(sub):
-        open_ = len(sub[sub[status_col] == "OPEN"])
-        closed_ = len(sub[sub[status_col] == "CLOSED"])
-        outstanding_ = len(
+
+        open_0_7 = len(
             sub[
                 (sub[status_col] == "OPEN") &
+                (sub[date_col].notna()) &
+                ((today - sub[date_col]).dt.days <= 7)
+            ]
+        )
+
+        outstanding_7_14 = len(
+            sub[
+                (sub[status_col] == "OPEN") &
+                (sub[date_col].notna()) &
+                ((today - sub[date_col]).dt.days > 7) &
+                ((today - sub[date_col]).dt.days <= 14)
+            ]
+        )
+
+        overdue_14_plus = len(
+            sub[
+                (sub[status_col] == "OPEN") &
+                (sub[date_col].notna()) &
                 ((today - sub[date_col]).dt.days > 14)
             ]
         )
-        return open_, outstanding_, closed_
 
-    rfi_open, rfi_out, rfi_closed = calc(rfi)
-    tq_open, tq_out, tq_closed = calc(tq)
+        return open_0_7, outstanding_7_14, overdue_14_plus
+
+    rfi_open, rfi_out, rfi_overdue = calc(rfi)
+    tq_open, tq_out, tq_overdue = calc(tq)
 
     COLORS = {
-        "open": "#ef4444",
-        "out": "#f59e0b",
-        "closed": "#22c55e"
+        "open": "#22c55e",        # green
+        "out": "#f59e0b",        # amber
+        "overdue": "#ef4444"     # red
     }
-
-    # =========================
-    # GLOBAL STYLE (CARD THEME)
-    # =========================
-    st.markdown("""
-    <style>
-
-    /* KEEP COLUMNS STABLE */
-    [data-testid="column"] {
-        min-width: 420px !important;
-        flex: 0 0 420px !important;
-    }
-
-    /* CARD BACKGROUND (APPLIES TO EACH BLOCK) */
-    div[data-testid="stVerticalBlock"] {
-        background-color: #0f172a;
-        padding: 16px;
-        border-radius: 14px;
-        border: 1px solid #334155;
-    }
-
-    /* PREVENT PLOTLY SHRINKING */
-    div[data-testid="stPlotlyChart"] {
-        min-width: 380px !important;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
 
     # =========================
     # PIE CHART
     # =========================
-    def pie(o, out, c):
+    def pie(o, out, od):
+
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
-            labels=["Open", "Outstanding", "Closed"],
-            values=[o, out, c],
+            labels=["Open (0-7d)", "Outstanding (7-14d)", "Overdue (14d+)"],
+            values=[o, out, od],
             textinfo="label+value",
             marker=dict(
-                colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
+                colors=[COLORS["open"], COLORS["out"], COLORS["overdue"]],
                 line=dict(color="white", width=2)
             ),
             sort=False
@@ -107,20 +101,20 @@ def render_outstanding_line(df, total=None):
     # =========================
     # CARD
     # =========================
-    def card(title, o, out, c):
+    def card(title, o, out, od):
 
-        st.markdown(f"### {title} Overview")
+        st.markdown(f"### {title} SLA Overview")
 
         st.markdown(
             f"""
-            🔴 **Open:** {o}  
-            🟡 **Outstanding:** {out}  
-            🟢 **Closed:** {c}
+            🟢 **Open (0–7d):** {o}  
+            🟡 **Outstanding (7–14d):** {out}  
+            🔴 **Overdue (14+d):** {od}
             """
         )
 
         st.plotly_chart(
-            pie(o, out, c),
+            pie(o, out, od),
             use_container_width=True
         )
 
@@ -132,7 +126,7 @@ def render_outstanding_line(df, total=None):
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        card("RFI", rfi_open, rfi_out, rfi_closed)
+        card("RFI", rfi_open, rfi_out, rfi_overdue)
 
     with col2:
-        card("TQ", tq_open, tq_out, tq_closed)
+        card("TQ", tq_open, tq_out, tq_overdue)

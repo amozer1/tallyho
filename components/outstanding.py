@@ -29,29 +29,29 @@ def render_outstanding_line(df, total=None):
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # SLA LOGIC (SIMPLE 3 STATES)
+    # CORRECT LOGIC
     # =========================
     def calc(sub):
 
         closed = len(sub[sub[status_col] == "CLOSED"])
 
-        open_red = len(
-            sub[
-                (sub[status_col] == "OPEN") &
-                (sub[date_col].notna()) &
-                ((today - sub[date_col]).dt.days <= 7)
+        open_items = sub[sub[status_col] == "OPEN"]
+
+        open_only = len(
+            open_items[
+                (open_items[date_col].notna()) &
+                ((today - open_items[date_col]).dt.days <= 7)
             ]
         )
 
-        outstanding_gold = len(
-            sub[
-                (sub[status_col] == "OPEN") &
-                (sub[date_col].notna()) &
-                ((today - sub[date_col]).dt.days > 7)
+        outstanding = len(
+            open_items[
+                (open_items[date_col].notna()) &
+                ((today - open_items[date_col]).dt.days > 7)
             ]
         )
 
-        return open_red, outstanding_gold, closed
+        return open_only, outstanding, closed
 
     rfi_open, rfi_out, rfi_closed = calc(rfi)
     tq_open, tq_out, tq_closed = calc(tq)
@@ -60,28 +60,24 @@ def render_outstanding_line(df, total=None):
     # COLOURS (YOUR STANDARD)
     # =========================
     COLORS = {
-        "open": "#ef4444",      # 🔴 red
-        "out": "#f59e0b",       # 🟡 gold
-        "closed": "#22c55e"     # 🟢 green
+        "open": "#ef4444",     # 🔴 red
+        "out": "#f59e0b",      # 🟡 gold
+        "closed": "#22c55e"    # 🟢 green
     }
 
     # =========================
-    # PIE CHART
+    # PIE
     # =========================
     def pie(o, out, c):
 
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
-            labels=["Open (≤7d)", "Outstanding (>7d)", "Closed"],
+            labels=["Open", "Outstanding (>7d)", "Closed"],
             values=[o, out, c],
             textinfo="label+value",
             marker=dict(
-                colors=[
-                    COLORS["open"],
-                    COLORS["out"],
-                    COLORS["closed"]
-                ],
+                colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="white", width=2)
             ),
             sort=False
@@ -107,7 +103,7 @@ def render_outstanding_line(df, total=None):
 
         st.markdown(
             f"""
-            🔴 **Open (≤7d):** {o}  
+            🔴 **Open:** {o}  
             🟡 **Outstanding (>7d):** {out}  
             🟢 **Closed:** {c}
             """

@@ -49,7 +49,35 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE (FIXED SIZE)
+    # GLOBAL STYLE (CARD THEME)
+    # =========================
+    st.markdown("""
+    <style>
+
+    /* KEEP COLUMNS STABLE */
+    [data-testid="column"] {
+        min-width: 420px !important;
+        flex: 0 0 420px !important;
+    }
+
+    /* CARD BACKGROUND (APPLIES TO EACH BLOCK) */
+    div[data-testid="stVerticalBlock"] {
+        background-color: #0f172a;
+        padding: 16px;
+        border-radius: 14px;
+        border: 1px solid #334155;
+    }
+
+    /* PREVENT PLOTLY SHRINKING */
+    div[data-testid="stPlotlyChart"] {
+        min-width: 380px !important;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    # =========================
+    # PIE CHART
     # =========================
     def pie(o, out, c):
         fig = go.Figure()
@@ -57,7 +85,7 @@ def render_outstanding_line(df, total=None):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding", "Closed"],
             values=[o, out, c],
-            textinfo="value+label",
+            textinfo="label+value",
             marker=dict(
                 colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
                 line=dict(color="white", width=2)
@@ -69,26 +97,27 @@ def render_outstanding_line(df, total=None):
             height=260,
             margin=dict(l=10, r=10, t=10, b=10),
             showlegend=False,
-            paper_bgcolor="white",
-            plot_bgcolor="white"
+            paper_bgcolor="#0f172a",
+            plot_bgcolor="#0f172a",
+            font=dict(color="white", size=12)
         )
 
         return fig
 
     # =========================
-    # SIMPLE CARD (NO HTML)
+    # CARD
     # =========================
     def card(title, o, out, c):
 
-        st.markdown(f"## {title} Overview")
+        st.markdown(f"### {title} Overview")
 
-        st.markdown(f"""
-        🔴 **Open:** {o}  
-
-        🟡 **Outstanding:** {out}  
-
-        🟢 **Closed:** {c}
-        """)
+        st.markdown(
+            f"""
+            🔴 **Open:** {o}  
+            🟡 **Outstanding:** {out}  
+            🟢 **Closed:** {c}
+            """
+        )
 
         st.plotly_chart(
             pie(o, out, c),
@@ -98,9 +127,9 @@ def render_outstanding_line(df, total=None):
         st.divider()
 
     # =========================
-    # LAYOUT (STABLE)
+    # LAYOUT
     # =========================
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2, gap="large")
 
     with col1:
         card("RFI", rfi_open, rfi_out, rfi_closed)

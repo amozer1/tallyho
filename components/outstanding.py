@@ -11,13 +11,15 @@ def render_outstanding_line(df, total=None):
     st.markdown("""
     <style>
 
-    div[data-testid="column"] {
+    /* FIX COLUMN WIDTH */
+    [data-testid="column"] {
         min-width: 420px !important;
-        flex: 1 1 420px !important;
+        flex: 0 0 420px !important;
     }
 
+    /* PREVENT PLOTLY SHRINKING */
     div[data-testid="stPlotlyChart"] {
-        width: 100% !important;
+        min-width: 380px !important;
     }
 
     </style>
@@ -70,9 +72,10 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE
+    # PIE (FIXED SIZE)
     # =========================
     def pie(o, out, c):
+
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
@@ -87,7 +90,8 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=200,
+            height=240,
+            width=380,
             margin=dict(l=0, r=0, t=0, b=0),
             showlegend=False,
             paper_bgcolor="#0f172a",
@@ -98,36 +102,17 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # HEADER
-    # =========================
-    def header(title, color):
-        st.markdown(f"""
-        <div style="
-            background:#0f172a;
-            border:1px solid {color};
-            border-radius:10px;
-            padding:8px;
-            text-align:center;
-            font-size:13px;
-            font-weight:700;
-            color:{color};
-        ">
-            📊 {title}
-        </div>
-        """, unsafe_allow_html=True)
-
-    # =========================
-    # CARD (STREAMLIT CONTAINER)
+    # CARD (STREAMLIT ONLY)
     # =========================
     def card(title, o, out, c):
 
         total = o + out + c
-
         color = "#60a5fa" if title == "RFI" else "#f59e0b"
+
         if o > (0.6 * total):
             color = "#ef4444"
 
-        # REAL CARD CONTAINER
+        # REAL STREAMLIT CARD
         with st.container():
 
             st.markdown(f"""
@@ -136,11 +121,10 @@ def render_outstanding_line(df, total=None):
                 border-radius:14px;
                 padding:12px;
                 background:#0f172a;
-                min-height:420px;
             ">
             """, unsafe_allow_html=True)
 
-            header(f"{title} Outstanding Overview", color)
+            st.markdown(f"### 📊 {title} Outstanding Overview")
 
             # KPI ROW
             k1, k2, k3 = st.columns(3)
@@ -154,27 +138,20 @@ def render_outstanding_line(df, total=None):
             with k3:
                 st.markdown(f"🟢 Closed: **{c}**")
 
-            # PIE (NOW INSIDE CONTAINER PROPERLY)
+            # PIE (NOW ALWAYS INSIDE STREAMLIT FLOW)
             st.plotly_chart(
                 pie(o, out, c),
-                use_container_width=True
+                use_container_width=False
             )
 
-            st.markdown(f"""
-            <div style="
-                font-size:12px;
-                color:#cbd5e1;
-                margin-top:8px;
-            ">
-                Total items: <b>{total}</b>
-            </div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"**Total items:** {total}")
+
+            st.markdown("</div>", unsafe_allow_html=True)
 
     # =========================
     # LAYOUT
     # =========================
-    col1, col2 = st.columns([1, 1], gap="large")
+    col1, col2 = st.columns(2, gap="large")
 
     with col1:
         card("RFI", rfi_open, rfi_out, rfi_closed)

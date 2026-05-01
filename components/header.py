@@ -6,9 +6,6 @@ def render_header():
 
     st.markdown("""
     <style>
-    /* ================================
-       CONTINUOUS HEADER BAR
-    ==================================*/
     .header-box {
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.18);
@@ -19,15 +16,11 @@ def render_header():
         display: flex;
         align-items: center;
         justify-content: space-between;
-
-        box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
     }
 
-    /* LEFT SECTION */
     .left {
         display: flex;
         flex-direction: column;
-        justify-content: center;
     }
 
     .title {
@@ -35,15 +28,14 @@ def render_header():
         font-size: 26px;
         font-weight: 900;
         line-height: 1.1;
-        margin-bottom: 4px;
     }
 
     .subtitle {
         color: #94a3b8;
         font-size: 12px;
+        margin-top: 4px;
     }
 
-    /* MIDDLE STATUS */
     .status-box {
         display: inline-flex;
         align-items: center;
@@ -72,21 +64,11 @@ def render_header():
         100% {opacity:1;}
     }
 
-    /* RIGHT DATE */
     .date-text {
         color: white;
         font-size: 14px;
         font-weight: 700;
         white-space: nowrap;
-    }
-
-    /* Responsive safety */
-    @media (max-width: 768px) {
-        .header-box {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-        }
     }
     </style>
     """, unsafe_allow_html=True)

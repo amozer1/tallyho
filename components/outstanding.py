@@ -29,9 +29,11 @@ def render_outstanding_line(df, total=None):
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # SLA LOGIC (UPDATED)
+    # SLA LOGIC (WITH CLOSED)
     # =========================
     def calc(sub):
+
+        closed = len(sub[sub[status_col] == "CLOSED"])
 
         open_0_7 = len(
             sub[
@@ -58,30 +60,36 @@ def render_outstanding_line(df, total=None):
             ]
         )
 
-        return open_0_7, outstanding_7_14, overdue_14_plus
+        return open_0_7, outstanding_7_14, overdue_14_plus, closed
 
-    rfi_open, rfi_out, rfi_overdue = calc(rfi)
-    tq_open, tq_out, tq_overdue = calc(tq)
+    rfi_open, rfi_out, rfi_overdue, rfi_closed = calc(rfi)
+    tq_open, tq_out, tq_overdue, tq_closed = calc(tq)
 
     COLORS = {
-        "open": "#22c55e",        # green
+        "open": "#22c55e",       # green
         "out": "#f59e0b",        # amber
-        "overdue": "#ef4444"     # red
+        "overdue": "#ef4444",    # red
+        "closed": "#64748b"      # grey
     }
 
     # =========================
     # PIE CHART
     # =========================
-    def pie(o, out, od):
+    def pie(o, out, od, c):
 
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
-            labels=["Open (0-7d)", "Outstanding (7-14d)", "Overdue (14d+)"],
-            values=[o, out, od],
+            labels=["Open (0–7d)", "Outstanding (7–14d)", "Overdue (14d+)", "Closed"],
+            values=[o, out, od, c],
             textinfo="label+value",
             marker=dict(
-                colors=[COLORS["open"], COLORS["out"], COLORS["overdue"]],
+                colors=[
+                    COLORS["open"],
+                    COLORS["out"],
+                    COLORS["overdue"],
+                    COLORS["closed"]
+                ],
                 line=dict(color="white", width=2)
             ),
             sort=False
@@ -101,7 +109,7 @@ def render_outstanding_line(df, total=None):
     # =========================
     # CARD
     # =========================
-    def card(title, o, out, od):
+    def card(title, o, out, od, c):
 
         st.markdown(f"### {title} SLA Overview")
 
@@ -109,12 +117,13 @@ def render_outstanding_line(df, total=None):
             f"""
             🟢 **Open (0–7d):** {o}  
             🟡 **Outstanding (7–14d):** {out}  
-            🔴 **Overdue (14+d):** {od}
+            🔴 **Overdue (14+d):** {od}  
+            ⚫ **Closed:** {c}
             """
         )
 
         st.plotly_chart(
-            pie(o, out, od),
+            pie(o, out, od, c),
             use_container_width=True
         )
 
@@ -126,7 +135,7 @@ def render_outstanding_line(df, total=None):
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        card("RFI", rfi_open, rfi_out, rfi_overdue)
+        card("RFI", rfi_open, rfi_out, rfi_overdue, rfi_closed)
 
     with col2:
-        card("TQ", tq_open, tq_out, tq_overdue)
+        card("TQ", tq_open, tq_out, tq_overdue, tq_closed)

@@ -38,7 +38,7 @@ def render_outstanding_line(df, total=None):
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # YOUR EXACT LOGIC
+    # LOGIC
     # =========================
     def calc(sub):
 
@@ -70,7 +70,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE CHART (SHOW ALL 3)
+    # PIE (INCREASED SIZE HERE)
     # =========================
     def pie(open_count, outstanding, closed):
 
@@ -92,7 +92,7 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=260,
+            height=420,   # 🔥 INCREASED SIZE (was 260)
             margin=dict(l=10, r=10, t=10, b=10),
             showlegend=False,
             paper_bgcolor="#0f172a",

@@ -3,65 +3,35 @@ from datetime import datetime
 
 def render_header():
 
+    # ===== minimal styling ONLY (no layout control) =====
     st.markdown("""
     <style>
 
-    .header-wrapper {
-        display: flex;
-        width: 100%;
-        gap: 0px;
-        margin-bottom: 10px;
-    }
-
-    .card {
-        flex: 1;
-        background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
-        border: 1px solid rgba(122, 60, 255, 0.18);
-        padding: 18px 20px;
-        min-height: 95px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
-    }
-
-    .left {
-        border-top-left-radius: 16px;
-        border-bottom-left-radius: 16px;
-    }
-
-    .right {
-        border-top-right-radius: 16px;
-        border-bottom-right-radius: 16px;
-    }
-
     .title {
-        color: white;
         font-size: 26px;
         font-weight: 900;
+        color: white;
         line-height: 1.1;
-        margin-bottom: 6px;
     }
 
     .subtitle {
-        color: #94a3b8;
         font-size: 12px;
+        color: #94a3b8;
+        margin-top: 4px;
     }
 
     .status {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        color: white;
         font-size: 13px;
         font-weight: 700;
-        padding: 10px 12px;
+        color: white;
+        padding: 10px 14px;
         border-radius: 10px;
         background: rgba(122, 60, 255, 0.12);
         border: 1px solid rgba(122, 60, 255, 0.25);
-        width: fit-content;
-        margin: auto;
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
     }
 
     .dot {
@@ -76,14 +46,13 @@ def render_header():
     }
 
     .date {
-        color: white;
         font-size: 14px;
         font-weight: 700;
+        color: white;
         text-align: right;
     }
 
     .btn {
-        margin-top: 10px;
         background: linear-gradient(135deg, #7a3cff, #8b5cf6);
         color: white;
         padding: 10px 14px;
@@ -91,36 +60,32 @@ def render_header():
         font-size: 13px;
         font-weight: 800;
         text-align: center;
-        cursor: pointer;
+        margin-top: 8px;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
-    date_today = datetime.today().strftime('%d %b %Y')
+    # ===== STREAMLIT LAYOUT ONLY =====
+    col1, col2, col3 = st.columns([5, 3, 2], gap="small")
 
-    st.markdown(f"""
-    <div class="header-wrapper">
+    # LEFT
+    with col1:
+        st.markdown('<div class="title">Tally Ho TQ & RFI Tracker</div>', unsafe_allow_html=True)
+        st.markdown('<div class="subtitle">TQs • RFIs • Outstanding Responses</div>', unsafe_allow_html=True)
 
-        <!-- LEFT CARD -->
-        <div class="card left">
-            <div class="title">Tally Ho TQ & RFI Tracker</div>
-            <div class="subtitle">TQs • RFIs • Outstanding Responses</div>
-        </div>
-
-        <!-- MIDDLE CARD -->
-        <div class="card" style="align-items:center;">
+    # MIDDLE
+    with col2:
+        st.markdown("""
+        <div style="text-align:center;">
             <div class="status">
                 <span class="dot">●</span>
                 Live System Status: Active
             </div>
         </div>
+        """, unsafe_allow_html=True)
 
-        <!-- RIGHT CARD -->
-        <div class="card right">
-            <div class="date">{date_today}</div>
-            <div class="btn">⬇ Export Report</div>
-        </div>
-
-    </div>
-    """, unsafe_allow_html=True)
+    # RIGHT
+    with col3:
+        st.markdown(f'<div class="date">{datetime.today().strftime("%d %b %Y")}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="btn">⬇ Export Report</div>', unsafe_allow_html=True)

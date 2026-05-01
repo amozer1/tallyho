@@ -19,17 +19,27 @@ def render_outstanding_line(df, total=None):
     doc_col = "doc type"
     date_col = "date sent"
 
-    df[status_col] = df[status_col].astype(str).str.upper().str.strip()
-    df[doc_col] = df[doc_col].astype(str).str.upper().str.strip()
+    df[status_col] = (
+        df[status_col]
+        .astype(str)
+        .str.replace("\xa0", "", regex=False)
+        .str.strip()
+        .str.upper()
+    )
+
+    df[doc_col] = df[doc_col].astype(str).str.strip().str.upper()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
 
     today = pd.Timestamp.today()
 
+    # =========================
+    # SPLIT DATA
+    # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
 
     # =========================
-    # CORRECT LOGIC
+    # FINAL LOGIC (CORRECT)
     # =========================
     def calc(sub):
 
@@ -37,12 +47,7 @@ def render_outstanding_line(df, total=None):
 
         open_items = sub[sub[status_col] == "OPEN"]
 
-        open_only = len(
-            open_items[
-                (open_items[date_col].notna()) &
-                ((today - open_items[date_col]).dt.days <= 7)
-            ]
-        )
+        open_count = len(open_items)
 
         outstanding = len(
             open_items[
@@ -51,13 +56,13 @@ def render_outstanding_line(df, total=None):
             ]
         )
 
-        return open_only, outstanding, closed
+        return open_count, outstanding, closed
 
     rfi_open, rfi_out, rfi_closed = calc(rfi)
     tq_open, tq_out, tq_closed = calc(tq)
 
     # =========================
-    # COLOURS (YOUR STANDARD)
+    # COLOURS
     # =========================
     COLORS = {
         "open": "#ef4444",     # 🔴 red
@@ -66,18 +71,24 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE
+    # PIE (NO DOUBLE COUNTING)
     # =========================
     def pie(o, out, c):
+
+        fresh_open = o - out
 
         fig = go.Figure()
 
         fig.add_trace(go.Pie(
-            labels=["Open", "Outstanding (>7d)", "Closed"],
-            values=[o, out, c],
+            labels=["Open (≤7d)", "Outstanding (>7d)", "Closed"],
+            values=[fresh_open, out, c],
             textinfo="label+value",
             marker=dict(
-                colors=[COLORS["open"], COLORS["out"], COLORS["closed"]],
+                colors=[
+                    COLORS["open"],
+                    COLORS["out"],
+                    COLORS["closed"]
+                ],
                 line=dict(color="white", width=2)
             ),
             sort=False

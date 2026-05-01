@@ -25,6 +25,9 @@ def render_outstanding_line(df, total=None):
 
     today = pd.Timestamp.today()
 
+    # =========================
+    # FILTERS
+    # =========================
     rfi = df[df[doc_col] == "RFI"]
     tq = df[df[doc_col] == "TQ"]
 
@@ -49,30 +52,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # SAFE CSS (NO GLOBAL OVERWRITE)
-    # =========================
-    st.markdown("""
-    <style>
-
-    /* ONLY LIMIT WIDTH (SAFE) */
-    [data-testid="column"] {
-        min-width: 420px !important;
-        flex: 0 0 420px !important;
-    }
-
-    /* CUSTOM CARD STYLE ONLY */
-    .rfi-card, .tq-card {
-        background-color: #0f172a;
-        border: 1px solid #334155;
-        padding: 16px;
-        border-radius: 14px;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
-    # =========================
-    # PIE
+    # PIE CHART (FIXED SIZE)
     # =========================
     def pie(o, out, c):
         fig = go.Figure()
@@ -100,34 +80,41 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # CARD
+    # CARD FUNCTION (STREAMLIT ONLY)
     # =========================
-    def card(title, o, out, c, cls):
+    def card(title, o, out, c):
 
-        st.markdown(f"""
-        <div class="{cls}">
-            <h4 style="color:white; margin-bottom:10px;">{title} Overview</h4>
+        st.markdown(f"## {title} Overview")
 
-            <p style="color:white;">
-            🔴 <b>Open:</b> {o}<br>
-            🟡 <b>Outstanding:</b> {out}<br>
-            🟢 <b>Closed:</b> {c}
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        # KPI ROW (SAFE + STABLE)
+        k1, k2, k3 = st.columns(3)
 
+        with k1:
+            st.metric("Open", o)
+
+        with k2:
+            st.metric("Outstanding", out)
+
+        with k3:
+            st.metric("Closed", c)
+
+        # PIE (ALWAYS INSIDE STREAMLIT FLOW)
         st.plotly_chart(
             pie(o, out, c),
             use_container_width=True
         )
 
+        st.divider()
+
     # =========================
-    # LAYOUT
+    # DASHBOARD LAYOUT
     # =========================
+    st.markdown("## 📊 Outstanding Dashboard")
+
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        card("RFI", rfi_open, rfi_out, rfi_closed, "rfi-card")
+        card("RFI", rfi_open, rfi_out, rfi_closed)
 
     with col2:
-        card("TQ", tq_open, tq_out, tq_closed, "tq-card")
+        card("TQ", tq_open, tq_out, tq_closed)

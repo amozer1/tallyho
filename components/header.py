@@ -7,7 +7,7 @@ def render_header():
     st.markdown("""
     <style>
 
-    /* ===== HEADER LAYOUT (your original design preserved) ===== */
+    /* ===== HEADER BOX ===== */
     .header-box {
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.18);
@@ -30,7 +30,7 @@ def render_header():
         border-bottom-right-radius: 16px;
     }
 
-    /* ===== STICKY FIX (SAFE STREAMLIT METHOD) ===== */
+    /* ===== STICKY HEADER ===== */
     div[data-testid="stHorizontalBlock"] {
         position: sticky;
         top: 0;
@@ -40,7 +40,7 @@ def render_header():
         padding-bottom: 6px;
     }
 
-    /* ===== TEXT STYLES ===== */
+    /* ===== TEXT ===== */
     .title {
         color: white;
         font-size: 26px;
@@ -79,11 +79,13 @@ def render_header():
         100% {opacity:1;}
     }
 
-    .date-text {
+    /* ===== CENTER DATE (NEW FIX) ===== */
+    .date-center {
         color: white;
-        font-size: 14px;
-        font-weight: 700;
-        text-align:right;
+        font-size: 15px;
+        font-weight: 800;
+        text-align: center;
+        width: 100%;
     }
 
     </style>
@@ -101,18 +103,20 @@ def render_header():
         """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="header-box" style="align-items:center; text-align:center;">
-            <div class="status-box">
-                <span class="dot">●</span>
-                Live System Status: Active
+            <div class="date-center">
+                {datetime.today().strftime('%d %b %Y')}
             </div>
         </div>
         """, unsafe_allow_html=True)
 
     with col3:
-        st.markdown(f"""
-        <div class="header-box right-box">
-            <div class="date-text">{datetime.today().strftime('%d %b %Y')}</div>
+        st.markdown("""
+        <div class="header-box right-box" style="align-items:center;">
+            <div class="status-box">
+                <span class="dot">●</span>
+                Live System Status: Active
+            </div>
         </div>
         """, unsafe_allow_html=True)

@@ -49,7 +49,35 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE CHART (FIXED)
+    # GLOBAL STYLE (CARD THEME)
+    # =========================
+    st.markdown("""
+    <style>
+
+    /* KEEP COLUMNS STABLE */
+    [data-testid="column"] {
+        min-width: 420px !important;
+        flex: 0 0 420px !important;
+    }
+
+    /* CARD BACKGROUND (APPLIES TO EACH BLOCK) */
+    div[data-testid="stVerticalBlock"] {
+        background-color: #0f172a;
+        padding: 16px;
+        border-radius: 14px;
+        border: 1px solid #334155;
+    }
+
+    /* PREVENT PLOTLY SHRINKING */
+    div[data-testid="stPlotlyChart"] {
+        min-width: 380px !important;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    # =========================
+    # PIE CHART
     # =========================
     def pie(o, out, c):
         fig = go.Figure()
@@ -77,20 +105,26 @@ def render_outstanding_line(df, total=None):
         return fig
 
     # =========================
-    # CLEAN SECTION (NO CUSTOM HTML)
+    # CARD
     # =========================
-    def section(title, o, out, c):
+    def card(title, o, out, c):
 
-        st.subheader(title)
+        st.markdown(f"### {title} Overview")
 
-        # KPI ROW (THIS IS THE KEY FIX)
-        k1, k2, k3 = st.columns(3)
+        st.markdown(
+            f"""
+            🔴 **Open:** {o}  
+            🟡 **Outstanding:** {out}  
+            🟢 **Closed:** {c}
+            """
+        )
 
-        k1.metric("Open", o)
-        k2.metric("Outstanding (>14d)", out)
-        k3.metric("Closed", c)
+        st.plotly_chart(
+            pie(o, out, c),
+            use_container_width=True
+        )
 
-        st.plotly_chart(pie(o, out, c), use_container_width=True)
+        st.divider()
 
     # =========================
     # LAYOUT
@@ -98,7 +132,7 @@ def render_outstanding_line(df, total=None):
     col1, col2 = st.columns(2, gap="large")
 
     with col1:
-        section("RFI", rfi_open, rfi_out, rfi_closed)
+        card("RFI", rfi_open, rfi_out, rfi_closed)
 
     with col2:
-        section("TQ", tq_open, tq_out, tq_closed)
+        card("TQ", tq_open, tq_out, tq_closed)

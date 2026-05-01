@@ -87,7 +87,7 @@ def render_outstanding_line(df, total=None):
         k1, k2, k3 = st.columns(3)
 
         k1.metric("Open", o)
-        k2.metric("Outstanding (>7d)", out)
+        k2.metric("Outstanding (>14d)", out)
         k3.metric("Closed", c)
 
         st.plotly_chart(pie(o, out, c), use_container_width=True)

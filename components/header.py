@@ -6,29 +6,28 @@ def render_header():
 
     st.markdown("""
     <style>
-    /* Shared unified style */
+    /* ================================
+       CONTINUOUS HEADER BAR
+    ==================================*/
     .header-box {
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.18);
         min-height: 95px;
-        border-radius: 0px;
-        padding: 18px 20px;
+        border-radius: 16px;
+        padding: 18px 22px;
+
         display: flex;
-        flex-direction: column;
-        justify-content: center;
+        align-items: center;
+        justify-content: space-between;
+
         box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
     }
 
-    /* left rounded */
-    .left-box {
-        border-top-left-radius: 16px;
-        border-bottom-left-radius: 16px;
-    }
-
-    /* right rounded */
-    .right-box {
-        border-top-right-radius: 16px;
-        border-bottom-right-radius: 16px;
+    /* LEFT SECTION */
+    .left {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .title {
@@ -44,18 +43,22 @@ def render_header():
         font-size: 12px;
     }
 
+    /* MIDDLE STATUS */
     .status-box {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
         gap: 8px;
+
         padding: 10px 14px;
         border-radius: 10px;
+
         background: rgba(122, 60, 255, 0.12);
         border: 1px solid rgba(122, 60, 255, 0.25);
+
         color: white;
         font-size: 13px;
         font-weight: 700;
+        white-space: nowrap;
     }
 
     .dot {
@@ -69,53 +72,46 @@ def render_header():
         100% {opacity:1;}
     }
 
+    /* RIGHT DATE */
     .date-text {
         color: white;
         font-size: 14px;
         font-weight: 700;
-        text-align:right;
+        white-space: nowrap;
     }
 
-    .export-btn {
-        margin-top: 8px;
-        display:inline-block;
-        background: linear-gradient(135deg, #7a3cff, #8b5cf6);
-        color: white;
-        padding: 9px 14px;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 800;
-        float:right;
+    /* Responsive safety */
+    @media (max-width: 768px) {
+        .header-box {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([5, 3, 2], gap="small")
+    st.markdown(f"""
+    <div class="header-box">
 
-    with col1:
-        st.markdown("""
-        <div class="header-box left-box">
+        <!-- LEFT -->
+        <div class="left">
             <div class="title">Tally Ho TQ & RFI Tracker</div>
             <div class="subtitle">
                 TQs • RFIs • Outstanding Responses
             </div>
         </div>
-        """, unsafe_allow_html=True)
 
-    with col2:
-        st.markdown("""
-        <div class="header-box" style="align-items:center; text-align:center;">
-            <div class="status-box">
-                <span class="dot">●</span>
-                Live System Status: Active
-            </div>
+        <!-- MIDDLE -->
+        <div class="status-box">
+            <span class="dot">●</span>
+            Live System Status: Active
         </div>
-        """, unsafe_allow_html=True)
 
-    with col3:
-        st.markdown(f"""
-        <div class="header-box right-box">
-            <div class="date-text">{datetime.today().strftime('%d %b %Y')}</div>
-            <div class="export-btn">⬇ Export Report</div>
+        <!-- RIGHT -->
+        <div class="date-text">
+            {datetime.today().strftime('%d %b %Y')}
         </div>
-        """, unsafe_allow_html=True)
+
+    </div>
+    """, unsafe_allow_html=True)

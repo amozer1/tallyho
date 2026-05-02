@@ -7,13 +7,13 @@ def get_base64_image(image_path):
         return base64.b64encode(img_file.read()).decode()
 
 
-def render_sidebar(datasets: dict):
+def render_sidebar(datasets):
     """
     datasets = {
-        "Tally Ho": df1,
-        "Ferry PS": df2,
-        "Rossal Outfall": df3,
-        "Flass Lane": df4
+        "Newlay CSO": df1,
+        "Eureca": df2,
+        "Musa": df3,
+        "Juli": df4
     }
     """
 
@@ -57,16 +57,13 @@ def render_sidebar(datasets: dict):
             list(datasets.keys())
         )
 
-        df = datasets[asset]
-
-        # CLEAN COLUMNS
-        df = df.copy()
+        df = datasets[asset].copy()
         df.columns = df.columns.str.strip().str.lower()
 
         # -------------------------
-        # 🔽 OPTIONAL FILTERS
+        # 🔽 FILTERS
         # -------------------------
-        st.markdown('<div class="section-title">FILTER</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">FILTERS</div>', unsafe_allow_html=True)
 
         doc_type = st.selectbox(
             "Doc Type",
@@ -92,6 +89,10 @@ def render_sidebar(datasets: dict):
         st.markdown('<div class="section-title">SEQUENCE</div>', unsafe_allow_html=True)
 
         seq_list = sorted(filtered_df["seq no"].dropna().unique().tolist())
+
+        if len(seq_list) == 0:
+            st.warning("No records found")
+            return asset, filtered_df, None
 
         seq_choice = st.selectbox(
             "Select Seq No",

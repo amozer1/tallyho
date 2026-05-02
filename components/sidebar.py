@@ -7,10 +7,19 @@ def get_base64_image(image_path):
         return base64.b64encode(img_file.read()).decode()
 
 
-def render_sidebar():
+def render_sidebar(datasets: dict):
+    """
+    datasets = {
+        "Tally Ho": df1,
+        "Ferry PS": df2,
+        "Rossal Outfall": df3,
+        "Flass Lane": df4
+    }
+    """
+
     logo_base64 = get_base64_image("assets/logo.png")
 
-    # HIDE STREAMLIT DEFAULT MULTIPAGE NAV
+    # STYLE
     st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display:none;}
@@ -20,79 +29,73 @@ def render_sidebar():
             background: linear-gradient(180deg, #08111f 0%, #0b1a2f 100%);
         }
 
-        .nav-button {
-            display:block;
-            width:100%;
-            padding:12px 14px;
-            margin:6px 0;
-            border-radius:10px;
-            text-decoration:none;
-            font-size:14px;
-            font-weight:500;
-            color:white;
-            background:#0f223b;
-            border:1px solid rgba(255,255,255,0.05);
-            transition:0.3s;
-        }
-
-        .nav-button:hover {
-            background:#1f5eff;
-            color:white;
-        }
-
-        .assistant-box {
-            background:#17113a;
-            padding:16px;
-            border-radius:12px;
-            border:1px solid rgba(168,85,247,0.25);
-            margin-top:30px;
+        .section-title {
+            color:#b8b8d1;
+            font-size:12px;
+            margin-top:15px;
+            margin-bottom:5px;
         }
     </style>
     """, unsafe_allow_html=True)
 
     with st.sidebar:
+
         # LOGO
         st.markdown(f"""
-        <div style="text-align:center; padding:10px 0 25px 0;">
-            <img src="data:image/png;base64,{logo_base64}" width="85">
+        <div style="text-align:center; padding:10px 0 20px 0;">
+            <img src="data:image/png;base64,{logo_base64}" width="80">
         </div>
         """, unsafe_allow_html=True)
 
-        # NAVIGATION
-        nav_items = [
-            "Overview",
-            "TQs",
-            "RFIs",
-            "Analytics",
-            "AI Insights",
-            "Predictive Risk",
-            "Response Performance",
-            "Reports",
-            "Settings"
-        ]
+        # -------------------------
+        # 🔽 ASSET SELECTOR
+        # -------------------------
+        st.markdown('<div class="section-title">ASSET</div>', unsafe_allow_html=True)
 
-        for item in nav_items:
-            st.markdown(
-                f'<a href="#" class="nav-button">{item}</a>',
-                unsafe_allow_html=True
-            )
+        asset = st.radio(
+            "",
+            list(datasets.keys())
+        )
 
-        # AI ASSISTANT
-        st.markdown("""
-        <div class="assistant-box">
-            <div style="
-                color:white;
-                font-size:15px;
-                font-weight:700;
-            ">
-                AI Assistant
-            </div>
-            <div style="
-                color:#b8b8d1;
-                font-size:12px;
-                margin-top:6px;
-            ">
-                Ask anything about your data...
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        df = datasets[asset]
+
+        # CLEAN COLUMNS
+        df = df.copy()
+        df.columns = df.columns.str.strip().str.lower()
+
+        # -------------------------
+        # 🔽 OPTIONAL FILTERS
+        # -------------------------
+        st.markdown('<div class="section-title">FILTER</div>', unsafe_allow_html=True)
+
+        doc_type = st.selectbox(
+            "Doc Type",
+            ["All"] + sorted(df["doc type"].dropna().unique().tolist())
+        )
+
+        status = st.selectbox(
+            "Status",
+            ["All"] + sorted(df["status"].dropna().unique().tolist())
+        )
+
+        filtered_df = df.copy()
+
+        if doc_type != "All":
+            filtered_df = filtered_df[filtered_df["doc type"] == doc_type]
+
+        if status != "All":
+            filtered_df = filtered_df[filtered_df["status"] == status]
+
+        # -------------------------
+        # 🔽 SEQUENCE SELECTOR
+        # -------------------------
+        st.markdown('<div class="section-title">SEQUENCE</div>', unsafe_allow_html=True)
+
+        seq_list = sorted(filtered_df["seq no"].dropna().unique().tolist())
+
+        seq_choice = st.selectbox(
+            "Select Seq No",
+            seq_list
+        )
+
+        return asset, filtered_df, seq_choice

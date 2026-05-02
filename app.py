@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import os
 
 from components.sidebar import render_sidebar
 from components.header import render_header
@@ -18,15 +19,24 @@ st.set_page_config(
 
 
 # =========================
-# LOAD DATA (MULTI-ASSET)
+# SAFE LOAD FUNCTION
+# =========================
+def safe_load(path):
+    if os.path.exists(path):
+        return pd.read_excel(path)
+    return None
+
+
+# =========================
+# LOAD DATASETS (SAFE)
 # =========================
 @st.cache_data
 def load_data():
     return {
-        "Newlay CSO": pd.read_excel("data/newlay.xlsx"),
-        "Eureca": pd.read_excel("data/eureca.xlsx"),
-        "Musa": pd.read_excel("data/musa.xlsx"),
-        "Juli": pd.read_excel("data/juli.xlsx"),
+        "Tally Ho": safe_load("data/TQ_TH.xlsx"),
+        "Ferry PS": safe_load("data/ferry_ps.xlsx"),
+        "Rossall Outfall": safe_load("data/rossall_outfall.xlsx"),
+        "Flass Lane": safe_load("data/flass_lane.xlsx"),
     }
 
 
@@ -34,7 +44,7 @@ datasets = load_data()
 
 
 # =========================
-# SIDEBAR (NOW WORKS)
+# SIDEBAR
 # =========================
 asset, df, seq = render_sidebar(datasets)
 
@@ -42,7 +52,17 @@ render_header()
 
 
 # =========================
-# CLEAN SELECTED DATA ONLY
+# HANDLE MISSING DATA
+# =========================
+st.title(f"{asset} Tracker")
+
+if df is None or df.empty:
+    st.warning(f"No data available for {asset}")
+    st.stop()
+
+
+# =========================
+# CLEAN DATA
 # =========================
 df = df.copy()
 df.columns = df.columns.str.strip().str.lower()
@@ -52,10 +72,8 @@ df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
 
 
 # =========================
-# DEFAULT DASHBOARD VIEW
+# DASHBOARD
 # =========================
-st.title(f"{asset} Tracker")
-
 render_outstanding_line(df, total=len(df))
 
 st.markdown("---")
@@ -70,27 +88,30 @@ with col2:
 
 
 # =========================
-# SELECTED ROW VIEW
+# ROW DETAILS (SEQ SELECT)
 # =========================
 if seq is not None:
 
-    selected = df[df["seq no"] == seq].iloc[0]
+    selected_df = df[df["seq no"] == seq]
 
-    st.markdown("---")
-    st.subheader(f"{selected['doc type']} - {selected['seq no']}")
+    if not selected_df.empty:
+        selected = selected_df.iloc[0]
 
-    col1, col2 = st.columns(2)
+        st.markdown("---")
+        st.subheader(f"{selected['doc type']} - {selected['seq no']}")
 
-    with col1:
-        st.write("**Originator:**", selected["originator"])
-        st.write("**Sender:**", selected["sender"])
-        st.write("**Recipient:**", selected["recipient"])
+        col1, col2 = st.columns(2)
 
-    with col2:
-        st.write("**Date Sent:**", selected["date sent"])
-        st.write("**Required Date:**", selected["required date"])
-        st.write("**Reply Date:**", selected["reply date"])
+        with col1:
+            st.write("**Originator:**", selected.get("originator", "—"))
+            st.write("**Sender:**", selected.get("sender", "—"))
+            st.write("**Recipient:**", selected.get("recipient", "—"))
 
-    st.write("**Subject:**", selected["subject"])
-    st.write("**Notes:**", selected["notes"])
-    st.write("**Status:**", selected["status"])
+        with col2:
+            st.write("**Date Sent:**", selected.get("date sent", "—"))
+            st.write("**Required Date:**", selected.get("required date", "—"))
+            st.write("**Reply Date:**", selected.get("reply date", "—"))
+
+        st.write("**Subject:**", selected.get("subject", "—"))
+        st.write("**Notes:**", selected.get("notes", "—"))
+        st.write("**Status:**", selected.get("status", "—"))

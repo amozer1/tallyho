@@ -64,13 +64,13 @@ def render_outstanding_line(df, total=None):
     # COLORS
     # =========================
     COLORS = {
-        "open": "#ef4444",      # red
-        "out": "#f59e0b",       # gold
-        "closed": "#22c55e"    # green
+        "open": "#ef4444",
+        "out": "#f59e0b",
+        "closed": "#22c55e"
     }
 
     # =========================
-    # PIE CHART
+    # PIE CHART (FIXED)
     # =========================
     def pie(open_count, outstanding, closed):
 
@@ -79,7 +79,15 @@ def render_outstanding_line(df, total=None):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding (>7d)", "Closed"],
             values=[open_count, outstanding, closed],
-            textinfo="label+value",
+
+            # 🔥 BETTER LABELS
+            textinfo="label+value+percent",
+            textfont=dict(size=16, color="white"),
+            textposition="outside",
+
+            # 🔥 DONUT DEPTH (MORE SPACE + MODERN LOOK)
+            hole=0.45,
+
             marker=dict(
                 colors=[
                     COLORS["open"],
@@ -88,16 +96,19 @@ def render_outstanding_line(df, total=None):
                 ],
                 line=dict(color="white", width=2)
             ),
+
             sort=False
         ))
 
         fig.update_layout(
-            height=420,   # 🔥 increased size
-            margin=dict(l=10, r=10, t=10, b=10),
+            height=520,  # bigger chart
+            margin=dict(l=20, r=20, t=20, b=20),
             showlegend=False,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
-            font=dict(color="white", size=12)
+
+            # 🔥 GLOBAL FONT BOOST
+            font=dict(color="white", size=14)
         )
 
         return fig
@@ -117,7 +128,6 @@ def render_outstanding_line(df, total=None):
             """
         )
 
-        # NOTE (IMPORTANT CLARITY)
         st.markdown("""
         <div style="
             font-size:12px;

@@ -22,13 +22,16 @@ st.set_page_config(
 # SAFE LOAD FUNCTION
 # =========================
 def safe_load(path):
-    if os.path.exists(path):
+    try:
+        if not os.path.exists(path):
+            return None
         return pd.read_excel(path)
-    return None
+    except Exception:
+        return None
 
 
 # =========================
-# LOAD DATASETS (SAFE)
+# LOAD DATASETS
 # =========================
 @st.cache_data
 def load_data():
@@ -50,27 +53,55 @@ asset, df, seq = render_sidebar(datasets)
 
 
 # =========================
-# HEADER (FIXED)
+# HEADER
 # =========================
 render_header(asset)
 
 
 # =========================
-# HANDLE MISSING DATA
+# SAFETY CHECK (CRITICAL FIX)
 # =========================
-if df is None or df.empty:
-    st.warning(f"No data available for {asset}")
+df_raw = datasets.get(asset)
+
+if df_raw is None:
+    st.error(f"""
+    ❌ Dataset '{asset}' failed to load.
+
+    Check:
+    - File exists in GitHub repo
+    - Correct path: data/{asset}.xlsx
+    - No .xlsx.xlsx naming issue
+    """)
     st.stop()
+
+df = df_raw.copy()
 
 
 # =========================
 # CLEAN DATA
 # =========================
-df = df.copy()
 df.columns = df.columns.str.strip().str.lower()
+
+required_cols = ["date sent", "reply date", "seq no", "doc type", "status"]
+
+missing = [c for c in required_cols if c not in df.columns]
+
+if missing:
+    st.error(f"Missing columns: {missing}")
+    st.write("Available columns:", df.columns.tolist())
+    st.stop()
+
 
 df["date sent"] = pd.to_datetime(df["date sent"], errors="coerce")
 df["reply date"] = pd.to_datetime(df["reply date"], errors="coerce")
+
+
+# =========================
+# HANDLE EMPTY DATA
+# =========================
+if df.empty:
+    st.warning(f"No data available for {asset}")
+    st.stop()
 
 
 # =========================
@@ -90,7 +121,7 @@ with col2:
 
 
 # =========================
-# ROW DETAILS (SEQ SELECT)
+# ROW DETAILS
 # =========================
 if seq is not None:
 

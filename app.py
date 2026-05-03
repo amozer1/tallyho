@@ -48,13 +48,16 @@ datasets = load_data()
 # =========================
 asset, df, seq = render_sidebar(datasets)
 
-render_header()
+
+# =========================
+# HEADER (FIXED)
+# =========================
+render_header(asset)
 
 
 # =========================
 # HANDLE MISSING DATA
 # =========================
-
 if df is None or df.empty:
     st.warning(f"No data available for {asset}")
     st.stop()

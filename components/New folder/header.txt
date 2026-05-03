@@ -2,12 +2,13 @@ import streamlit as st
 from datetime import datetime
 
 
-def render_header(asset):
+def render_header():
 
-    st.markdown(f"""
+    st.markdown("""
     <style>
 
-    .header-box {{
+    /* ===== HEADER BOX ===== */
+    .header-box {
         background: linear-gradient(135deg, #0b1a2f 0%, #102845 100%);
         border: 1px solid rgba(122, 60, 255, 0.18);
         min-height: 95px;
@@ -17,41 +18,43 @@ def render_header(asset):
         flex-direction: column;
         justify-content: center;
         box-shadow: 0 0 18px rgba(122, 60, 255, 0.08);
-    }}
+    }
 
-    .left-box {{
+    .left-box {
         border-top-left-radius: 16px;
         border-bottom-left-radius: 16px;
-    }}
+    }
 
-    .right-box {{
+    .right-box {
         border-top-right-radius: 16px;
         border-bottom-right-radius: 16px;
-    }}
+    }
 
-    div[data-testid="stHorizontalBlock"] {{
+    /* ===== STICKY HEADER ===== */
+    div[data-testid="stHorizontalBlock"] {
         position: sticky;
         top: 0;
         z-index: 999;
         background: #0b1a2f;
         padding-top: 6px;
         padding-bottom: 6px;
-    }}
+    }
 
-    .title {{
+    /* ===== TEXT ===== */
+    .title {
         color: white;
         font-size: 26px;
         font-weight: 900;
         line-height: 1.1;
         margin-bottom: 4px;
-    }}
+    }
 
-    .subtitle {{
+    .subtitle {
         color: #94a3b8;
         font-size: 12px;
-    }}
+    }
 
-    .status-box {{
+    .status-box {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -63,36 +66,38 @@ def render_header(asset):
         color: white;
         font-size: 13px;
         font-weight: 700;
-    }}
+    }
 
-    .dot {{
+    .dot {
         color: #22c55e;
         animation: pulse 1.5s infinite;
-    }}
+    }
 
-    @keyframes pulse {{
-        0% {{opacity:1;}}
-        50% {{opacity:0.4;}}
-        100% {{opacity:1;}}
-    }}
+    @keyframes pulse {
+        0% {opacity:1;}
+        50% {opacity:0.4;}
+        100% {opacity:1;}
+    }
 
-    .date-center {{
+    /* ===== CENTER DATE ===== */
+    .date-center {
         color: white;
         font-size: 15px;
         font-weight: 800;
         text-align: center;
         width: 100%;
-    }}
+    }
 
     </style>
     """, unsafe_allow_html=True)
 
+    # ===== HEADER LAYOUT =====
     col1, col2, col3 = st.columns([5, 3, 2], gap="small")
 
     with col1:
-        st.markdown(f"""
+        st.markdown("""
         <div class="header-box left-box">
-            <div class="title">{asset} TQ & RFI Tracker</div>
+            <div class="title">Tally Ho TQ & RFI Tracker</div>
             <div class="subtitle">TQs • RFIs • Outstanding Responses</div>
         </div>
         """, unsafe_allow_html=True)

@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 
-
 def render_outstanding_line(df, total=None):
 
     if df is None or df.empty:
@@ -64,9 +63,9 @@ def render_outstanding_line(df, total=None):
     # COLORS
     # =========================
     COLORS = {
-        "open": "#ef4444",
-        "out": "#f59e0b",
-        "closed": "#22c55e"
+        "open": "#ef4444",  # red
+        "out": "#f59e0b",   # gold
+        "closed": "#22c55e" # green
     }
 
     # =========================
@@ -79,12 +78,7 @@ def render_outstanding_line(df, total=None):
         fig.add_trace(go.Pie(
             labels=["Open", "Outstanding (>7d)", "Closed"],
             values=[open_count, outstanding, closed],
-
-            # 🔥 ONLY CHANGE: bigger + clearer text
             textinfo="label+value",
-            textfont=dict(size=18, color="white"),
-            insidetextorientation="radial",
-
             marker=dict(
                 colors=[
                     COLORS["open"],
@@ -97,7 +91,7 @@ def render_outstanding_line(df, total=None):
         ))
 
         fig.update_layout(
-            height=420,
+            height=420,  # 🔥 increased size
             margin=dict(l=10, r=10, t=10, b=10),
             showlegend=False,
             paper_bgcolor="#0f172a",
@@ -122,6 +116,7 @@ def render_outstanding_line(df, total=None):
             """
         )
 
+        # NOTE (IMPORTANT CLARITY)
         st.markdown("""
         <div style="
             font-size:12px;

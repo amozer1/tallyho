@@ -54,7 +54,6 @@ render_header()
 # =========================
 # HANDLE MISSING DATA
 # =========================
-st.title(f"{asset} Tracker")
 
 if df is None or df.empty:
     st.warning(f"No data available for {asset}")

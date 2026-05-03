@@ -70,7 +70,7 @@ def render_outstanding_line(df, total=None):
     }
 
     # =========================
-    # PIE CHART (FIXED)
+    # PIE CHART
     # =========================
     def pie(open_count, outstanding, closed):
 
@@ -80,13 +80,10 @@ def render_outstanding_line(df, total=None):
             labels=["Open", "Outstanding (>7d)", "Closed"],
             values=[open_count, outstanding, closed],
 
-            # 🔥 BETTER LABELS
-            textinfo="label+value+percent",
-            textfont=dict(size=16, color="white"),
-            textposition="outside",
-
-            # 🔥 DONUT DEPTH (MORE SPACE + MODERN LOOK)
-            hole=0.45,
+            # 🔥 ONLY CHANGE: bigger + clearer text
+            textinfo="label+value",
+            textfont=dict(size=18, color="white"),
+            insidetextorientation="radial",
 
             marker=dict(
                 colors=[
@@ -96,19 +93,16 @@ def render_outstanding_line(df, total=None):
                 ],
                 line=dict(color="white", width=2)
             ),
-
             sort=False
         ))
 
         fig.update_layout(
-            height=520,  # bigger chart
-            margin=dict(l=20, r=20, t=20, b=20),
+            height=420,
+            margin=dict(l=10, r=10, t=10, b=10),
             showlegend=False,
             paper_bgcolor="#0f172a",
             plot_bgcolor="#0f172a",
-
-            # 🔥 GLOBAL FONT BOOST
-            font=dict(color="white", size=14)
+            font=dict(color="white", size=12)
         )
 
         return fig
